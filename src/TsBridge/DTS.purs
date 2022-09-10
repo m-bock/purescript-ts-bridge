@@ -1,18 +1,30 @@
-module TsBridge.DTS where
+module TsBridge.DTS
+  ( TsDeclaration(..)
+  , TsFilePath(..)
+  , TsImport(..)
+  , TsModule(..)
+  , TsModuleFile(..)
+  , TsName(..)
+  , TsProgram(..)
+  , TsType(..)
+  , printTsModule
+  , printTsProgram
+  )
+  where
 
 import Prelude
 
-import Data.Array (intercalate, intersperse)
+import Data.Array (intersperse)
 import Data.Maybe (Maybe, maybe)
 import Data.String as S
 import Data.Tuple.Nested (type (/\), (/\))
-import Data.Typelevel.Undefined (undefined)
 
 -------------------------------------------------------------------------------
 -- Types
 -------------------------------------------------------------------------------
 
 data TsToken
+
   -- Keywords
   = TsTokConst
   | TsTokDefault
@@ -25,7 +37,8 @@ data TsToken
   | TsTokAs
   | TsTokFrom
   | TsTokType
-  -- Puntuation
+
+  -- Punctuation
   | TsTokSemicolon
   | TsTokAsterisk
   | TsTokOpenParen
@@ -40,15 +53,15 @@ data TsToken
   | TsTokEquals
   | TsTokColon
   | TsTokDot
-  --
+
+  -- Formatting 
   | TsTokWhitespace
   | TsTokNewline
-  -- 
+
+  -- Literals
   | TsTokIdentifier String
   | TsTokStringLiteral String
   | TsTokNumberLiteral Number
-  | TsTokSingleComment String
-  | TsTokMultiComment String
 
 data TsName = TsName String
 
@@ -60,24 +73,8 @@ data TsImport
 
 data TsQualName = TsQualName (Maybe String) String
 
-data TsType = -- TsTypeAny
-  --   | TsTypeNull
-  --   | TsTypeNever
-  --   | TsTypeUndefined
-  --   | TsTypeString
+data TsType =
   TsTypeNumber
-
---   | TsTypeBoolean
---   | TsTypeArray Type
---   | TsTypeRecord (Array (TsName /\ Type))
---   | TsTypeFunction (Set TsName) (Array (TsName /\ Type)) Type
---   | TsTypeVar TsName
---   | TsTypeConstructor TsQualName (Array Type)
---   | TsTypeOpaque TsQualName (Array TsName)
---   | TsTypeUnion Type Type
---   | TsTypeTLString String
---   | TsTypeUniqueSymbol
---   | TsTypeIsPred TsName Type
 
 data TsModule = TsModule (Array TsImport) (Array TsDeclaration)
 
@@ -132,7 +129,6 @@ printToken = case _ of
   TsTokAs -> "as"
   TsTokFrom -> "from"
   TsTokType -> "type"
-  -- Puntuation
   TsTokSemicolon -> ";"
   TsTokAsterisk -> "*"
   TsTokOpenParen -> "("
@@ -147,21 +143,12 @@ printToken = case _ of
   TsTokEquals -> "="
   TsTokColon -> ":"
   TsTokDot -> "."
-  --
   TsTokWhitespace -> " "
   TsTokNewline -> "\n"
-  -- 
   TsTokIdentifier x -> x
   TsTokStringLiteral x -> "\"" <> x <> "\""
   TsTokNumberLiteral x -> show x
-  TsTokSingleComment x -> "TODO"
-  TsTokMultiComment x -> "TODO"
 
-printTsDeclaration :: TsDeclaration -> String
-printTsDeclaration = undefined
-
-printTsDeclarations :: Array TsDeclaration -> String
-printTsDeclarations = undefined
 
 printTsModule :: TsModule -> String
 printTsModule x = tokenize x <#> printToken # S.joinWith ""

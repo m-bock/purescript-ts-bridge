@@ -24,7 +24,7 @@ type TsBridgeCliOpts =
   }
 
 -------------------------------------------------------------------------------
--- CLI Opts
+-- CLI Options
 -------------------------------------------------------------------------------
 parserTsBridgeCliOpts :: O.Parser TsBridgeCliOpts
 parserTsBridgeCliOpts = ado

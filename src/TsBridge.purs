@@ -12,7 +12,7 @@ import Data.Typelevel.Undefined (undefined)
 import TsBridge.Class (class TsBridge, toTsType)
 import TsBridge.Class (class TsBridge, toTsType) as Exp
 import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsImport, TsModule(..), TsModuleFile(..), TsName(..), TsProgram(..))
-import TsBridge.DTS (TsDeclaration(..), TsImport, TsModule(..), TsName(..), TsProgram(..), TsType, printTsModule, printTsProgram) as Exp
+import TsBridge.DTS (TsDeclaration(..), TsImport, TsModule(..), TsName(..), TsProgram(..), TsType, printTsProgram) as Exp
 import Type.Proxy (Proxy)
 
 tsModuleFile :: String -> Array (Array TsDeclaration) -> TsModuleFile
