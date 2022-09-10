@@ -39,6 +39,7 @@
             pkgs.bashInteractive
             pkgs.spago
             pkgs.nodePackages.prettier
+            pkgs.just
           ];
         };
       }
