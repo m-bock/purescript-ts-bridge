@@ -3,9 +3,11 @@ module TsBridge.Class
   , toTsType
   ) where
 
+import Prelude
+
 import Data.Typelevel.Undefined (undefined)
 import TsBridge.DTS (TsType(..))
-import Type.Proxy (Proxy)
+import Type.Proxy (Proxy(..))
 
 class TsBridge a where
   toTsType :: a -> TsType
@@ -29,3 +31,6 @@ instance TsBridge String where
 
 instance TsBridge Boolean where
   toTsType _ = TsTypeBoolean
+
+instance TsBridge a => TsBridge (Array a) where
+  toTsType _ = TsTypeArray $ toTsType (Proxy :: _ a)

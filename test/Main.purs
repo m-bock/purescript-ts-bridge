@@ -23,7 +23,7 @@ spec = do
           [ tsTypeAlias "Foo" (Proxy :: _ Number) ]
       ]
       # printTsProgram
-      # shouldEqual ([ "types.d.ts" /\ "type Foo = number" ])
+      # shouldEqual ([ "types.d.ts" /\ "type Foo=number" ])
 
   it "generates a type alias for String" do
     tsProgram
@@ -31,7 +31,7 @@ spec = do
           [ tsTypeAlias "Foo" (Proxy :: _ String) ]
       ]
       # printTsProgram
-      # shouldEqual ([ "types.d.ts" /\ "type Foo = string" ])
+      # shouldEqual ([ "types.d.ts" /\ "type Foo=string" ])
 
   it "generates a type alias for Boolean" do
     tsProgram
@@ -39,4 +39,12 @@ spec = do
           [ tsTypeAlias "Foo" (Proxy :: _ Boolean) ]
       ]
       # printTsProgram
-      # shouldEqual ([ "types.d.ts" /\ "type Foo = boolean" ])
+      # shouldEqual ([ "types.d.ts" /\ "type Foo=boolean" ])
+
+  it "generates a type alias for Arrays" do
+    tsProgram
+      [ tsModuleFile "types.d.ts"
+          [ tsTypeAlias "Foo" (Proxy :: _ (Array String)) ]
+      ]
+      # printTsProgram
+      # shouldEqual ([ "types.d.ts" /\ "type Foo=Array<string>" ])

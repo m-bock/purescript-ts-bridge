@@ -81,6 +81,7 @@ data TsType
   = TsTypeNumber
   | TsTypeString
   | TsTypeBoolean
+  | TsTypeArray TsType
 
 data TsModule = TsModule (Array TsImport) (Array TsDeclaration)
 
@@ -91,6 +92,9 @@ data TsProgram = TsProgram (Array TsModuleFile)
 -------------------------------------------------------------------------------
 -- Tokenize
 -------------------------------------------------------------------------------
+
+wrapAngles :: Array TsToken -> Array TsToken
+wrapAngles x = [ TsTokOpenAngle ] <> x <> [ TsTokCloseAngle ]
 
 class Tokenize a where
   tokenize :: a -> Array TsToken
@@ -108,11 +112,12 @@ instance Tokenize TsType where
     TsTypeNumber -> [ TsTokNumber ]
     TsTypeString -> [ TsTokString ]
     TsTypeBoolean -> [ TsTokBoolean ]
+    TsTypeArray x -> [ TsTokIdentifier "Array" ] <> wrapAngles (tokenize x)
 
 instance Tokenize TsDeclaration where
   tokenize = case _ of
-    TsDeclTypeDef n _ t -> intersperse TsTokWhitespace $
-      [ TsTokType ] <> tokenize n <> [ TsTokEquals ] <> tokenize t
+    TsDeclTypeDef n _ t ->
+      [ TsTokType, TsTokWhitespace ] <> tokenize n <> [ TsTokEquals ] <> tokenize t
 
 instance Tokenize TsModule where
   tokenize (TsModule _ ds) = tokenize ds
