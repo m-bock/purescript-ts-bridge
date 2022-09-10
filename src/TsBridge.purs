@@ -1,6 +1,5 @@
 module TsBridge
-  ( defaultProgOptions
-  , module Exp
+  ( module Exp
   , tsModuleFile
   , tsModuleWithImports
   , tsProgram
@@ -22,13 +21,8 @@ tsModuleFile n xs = TsModuleFile (TsFilePath n) (TsModule [] $ join xs)
 tsModuleWithImports :: String -> Array TsImport -> Array (Array TsImport) -> TsModule
 tsModuleWithImports = undefined
 
-type ProgramOptions = { addImports :: Boolean }
-
-defaultProgOptions :: ProgramOptions
-defaultProgOptions = { addImports: true }
-
-tsProgram :: ProgramOptions -> Array TsModuleFile -> TsProgram
-tsProgram _ xs = TsProgram xs
+tsProgram :: Array TsModuleFile -> TsProgram
+tsProgram xs = TsProgram xs
 
 tsTypeAlias :: forall a. TsBridge a => String -> Proxy a -> Array TsDeclaration
 tsTypeAlias n p = [ TsDeclTypeDef (TsName n) [] $ toTsType p ]

@@ -1,7 +1,7 @@
-name: GitHub Actions Demo
+name: CI
 on: [push]
 jobs:
-  Explore-GitHub-Actions:
+  ci:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2.4.0
@@ -10,3 +10,9 @@ jobs:
         extra_nix_config: |
           access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
     - run: nix develop --command spago test
+    - run: nix develop --command spago docs --no-search
+
+    - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: generated-docs
