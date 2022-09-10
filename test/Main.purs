@@ -32,3 +32,11 @@ spec = do
       ]
       # printTsProgram
       # shouldEqual ([ "types.d.ts" /\ "type Foo = string" ])
+
+  it "generates a type alias for Boolean" do
+    tsProgram
+      [ tsModuleFile "types.d.ts"
+          [ tsTypeAlias "Foo" (Proxy :: _ Boolean) ]
+      ]
+      # printTsProgram
+      # shouldEqual ([ "types.d.ts" /\ "type Foo = boolean" ])

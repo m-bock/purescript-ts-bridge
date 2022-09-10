@@ -40,6 +40,7 @@ data TsToken
   -- Builtins
   | TsTokString
   | TsTokNumber
+  | TsTokBoolean
 
   -- Punctuation
   | TsTokSemicolon
@@ -79,6 +80,7 @@ data TsQualName = TsQualName (Maybe String) String
 data TsType
   = TsTypeNumber
   | TsTypeString
+  | TsTypeBoolean
 
 data TsModule = TsModule (Array TsImport) (Array TsDeclaration)
 
@@ -105,6 +107,7 @@ instance Tokenize TsType where
   tokenize = case _ of
     TsTypeNumber -> [ TsTokNumber ]
     TsTypeString -> [ TsTokString ]
+    TsTypeBoolean -> [ TsTokBoolean ]
 
 instance Tokenize TsDeclaration where
   tokenize = case _ of
@@ -137,6 +140,7 @@ printToken = case _ of
 
   TsTokNumber -> "number"
   TsTokString -> "string"
+  TsTokBoolean -> "boolean"
 
   TsTokSemicolon -> ";"
   TsTokAsterisk -> "*"

@@ -27,3 +27,5 @@ instance TsBridge Number where
 instance TsBridge String where
   toTsType _ = TsTypeString
 
+instance TsBridge Boolean where
+  toTsType _ = TsTypeBoolean
