@@ -82,6 +82,7 @@ data TsType
   | TsTypeString
   | TsTypeBoolean
   | TsTypeArray TsType
+  | TsTypeRecord (Array (TsName /\ TsType))
 
 data TsModule = TsModule (Array TsImport) (Array TsDeclaration)
 
@@ -95,6 +96,9 @@ data TsProgram = TsProgram (Array TsModuleFile)
 
 wrapAngles :: Array TsToken -> Array TsToken
 wrapAngles x = [ TsTokOpenAngle ] <> x <> [ TsTokCloseAngle ]
+
+wrapBraces :: Array TsToken -> Array TsToken
+wrapBraces x = [ TsTokOpenBrace ] <> x <> [ TsTokCloseBrace ]
 
 class Tokenize a where
   tokenize :: a -> Array TsToken
@@ -113,6 +117,11 @@ instance Tokenize TsType where
     TsTypeString -> [ TsTokString ]
     TsTypeBoolean -> [ TsTokBoolean ]
     TsTypeArray x -> [ TsTokIdentifier "Array" ] <> wrapAngles (tokenize x)
+    TsTypeRecord xs -> wrapBraces
+      $ join
+      $ intersperse [ TsTokSemicolon ]
+      $ (\(k /\ v) -> tokenize k <> [ TsTokColon ] <> tokenize v)
+          <$> xs
 
 instance Tokenize TsDeclaration where
   tokenize = case _ of

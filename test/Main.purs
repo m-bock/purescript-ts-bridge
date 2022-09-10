@@ -48,3 +48,11 @@ spec = do
       ]
       # printTsProgram
       # shouldEqual ([ "types.d.ts" /\ "type Foo=Array<string>" ])
+
+  it "generates a type alias for Records" do
+    tsProgram
+      [ tsModuleFile "types.d.ts"
+          [ tsTypeAlias "Foo" (Proxy :: _ { bar :: String, foo :: Number }) ]
+      ]
+      # printTsProgram
+      # shouldEqual ([ "types.d.ts" /\ "type Foo={bar:string;foo:number}" ])
