@@ -25,12 +25,10 @@ tsModuleWithImports = undefined
 type ProgramOptions = { addImports :: Boolean }
 
 defaultProgOptions :: ProgramOptions
-defaultProgOptions = undefined
+defaultProgOptions = { addImports: true }
 
 tsProgram :: ProgramOptions -> Array TsModuleFile -> TsProgram
 tsProgram _ xs = TsProgram xs
 
--- tsModule :: String -> Array TsImport -> Array TsDeclaration -> TsModule
--- tsModule = undefined
 tsTypeAlias :: forall a. TsBridge a => String -> Proxy a -> Array TsDeclaration
 tsTypeAlias n p = [ TsDeclTypeDef (TsName n) [] $ toTsType p ]
