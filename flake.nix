@@ -29,7 +29,6 @@
 
         easy-purescript-nix = import inputs.easy-purescript-nix { inherit pkgs; };
 
-
       in
 
       {
@@ -40,7 +39,6 @@
             pkgs.bashInteractive
             pkgs.spago
           ];
-
         };
       }
     );
