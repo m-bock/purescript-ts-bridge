@@ -9,8 +9,7 @@ module TsBridge.DTS
   , TsType(..)
   , printTsModule
   , printTsProgram
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -37,6 +36,10 @@ data TsToken
   | TsTokAs
   | TsTokFrom
   | TsTokType
+
+  -- Builtins
+  | TsTokString
+  | TsTokNumber
 
   -- Punctuation
   | TsTokSemicolon
@@ -73,8 +76,9 @@ data TsImport
 
 data TsQualName = TsQualName (Maybe String) String
 
-data TsType =
-  TsTypeNumber
+data TsType
+  = TsTypeNumber
+  | TsTypeString
 
 data TsModule = TsModule (Array TsImport) (Array TsDeclaration)
 
@@ -99,7 +103,8 @@ instance Tokenize TsQualName where
 
 instance Tokenize TsType where
   tokenize = case _ of
-    TsTypeNumber -> [ TsTokIdentifier "number" ]
+    TsTypeNumber -> [ TsTokNumber ]
+    TsTypeString -> [ TsTokString ]
 
 instance Tokenize TsDeclaration where
   tokenize = case _ of
@@ -129,6 +134,10 @@ printToken = case _ of
   TsTokAs -> "as"
   TsTokFrom -> "from"
   TsTokType -> "type"
+
+  TsTokNumber -> "number"
+  TsTokString -> "string"
+
   TsTokSemicolon -> ";"
   TsTokAsterisk -> "*"
   TsTokOpenParen -> "("
@@ -143,12 +152,13 @@ printToken = case _ of
   TsTokEquals -> "="
   TsTokColon -> ":"
   TsTokDot -> "."
+
   TsTokWhitespace -> " "
   TsTokNewline -> "\n"
+
   TsTokIdentifier x -> x
   TsTokStringLiteral x -> "\"" <> x <> "\""
   TsTokNumberLiteral x -> show x
-
 
 printTsModule :: TsModule -> String
 printTsModule x = tokenize x <#> printToken # S.joinWith ""

@@ -24,3 +24,6 @@ instance TsBridge a => TsBridge (Proxy a) where
 instance TsBridge Number where
   toTsType _ = TsTypeNumber
 
+instance TsBridge String where
+  toTsType _ = TsTypeString
+
