@@ -13,6 +13,6 @@ jobs:
     - run: nix develop --command spago docs --no-search
 
     - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: generated-docs
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        folder: generated-docs

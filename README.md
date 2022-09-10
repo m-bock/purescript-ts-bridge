@@ -7,7 +7,3 @@ A PureScript library for type class based TypeScript type generation
 ```
 spago install typescript-bridge
 ```
-
-# Features
-
-- 
