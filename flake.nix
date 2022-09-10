@@ -38,6 +38,7 @@
             pkgs.purs-tidy
             pkgs.bashInteractive
             pkgs.spago
+            pkgs.nodePackages.prettier
           ];
         };
       }

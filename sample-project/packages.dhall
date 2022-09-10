@@ -3,3 +3,4 @@ let upstream =
         sha256:f1531b29c21ac437ffe5666c1b6cc76f0a9c29d3c9d107ff047aa2567744994f
 
 in  upstream
+  with typescript-bridge = ../spago.dhall as Location
