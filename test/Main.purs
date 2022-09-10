@@ -2,10 +2,22 @@ module Test.Main where
 
 import Prelude
 
+import Data.Tuple.Nested ((/\))
 import Effect (Effect)
-import Effect.Class.Console (log)
+import Effect.Aff (launchAff_)
+import Test.Spec (it)
+import Test.Spec.Assertions (shouldEqual)
+import Test.Spec.Reporter.Console (consoleReporter)
+import Test.Spec.Runner (runSpec)
+import TsBridge (defaultProgOptions, printTsProgram, tsModuleFile, tsProgram, tsTypeAlias)
+import Type.Proxy (Proxy(..))
 
 main :: Effect Unit
-main = do
-  log "🍝"
-  log "You should add some tests."
+main = launchAff_ $ runSpec [ consoleReporter ] do
+  it "a" do
+    tsProgram defaultProgOptions
+      [ tsModuleFile "types.d.ts"
+          [ tsTypeAlias "Foo" (Proxy :: _ Number) ]
+      ]
+      # printTsProgram
+      # shouldEqual ([ "types.d.ts" /\ "type Foo = number" ])

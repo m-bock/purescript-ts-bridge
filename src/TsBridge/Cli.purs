@@ -1,0 +1,71 @@
+module TsBridge.Cli (mkTypeGenCli) where
+
+import Prelude
+import Data.Foldable (fold, for_)
+import Data.Maybe (Maybe(..))
+import Data.Tuple.Nested ((/\))
+import Effect (Effect)
+import Effect.Aff (Aff, error, launchAff_, throwError)
+import Effect.Class (liftEffect)
+import Effect.Class.Console (log)
+import Node.ChildProcess (Exit(..), defaultSpawnOptions)
+import Node.Encoding (Encoding(..))
+import Node.FS.Aff (writeTextFile)
+import Options.Applicative (help, helper, info, long, metavar, strOption, (<**>))
+import Options.Applicative as O
+import Sunde as Sun
+import TsBridge.DTS (TsProgram, printTsProgram)
+
+-------------------------------------------------------------------------------
+-- Types
+-------------------------------------------------------------------------------
+type TsBridgeCliOpts =
+  { outputDir :: String
+  }
+
+-------------------------------------------------------------------------------
+-- CLI Opts
+-------------------------------------------------------------------------------
+parserTsBridgeCliOpts :: O.Parser TsBridgeCliOpts
+parserTsBridgeCliOpts = ado
+  outputDir <-
+    strOption
+      $ fold
+          [ long "output-dir"
+          , metavar "OUTPUT_DIR"
+          , help "Dictionary the CLI will write the output d.ts files to."
+          ]
+  in { outputDir }
+
+parserInfoTsBridgeCliOpts :: O.ParserInfo TsBridgeCliOpts
+parserInfoTsBridgeCliOpts = info (parserTsBridgeCliOpts <**> helper) mempty
+
+-------------------------------------------------------------------------------
+-- App
+-------------------------------------------------------------------------------
+mkTypeGenCliAff :: TsProgram -> Aff Unit
+mkTypeGenCliAff tsProg = do
+  cliOpts <- liftEffect $ O.execParser parserInfoTsBridgeCliOpts
+  for_ (printTsProgram tsProg)
+    ( \(modPath /\ source) -> do
+        let
+          filePath = cliOpts.outputDir <> "/" <> modPath
+        log filePath
+        writeTextFile UTF8 filePath source
+    )
+  void $ spawn "prettier" [ "--write", cliOpts.outputDir <> "/**/*.d.ts" ]
+
+mkTypeGenCli :: TsProgram -> Effect Unit
+mkTypeGenCli tsProg = launchAff_ $ mkTypeGenCliAff tsProg
+
+-------------------------------------------------------------------------------
+-- Util
+-------------------------------------------------------------------------------
+spawn :: String -> Array String -> Aff { stderr :: String, stdout :: String }
+spawn cmd args = do
+  { exit, stderr, stdout } <-
+    Sun.spawn { cmd, args, stdin: Nothing }
+      defaultSpawnOptions
+  case exit of
+    Normally 0 -> pure { stderr, stdout }
+    _ -> throwError $ error ("Command " <> cmd <> " failed")
