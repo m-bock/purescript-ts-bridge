@@ -4,7 +4,8 @@ import Prelude
 
 import Data.Maybe (Maybe)
 import Data.String (joinWith)
-import Data.Tuple.Nested ((/\))
+import Data.String as S
+import Data.Tuple.Nested (type (/\), (/\))
 import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Test.Spec (Spec, describe, it)
@@ -26,7 +27,10 @@ spec = do
             [ tsTypeAlias "Foo" (Proxy :: _ Number) ]
         ]
         # printTsProgram
-        # shouldEqual ([ "types.d.ts" /\ "type Foo=number" ])
+        # shouldEqual
+            [ textFile "types.d.ts"
+                [ "type Foo=number" ]
+            ]
 
     it "generates a type alias for String" do
       tsProgram
@@ -34,7 +38,10 @@ spec = do
             [ tsTypeAlias "Foo" (Proxy :: _ String) ]
         ]
         # printTsProgram
-        # shouldEqual ([ "types.d.ts" /\ "type Foo=string" ])
+        # shouldEqual
+            [ textFile "types.d.ts"
+                [ "type Foo=string" ]
+            ]
 
     it "generates a type alias for Boolean" do
       tsProgram
@@ -42,7 +49,10 @@ spec = do
             [ tsTypeAlias "Foo" (Proxy :: _ Boolean) ]
         ]
         # printTsProgram
-        # shouldEqual ([ "types.d.ts" /\ "type Foo=boolean" ])
+        # shouldEqual
+            [ textFile "types.d.ts"
+                [ "type Foo=boolean" ]
+            ]
 
     it "generates a type alias for Arrays" do
       tsProgram
@@ -50,7 +60,10 @@ spec = do
             [ tsTypeAlias "Foo" (Proxy :: _ (Array String)) ]
         ]
         # printTsProgram
-        # shouldEqual ([ "types.d.ts" /\ "type Foo=Array<string>" ])
+        # shouldEqual
+            [ textFile "types.d.ts"
+                [ "type Foo=Array<string>" ]
+            ]
 
     it "generates a type alias for Records" do
       tsProgram
@@ -58,7 +71,10 @@ spec = do
             [ tsTypeAlias "Foo" (Proxy :: _ { bar :: String, foo :: Number }) ]
         ]
         # printTsProgram
-        # shouldEqual ([ "types.d.ts" /\ "type Foo={bar:string;foo:number}" ])
+        # shouldEqual
+            [ textFile "types.d.ts"
+                [ "type Foo={bar:string;foo:number}" ]
+            ]
 
     it "generates a type alias for Functions" do
       tsProgram
@@ -66,7 +82,10 @@ spec = do
             [ tsTypeAlias "Foo" (Proxy :: _ (String -> Number -> Boolean)) ]
         ]
         # printTsProgram
-        # shouldEqual ([ "types.d.ts" /\ "type Foo=(_:string)=>(_:number)=>boolean" ])
+        # shouldEqual
+            [ textFile "types.d.ts"
+                [ "type Foo=(_:string)=>(_:number)=>boolean" ]
+            ]
 
   describe "Standard Types" do
     it "generates a type " do
@@ -76,14 +95,21 @@ spec = do
         ]
         # printTsProgram
         # shouldEqual
-            ( [ "types.d.ts" /\
-                  joinWith "\n"
-                    [ "import*as Data_Maybe from 'Data.Maybe/index'"
-                    , "type Foo=Data_Maybe.Maybe<boolean>"
-                    ]
-              , "Data.Maybe/index.d.ts" /\
-                  joinWith "\n"
-                    [ "type Maybe<A>={ opaque }"
-                    ]
-              ]
-            )
+            { "types.d.ts":
+                [ "import*as Data_Maybe from 'Data.Maybe/index'"
+                , "type Foo=Data_Maybe.Maybe<boolean>"
+                ]
+            , "Data.Maybe/index.d.ts":
+                [ "type Maybe<A>={ opaque }" ]
+            }
+            -- [ textFile "types.d.ts"
+            --     [ "import*as Data_Maybe from 'Data.Maybe/index'"
+            --     , "type Foo=Data_Maybe.Maybe<boolean>"
+            --     ]
+            -- , textFile "Data.Maybe/index.d.ts"
+            --     [ "type Maybe<A>={ opaque }"
+            --     ]
+            -- ]
+
+textFile :: String -> Array String -> String /\ String
+textFile n lines = n /\ S.joinWith "\n" lines

@@ -10,8 +10,7 @@ module TsBridge.DTS
   , TsType(..)
   , printTsModule
   , printTsProgram
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -21,11 +20,10 @@ import Data.Maybe (Maybe, maybe)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.String as S
-import Data.Tuple (snd)
 import Data.Tuple.Nested (type (/\), (/\))
 
 -------------------------------------------------------------------------------
--- Types
+-- Types / TsToken
 -------------------------------------------------------------------------------
 
 data TsToken
@@ -74,15 +72,64 @@ data TsToken
   | TsTokStringLiteral String
   | TsTokNumberLiteral Number
 
+-------------------------------------------------------------------------------
+-- Types
+-------------------------------------------------------------------------------
+
+data TsModule = TsModule (Array TsImport) (Array TsDeclaration)
+
+data TsModuleFile = TsModuleFile TsFilePath TsModule
+
+data TsProgram = TsProgram (Array TsModuleFile)
+
+-------------------------------------------------------------------------------
+-- Types / TsName
+-------------------------------------------------------------------------------
+
 data TsName = TsName String
+
+derive instance Eq TsName
+derive instance Ord TsName
+
+-------------------------------------------------------------------------------
+-- Types / TsFilePath
+-------------------------------------------------------------------------------
 
 data TsFilePath = TsFilePath String
 
+derive instance Eq TsFilePath
+derive instance Ord TsFilePath
+
+-------------------------------------------------------------------------------
+-- Types / TsDeclaration
+-------------------------------------------------------------------------------
+
 data TsDeclaration = TsDeclTypeDef TsName (Array TsName) TsType
 
-data TsImport
+derive instance Eq TsDeclaration
+derive instance Ord TsDeclaration
+
+-------------------------------------------------------------------------------
+-- Types / TsImport
+-------------------------------------------------------------------------------
+
+data TsImport = TsImport TsName TsFilePath
+
+derive instance Eq TsImport
+derive instance Ord TsImport
+
+-------------------------------------------------------------------------------
+-- Types / TsQualName
+-------------------------------------------------------------------------------
 
 data TsQualName = TsQualName (Maybe String) String
+
+derive instance Eq TsQualName
+derive instance Ord TsQualName
+
+-------------------------------------------------------------------------------
+-- Types / TsType
+-------------------------------------------------------------------------------
 
 data TsType
   = TsTypeNumber
@@ -91,14 +138,10 @@ data TsType
   | TsTypeArray TsType
   | TsTypeRecord (Array (TsName /\ TsType))
   | TsTypeFunction (Set TsName) (Array (TsName /\ TsType)) TsType
-  | TsTypeConstructor TsQualName (Array (TsName /\ TsType))
-  | TsTypeOpaqueRef TsFilePath 
+  | TsTypeConstructor TsQualName (Array TsType)
 
-data TsModule = TsModule (Array TsImport) (Array TsDeclaration)
-
-data TsModuleFile = TsModuleFile TsFilePath TsModule
-
-data TsProgram = TsProgram (Array TsModuleFile)
+derive instance Eq TsType
+derive instance Ord TsType
 
 -------------------------------------------------------------------------------
 -- Tokenize
@@ -144,11 +187,11 @@ instance Tokenize TsType where
       tokenizeTypeArgs x | Set.isEmpty x = []
       tokenizeTypeArgs x = wrapAngles $ tokenize x
 
-      tokenizeFnArg (k /\ v) = tokenize k <> [TsTokColon] <> tokenize v
+      tokenizeFnArg (k /\ v) = tokenize k <> [ TsTokColon ] <> tokenize v
     TsTypeConstructor qname targs -> tokenize qname <> tokenizeTypeArgs targs
       where
       tokenizeTypeArgs x | Array.length x == 0 = []
-      tokenizeTypeArgs xs = wrapAngles $ tokenize $ snd <$> xs
+      tokenizeTypeArgs xs = wrapAngles $ tokenize xs
 
 instance Tokenize TsDeclaration where
   tokenize = case _ of

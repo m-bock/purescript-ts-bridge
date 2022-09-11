@@ -28,6 +28,7 @@ to generate this file without the comments in this block.
   , "spec"
   , "strings"
   , "sunde"
+  , "transformers"
   , "tuples"
   , "typelevel"
   ]
