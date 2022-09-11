@@ -99,23 +99,24 @@ spec = do
                   [ "type Foo = (_: string) => (_: number) => boolean" ]
               ]
 
---   describe "Standard Types" do
---     it "generates a type " do
---       tsProgram
---         [ tsModuleFile "types.d.ts"
---             [ tsTypeAlias "Foo" (Proxy :: _ (Maybe Boolean)) ]
---         ]
---         # printTsProgram
---         # shouldEqual
---         $ Map.fromFoldable
---             [ textFile "types.d.ts"
---                 [ "import*as Data_Maybe from 'Data.Maybe/index'"
---                 , "type Foo=Data_Maybe.Maybe<boolean>"
---                 ]
---             , textFile "Data.Maybe/index.d.ts"
---                 [ "type Maybe<A>={ opaque }"
---                 ]
---             ]
+    describe "Standard Types" do
+      describe "Maybe" do
+        it "generates a type " do
+          tsProgram
+            [ tsModuleFile "types.d.ts"
+                [ tsTypeAlias "Foo" (Proxy :: _ (Maybe Boolean)) ]
+            ]
+            # printTsProgram
+            # shouldEqual
+            $ Map.fromFoldable
+                [ textFile "types.d.ts"
+                    [ -- "import * as Data_Maybe from 'Data.Maybe/index'"
+                      "type Foo = Data_Maybe.Maybe<boolean>"
+                    ]
+                , textFile "Data.Maybe/index.d.ts"
+                    [ "type Maybe<A> = { }"
+                    ]
+                ]
 
 textFile :: String -> Array String -> String /\ String
 textFile n lines = n /\ S.joinWith "\n" lines

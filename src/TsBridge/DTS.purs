@@ -84,7 +84,7 @@ data TsToken
 -- Types
 -------------------------------------------------------------------------------
 
-data TsModule = TsModule (Array TsImport) (Array TsDeclaration)
+data TsModule = TsModule (Set TsImport) (Array TsDeclaration)
 
 data TsModuleFile = TsModuleFile TsFilePath TsModule
 
@@ -295,44 +295,78 @@ instance Tokenize a => Tokenize (Set a) where
 
 printToken :: TsToken -> String
 printToken = case _ of
-  TsTokConst -> "const"
-  TsTokDefault -> "default"
-  TsTokExport -> "export"
-  TsTokDeclare -> "declare"
-  TsTokImport -> "import"
-  TsTokVoid -> "void"
-  TsTokReadonly -> "readonly"
-  TsTokUnique -> "unique"
-  TsTokAs -> "as"
-  TsTokFrom -> "from"
-  TsTokType -> "type"
+  TsTokConst ->
+    "const"
+  TsTokDefault ->
+    "default"
+  TsTokExport ->
+    "export"
+  TsTokDeclare ->
+    "declare"
+  TsTokImport ->
+    "import"
+  TsTokVoid ->
+    "void"
+  TsTokReadonly ->
+    "readonly"
+  TsTokUnique ->
+    "unique"
+  TsTokAs ->
+    "as"
+  TsTokFrom ->
+    "from"
+  TsTokType ->
+    "type"
 
-  TsTokNumber -> "number"
-  TsTokString -> "string"
-  TsTokBoolean -> "boolean"
+  TsTokNumber ->
+    "number"
+  TsTokString ->
+    "string"
+  TsTokBoolean ->
+    "boolean"
 
-  TsTokSemicolon -> ";"
-  TsTokAsterisk -> "*"
-  TsTokOpenParen -> "("
-  TsTokCloseParen -> ")"
-  TsTokOpenBracket -> "["
-  TsTokCloseBracket -> "]"
-  TsTokOpenBrace -> "{"
-  TsTokCloseBrace -> "}"
-  TsTokOpenAngle -> "<"
-  TsTokCloseAngle -> ">"
-  TsTokComma -> ","
-  TsTokEquals -> "="
-  TsTokColon -> ":"
-  TsTokDot -> "."
-  TsTokFatArrow -> "=>"
+  TsTokSemicolon ->
+    ";"
+  TsTokAsterisk ->
+    "*"
+  TsTokOpenParen ->
+    "("
+  TsTokCloseParen ->
+    ")"
+  TsTokOpenBracket ->
+    "["
+  TsTokCloseBracket ->
+    "]"
+  TsTokOpenBrace ->
+    "{"
+  TsTokCloseBrace ->
+    "}"
+  TsTokOpenAngle ->
+    "<"
+  TsTokCloseAngle ->
+    ">"
+  TsTokComma ->
+    ","
+  TsTokEquals ->
+    "="
+  TsTokColon ->
+    ":"
+  TsTokDot ->
+    "."
+  TsTokFatArrow ->
+    "=>"
 
-  TsTokWhitespace -> " "
-  TsTokNewline -> "\n"
+  TsTokWhitespace ->
+    " "
+  TsTokNewline ->
+    "\n"
 
-  TsTokIdentifier x -> x
-  TsTokStringLiteral x -> "\"" <> x <> "\""
-  TsTokNumberLiteral x -> show x
+  TsTokIdentifier x ->
+    x
+  TsTokStringLiteral x ->
+    "\"" <> x <> "\""
+  TsTokNumberLiteral x ->
+    show x
 
 printTsModule :: TsModule -> String
 printTsModule x = tokenize x <#> printToken # S.joinWith ""

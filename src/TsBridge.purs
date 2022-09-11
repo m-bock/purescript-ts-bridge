@@ -21,9 +21,9 @@ import Type.Proxy (Proxy)
 tsModuleFile :: String -> Array (TsBridge (Array TsDeclaration)) -> Array TsModuleFile
 tsModuleFile n xs =
   let
-    (xs' /\ w) = runTsBridge $ join <$> sequence xs
+    (xs' /\ {imports}) = runTsBridge $ join <$> sequence xs
   in
-    [ TsModuleFile (TsFilePath n) (TsModule [] xs') ]
+    [ TsModuleFile (TsFilePath n) (TsModule imports xs') ]
 
 tsModuleWithImports :: String -> Array TsImport -> Array (Array TsImport) -> TsModule
 tsModuleWithImports = undefined

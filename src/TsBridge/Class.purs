@@ -16,7 +16,8 @@ import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Tuple.Nested (type (/\), (/\))
+import Data.Traversable (sequence)
+import Data.Tuple.Nested (type (/\))
 import Data.Typelevel.Undefined (undefined)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsFunction(..), TsImport(..), TsModule(..), TsModuleFile(..), TsName(..), TsQualName(..), TsRecord(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..))
@@ -90,20 +91,7 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
 -------------------------------------------------------------------------------
 
 instance ToTsBridge a => ToTsBridge (Maybe a) where
-  toTsBridge _ = ado
-    x <- toTsBridge (Proxy :: _ a)
-    tell
-      { typeDefs:
-          [ TsModuleFile
-              (TsFilePath "Data_Maybe/index")
-              (TsModule [] [ TsDeclTypeDef (TsName "Maybe") [] (TsTypeRecord (TsRecord [])) ])
-          ]
-      , imports: Set.singleton $
-          TsImport
-            (TsName "Data_Maybe")
-            (TsFilePath "Data_Maybe/index")
-      }
-    in TsTypeConstructor (TsQualName (Just "Data_Maybe") "Maybe") (TsTypeArgs [ x ])
+  toTsBridge _ = opaqueType "Data.Maybe" "Maybe" [ toTsBridge (Proxy :: _ a) ]
 
 -------------------------------------------------------------------------------
 -- Class / GenRecord
@@ -123,3 +111,27 @@ instance (GenRecord rl, ToTsBridge t, IsSymbol s) => GenRecord (Cons s t rl) whe
     let k = TsName $ reflectSymbol (Proxy :: _ s)
     in
       A.cons (TsRecordField k x) xs
+
+-------------------------------------------------------------------------------
+-- Util
+-------------------------------------------------------------------------------
+
+opaqueType :: String -> String -> Array (TsBridge TsType) -> TsBridge TsType
+opaqueType _ _ xs = ado
+  xs' <- sequence xs
+  tell
+    { typeDefs:
+        [ TsModuleFile
+            (TsFilePath "Data_Maybe/index")
+            ( TsModule Set.empty
+                [ TsDeclTypeDef (TsName "Maybe") []
+                    (TsTypeRecord (TsRecord []))
+                ]
+            )
+        ]
+    , imports: Set.singleton $
+        TsImport
+          (TsName "Data_Maybe")
+          (TsFilePath "Data_Maybe/index")
+    }
+  in TsTypeConstructor (TsQualName (Just "Data_Maybe") "Maybe") (TsTypeArgs xs')
