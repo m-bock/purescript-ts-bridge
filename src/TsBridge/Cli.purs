@@ -1,7 +1,9 @@
 module TsBridge.Cli (mkTypeGenCli) where
 
 import Prelude
+
 import Data.Foldable (fold, for_)
+import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
@@ -46,7 +48,10 @@ parserInfoTsBridgeCliOpts = info (parserTsBridgeCliOpts <**> helper) mempty
 mkTypeGenCliAff :: TsProgram -> Aff Unit
 mkTypeGenCliAff tsProg = do
   cliOpts <- liftEffect $ O.execParser parserInfoTsBridgeCliOpts
-  for_ (printTsProgram tsProg)
+
+  let files = Map.toUnfoldable $ printTsProgram tsProg :: Array _
+
+  for_ files
     ( \(modPath /\ source) -> do
         let
           filePath = cliOpts.outputDir <> "/" <> modPath

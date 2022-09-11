@@ -6,15 +6,12 @@ module TsBridge.Class
   , genRecord
   , runTsBridge
   , toTsBridge
-  )
-  where
+  ) where
 
 import Prelude
 
-import Control.Monad.Writer (class MonadTell, class MonadWriter, Writer, runWriter, tell)
+import Control.Monad.Writer (class MonadTell, Writer, runWriter, tell)
 import Data.Array as A
-import Data.Map (Map)
-import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
@@ -22,7 +19,7 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Typelevel.Undefined (undefined)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
-import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsImport(..), TsName(..), TsQualName(..), TsType(..))
+import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsFunction(..), TsImport(..), TsModule(..), TsModuleFile(..), TsName(..), TsQualName(..), TsRecord(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..))
 import Type.Proxy (Proxy(..))
 
 -------------------------------------------------------------------------------
@@ -32,7 +29,7 @@ import Type.Proxy (Proxy(..))
 newtype TsBridge a = TsBridge (Writer TsBridgeAccum a)
 
 type TsBridgeAccum =
-  { typeDefs :: Set (TsFilePath /\ TsDeclaration)
+  { typeDefs :: Array TsModuleFile
   , imports :: Set TsImport
   }
 
@@ -77,15 +74,15 @@ instance ToTsBridge a => ToTsBridge (Array a) where
   toTsBridge _ = TsTypeArray <$> toTsBridge (Proxy :: _ a)
 
 instance (RowToList r rl, GenRecord rl) => ToTsBridge (Record r) where
-  toTsBridge _ = TsTypeRecord <$> genRecord (Proxy :: _ rl)
+  toTsBridge _ = TsTypeRecord <<< TsRecord <$> genRecord (Proxy :: _ rl)
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
   toTsBridge _ = ado
     arg <- toTsBridge (Proxy :: _ a)
     ret <- toTsBridge (Proxy :: _ b)
     in
-      TsTypeFunction Set.empty
-        [ TsName "_" /\ arg ]
+      TsTypeFunction $ TsFunction (TsTypeArgsQuant Set.empty)
+        [ TsFnArg (TsName "_") arg ]
         ret
 
 -------------------------------------------------------------------------------
@@ -96,13 +93,17 @@ instance ToTsBridge a => ToTsBridge (Maybe a) where
   toTsBridge _ = ado
     x <- toTsBridge (Proxy :: _ a)
     tell
-      { typeDefs: Set.singleton $
-          TsFilePath "Data_Maybe/index" /\
-            TsDeclTypeDef (TsName "Maybe") [] (TsTypeRecord [])
+      { typeDefs:
+          [ TsModuleFile
+              (TsFilePath "Data_Maybe/index")
+              (TsModule [] [ TsDeclTypeDef (TsName "Maybe") [] (TsTypeRecord (TsRecord [])) ])
+          ]
       , imports: Set.singleton $
-          TsImport (TsName "Data_Maybe") (TsFilePath "Data_Maybe/index")
+          TsImport
+            (TsName "Data_Maybe")
+            (TsFilePath "Data_Maybe/index")
       }
-    in TsTypeConstructor (TsQualName (Just "Data_Maybe") "Maybe") [ x ]
+    in TsTypeConstructor (TsQualName (Just "Data_Maybe") "Maybe") (TsTypeArgs [ x ])
 
 -------------------------------------------------------------------------------
 -- Class / GenRecord
@@ -110,7 +111,7 @@ instance ToTsBridge a => ToTsBridge (Maybe a) where
 
 class GenRecord :: RowList Type -> Constraint
 class GenRecord rl where
-  genRecord :: Proxy rl -> TsBridge (Array (TsName /\ TsType))
+  genRecord :: Proxy rl -> TsBridge (Array (TsRecordField))
 
 instance GenRecord Nil where
   genRecord _ = pure []
@@ -119,5 +120,6 @@ instance (GenRecord rl, ToTsBridge t, IsSymbol s) => GenRecord (Cons s t rl) whe
   genRecord _ = ado
     x <- toTsBridge (Proxy :: _ t)
     xs <- genRecord (Proxy :: _ rl)
+    let k = TsName $ reflectSymbol (Proxy :: _ s)
     in
-      A.cons (TsName (reflectSymbol (Proxy :: _ s)) /\ x) xs
+      A.cons (TsRecordField k x) xs

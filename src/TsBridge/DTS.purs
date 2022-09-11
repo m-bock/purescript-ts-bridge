@@ -1,13 +1,19 @@
 module TsBridge.DTS
   ( TsDeclaration(..)
   , TsFilePath(..)
+  , TsFnArg(..)
+  , TsFunction(..)
   , TsImport(..)
   , TsModule(..)
   , TsModuleFile(..)
   , TsName(..)
   , TsProgram(..)
   , TsQualName(..)
+  , TsRecord(..)
+  , TsRecordField(..)
   , TsType(..)
+  , TsTypeArgs(..)
+  , TsTypeArgsQuant(..)
   , printTsModule
   , printTsProgram
   ) where
@@ -16,6 +22,8 @@ import Prelude
 
 import Data.Array (intersperse)
 import Data.Array as Array
+import Data.Map (Map)
+import Data.Map as Map
 import Data.Maybe (Maybe, maybe)
 import Data.Set (Set)
 import Data.Set as Set
@@ -128,6 +136,24 @@ derive instance Eq TsQualName
 derive instance Ord TsQualName
 
 -------------------------------------------------------------------------------
+-- Types / TsTypeArgsQuant
+-------------------------------------------------------------------------------
+
+newtype TsTypeArgsQuant = TsTypeArgsQuant (Set TsName)
+
+derive instance Eq TsTypeArgsQuant
+derive instance Ord TsTypeArgsQuant
+
+-------------------------------------------------------------------------------
+-- Types / TsTypeArgs
+-------------------------------------------------------------------------------
+
+newtype TsTypeArgs = TsTypeArgs (Array TsType)
+
+derive instance Eq TsTypeArgs
+derive instance Ord TsTypeArgs
+
+-------------------------------------------------------------------------------
 -- Types / TsType
 -------------------------------------------------------------------------------
 
@@ -136,12 +162,48 @@ data TsType
   | TsTypeString
   | TsTypeBoolean
   | TsTypeArray TsType
-  | TsTypeRecord (Array (TsName /\ TsType))
-  | TsTypeFunction (Set TsName) (Array (TsName /\ TsType)) TsType
-  | TsTypeConstructor TsQualName (Array TsType)
+  | TsTypeRecord TsRecord
+  | TsTypeFunction TsFunction
+  | TsTypeConstructor TsQualName TsTypeArgs
 
 derive instance Eq TsType
 derive instance Ord TsType
+
+-------------------------------------------------------------------------------
+-- Types / TsFunction
+-------------------------------------------------------------------------------
+
+data TsFunction = TsFunction TsTypeArgsQuant (Array TsFnArg) TsType
+
+derive instance Eq TsFunction
+derive instance Ord TsFunction
+
+-------------------------------------------------------------------------------
+-- Types / TsFnArg
+-------------------------------------------------------------------------------
+
+data TsFnArg = TsFnArg TsName TsType
+
+derive instance Eq TsFnArg
+derive instance Ord TsFnArg
+
+-------------------------------------------------------------------------------
+-- Types / TsRecord
+-------------------------------------------------------------------------------
+
+newtype TsRecord = TsRecord (Array TsRecordField)
+
+derive instance Eq TsRecord
+derive instance Ord TsRecord
+
+-------------------------------------------------------------------------------
+-- Types / TsRecordField
+-------------------------------------------------------------------------------
+
+data TsRecordField = TsRecordField TsName TsType
+
+derive instance Eq TsRecordField
+derive instance Ord TsRecordField
 
 -------------------------------------------------------------------------------
 -- Tokenize
@@ -173,30 +235,50 @@ instance Tokenize TsType where
     TsTypeString -> [ TsTokString ]
     TsTypeBoolean -> [ TsTokBoolean ]
     TsTypeArray x -> [ TsTokIdentifier "Array" ] <> wrapAngles (tokenize x)
-    TsTypeRecord xs -> wrapBraces
-      $ join
-      $ intersperse [ TsTokSemicolon ]
-      $ (\(k /\ v) -> tokenize k <> [ TsTokColon ] <> tokenize v)
-          <$> xs
-    TsTypeFunction targs args ret ->
-      tokenizeTypeArgs targs
-        <> wrapParens (tokenizeFnArg =<< args)
-        <> [ TsTokFatArrow ]
-        <> tokenize ret
-      where
-      tokenizeTypeArgs x | Set.isEmpty x = []
-      tokenizeTypeArgs x = wrapAngles $ tokenize x
+    TsTypeRecord r -> tokenize r
+    TsTypeFunction x -> tokenize x
+    TsTypeConstructor qname targs -> tokenize qname <> tokenize targs
 
-      tokenizeFnArg (k /\ v) = tokenize k <> [ TsTokColon ] <> tokenize v
-    TsTypeConstructor qname targs -> tokenize qname <> tokenizeTypeArgs targs
-      where
-      tokenizeTypeArgs x | Array.length x == 0 = []
-      tokenizeTypeArgs xs = wrapAngles $ tokenize xs
+instance Tokenize TsFunction where
+  tokenize (TsFunction targsQ args ret) =
+    tokenize targsQ
+      <> wrapParens (tokenize =<< args)
+      <> [ TsTokWhitespace, TsTokFatArrow, TsTokWhitespace ]
+      <> tokenize ret
+
+instance Tokenize TsFnArg where
+  tokenize (TsFnArg k v) = tokenize k
+    <> [ TsTokColon, TsTokWhitespace ]
+    <> tokenize v
+
+instance Tokenize TsTypeArgs where
+  tokenize (TsTypeArgs x) | Array.length x == 0 = []
+  tokenize (TsTypeArgs xs) = wrapAngles $ tokenize xs
+
+instance Tokenize TsTypeArgsQuant where
+  tokenize (TsTypeArgsQuant x) | Set.isEmpty x = []
+  tokenize (TsTypeArgsQuant x) = wrapAngles $ tokenize x
+
+instance Tokenize TsRecord where
+  tokenize (TsRecord []) = wrapBraces []
+  tokenize (TsRecord xs) =
+    wrapBraces $
+      [ TsTokWhitespace ] <> (join $ tokenize <$> xs)
+
+instance Tokenize TsRecordField where
+  tokenize (TsRecordField k v) =
+    tokenize k
+      <> [ TsTokColon, TsTokWhitespace ]
+      <> tokenize v
+      <> [ TsTokSemicolon, TsTokWhitespace ]
 
 instance Tokenize TsDeclaration where
   tokenize = case _ of
     TsDeclTypeDef n _ t ->
-      [ TsTokType, TsTokWhitespace ] <> tokenize n <> [ TsTokEquals ] <> tokenize t
+      [ TsTokType, TsTokWhitespace ]
+        <> tokenize n
+        <> [ TsTokWhitespace, TsTokEquals, TsTokWhitespace ]
+        <> tokenize t
 
 instance Tokenize TsModule where
   tokenize (TsModule _ ds) = tokenize ds
@@ -261,5 +343,5 @@ printTsFilePath (TsFilePath x) = x
 printTsModuleFile :: TsModuleFile -> String /\ String
 printTsModuleFile (TsModuleFile fp m) = printTsFilePath fp /\ printTsModule m
 
-printTsProgram :: TsProgram -> Array (String /\ String)
-printTsProgram (TsProgram xs) = map printTsModuleFile xs
+printTsProgram :: TsProgram -> Map String String
+printTsProgram (TsProgram xs) = Map.fromFoldable $ map printTsModuleFile xs

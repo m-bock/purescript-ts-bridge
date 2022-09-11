@@ -18,18 +18,18 @@ import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsImport, TsModule(..), 
 import TsBridge.DTS (TsDeclaration(..), TsImport, TsModule(..), TsName(..), TsProgram(..), TsType, printTsProgram) as Exp
 import Type.Proxy (Proxy)
 
-tsModuleFile :: String -> Array (TsBridge (Array TsDeclaration)) -> TsModuleFile
+tsModuleFile :: String -> Array (TsBridge (Array TsDeclaration)) -> Array TsModuleFile
 tsModuleFile n xs =
   let
     (xs' /\ w) = runTsBridge $ join <$> sequence xs
   in
-    TsModuleFile (TsFilePath n) (TsModule [] xs')
+    [ TsModuleFile (TsFilePath n) (TsModule [] xs') ]
 
 tsModuleWithImports :: String -> Array TsImport -> Array (Array TsImport) -> TsModule
 tsModuleWithImports = undefined
 
-tsProgram :: Array TsModuleFile -> TsProgram
-tsProgram xs = TsProgram xs
+tsProgram :: Array (Array TsModuleFile) -> TsProgram
+tsProgram xs = TsProgram $ join xs
 
 tsTypeAlias :: forall a. ToTsBridge a => String -> Proxy a -> TsBridge (Array TsDeclaration)
 tsTypeAlias n p = ado
