@@ -8,25 +8,31 @@ module TsBridge.Class
 import Prelude
 
 import Data.Array as A
+import Data.Maybe (Maybe(..))
+import Data.Set as Set
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Typelevel.Undefined (undefined)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
-import TsBridge.DTS (TsName(..), TsType(..))
+import TsBridge.DTS (TsName(..), TsQualName(..), TsType(..))
 import Type.Proxy (Proxy(..))
+
+-------------------------------------------------------------------------------
+-- TsBridge / Class
+-------------------------------------------------------------------------------
 
 class TsBridge a where
   toTsType :: a -> TsType
 
 -------------------------------------------------------------------------------
--- Proxy
+-- TsBridge / Proxy
 -------------------------------------------------------------------------------
 
 instance TsBridge a => TsBridge (Proxy a) where
   toTsType _ = toTsType (undefined :: a)
 
 -------------------------------------------------------------------------------
--- Primitives
+-- TsBridge / Primitives
 -------------------------------------------------------------------------------
 
 instance TsBridge Number where
@@ -43,6 +49,21 @@ instance TsBridge a => TsBridge (Array a) where
 
 instance (RowToList r rl, GenRecord rl) => TsBridge (Record r) where
   toTsType _ = TsTypeRecord $ genRecord (Proxy :: _ rl)
+
+instance (TsBridge a, TsBridge b) => TsBridge (a -> b) where
+  toTsType _ =
+    TsTypeFunction Set.empty
+      [ TsName "_" /\ toTsType (Proxy :: _ a) ]
+      (toTsType (Proxy :: _ b))
+
+-------------------------------------------------------------------------------
+-- TsBridge / Standard Types
+-------------------------------------------------------------------------------
+
+instance TsBridge a => TsBridge (Maybe a) where
+  toTsType _ = TsTypeConstructor
+    (TsQualName (Just "Data_Maybe") "Maybe")
+    [ toTsType (Proxy :: _ a) ]
 
 -------------------------------------------------------------------------------
 -- GenRecord
