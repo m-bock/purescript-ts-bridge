@@ -35,6 +35,8 @@ import Data.Tuple.Nested (type (/\), (/\))
 -- Types / TsToken
 -------------------------------------------------------------------------------
 
+type TsTokens = Array TsToken
+
 data TsToken
 
   -- Keywords
@@ -158,33 +160,49 @@ derive instance Ord TsFilePath
 -- Tokenize
 -------------------------------------------------------------------------------
 
-wrapAngles :: Array TsToken -> Array TsToken
-wrapAngles x = [ TsTokOpenAngle ] <> x <> [ TsTokCloseAngle ]
+wrap :: TsTokens -> TsTokens -> TsTokens -> TsTokens
+wrap p q x = p  <> x <>  q 
 
-wrapBraces :: Array TsToken -> Array TsToken
-wrapBraces x = [ TsTokOpenBrace ] <> x <> [ TsTokCloseBrace ]
+sepBy :: TsTokens -> Array TsTokens -> TsTokens
+sepBy sep xs = intersperse sep xs # join
 
-wrapParens :: Array TsToken -> Array TsToken
-wrapParens x = [ TsTokOpenParen ] <> x <> [ TsTokCloseParen ]
 
-sepByComma :: Array (Array TsToken) -> Array TsToken
-sepByComma xs = intersperse [ TsTokComma ] xs # join
+postfix :: TsTokens -> Array TsTokens -> TsTokens
+postfix tok xs = xs <#> (_ <> tok) # join
 
-sepByDoubleNewline :: Array (Array TsToken) -> Array TsToken
-sepByDoubleNewline xs = intersperse [ TsTokNewline, TsTokNewline ] xs # join
+wrapAngles :: TsTokens -> TsTokens
+wrapAngles = wrap [TsTokOpenAngle] [TsTokCloseAngle]
 
-postfixSemicolon :: Array (Array TsToken) -> Array TsToken
-postfixSemicolon xs = xs <#> (_ <> [ TsTokSemicolon ]) # join
+wrapBraces :: TsTokens -> TsTokens
+wrapBraces = wrap [TsTokOpenBrace] [TsTokCloseBrace]
 
-postfixDoubleNewline :: Array (Array TsToken) -> Array TsToken
-postfixDoubleNewline xs = xs <#> (_ <> [ TsTokNewline, TsTokNewline ]) # join
+wrapParens :: TsTokens -> TsTokens
+wrapParens = wrap [TsTokOpenParen] [TsTokCloseParen]
 
-sectionNewline :: (Array (Array TsToken) -> Array TsToken) -> Array (Array TsToken) -> Array TsToken
+sepByComma :: Array TsTokens -> TsTokens
+sepByComma = sepBy [ TsTokComma ]
+
+sepByDoubleNewline :: Array TsTokens -> TsTokens
+sepByDoubleNewline = sepBy [ TsTokNewline, TsTokNewline ]
+
+postfixSemicolon :: Array TsTokens -> TsTokens
+postfixSemicolon = postfix [ TsTokSemicolon ]
+
+postfixDoubleNewline :: Array TsTokens -> TsTokens
+postfixDoubleNewline = postfix [ TsTokNewline, TsTokNewline ]
+
+sectionNewline :: (Array TsTokens -> TsTokens) -> Array TsTokens -> TsTokens
 sectionNewline f xs | Array.length xs == 0 = []
 sectionNewline f xs = f xs <> [ TsTokNewline ]
 
+applyWhenNotEmpty :: forall a b. (Array a -> Array b) -> Array a -> Array b
+applyWhenNotEmpty f xs | Array.null xs = []
+applyWhenNotEmpty f xs = f xs
+
+
+
 class Tokenize a where
-  tokenize :: a -> Array TsToken
+  tokenize :: a -> TsTokens
 
 instance Tokenize TsName where
   tokenize (TsName x) = [ TsTokIdentifier x ]
