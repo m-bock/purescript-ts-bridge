@@ -2,17 +2,23 @@ module Test.Main where
 
 import Prelude
 
+import Control.Monad.Error.Class (class MonadThrow)
+import Data.Argonaut (class EncodeJson, encodeJson)
+import Data.Argonaut as J
+import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe)
-import Data.String as S
+import Data.String (Pattern(..))
+import Data.String as String
 import Data.Tuple.Nested (type (/\), (/\))
 import Effect (Effect)
-import Effect.Aff (launchAff_)
+import Effect.Aff (Error, launchAff_)
 import Test.Spec (Spec, describe, it)
-import Test.Spec.Assertions (shouldEqual)
+import Test.Spec.Assertions (fail)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (runSpec)
-import TsBridge (printTsProgram, tsModuleFile, tsProgram, tsTypeAlias)
+import TsBridge (TsProgram(..), tsModuleFile, tsProgram, tsTypeAlias)
+import TsBridge as TsBridge
 import Type.Proxy (Proxy(..))
 
 main :: Effect Unit
@@ -110,13 +116,31 @@ spec = do
             # shouldEqual
             $ Map.fromFoldable
                 [ textFile "types.d.ts"
-                    [ -- "import * as Data_Maybe from 'Data.Maybe/index'"
-                      "type Foo = Data_Maybe.Maybe<boolean>"
+                    [ "import * as Data_Maybe from 'Data.Maybe/index'"
+                    , ""
+                    , "type Foo = Data_Maybe.Maybe<boolean>"
                     ]
                 , textFile "Data.Maybe/index.d.ts"
                     [ "type Maybe<A> = { }"
                     ]
                 ]
 
-textFile :: String -> Array String -> String /\ String
-textFile n lines = n /\ S.joinWith "\n" lines
+textFile :: String -> Array String -> String /\ Array String
+textFile n lines = n /\ lines
+
+shouldEqual :: forall m t. MonadThrow Error m => EncodeJson t => Show t => Eq t => t -> t -> m Unit
+shouldEqual v1 v2 = when (v1 /= v2)
+  $ fail
+  $ show v1 <> " ≠ " <> show v2
+      <> "\n\n"
+      <> "JSON:"
+      <> "\n\n"
+      <> showJson v1
+      <> "\n\n≠\n\n"
+      <> showJson v2
+      <> "\n"
+  where
+  showJson = encodeJson >>> J.stringifyWithIndent 2
+
+printTsProgram :: TsProgram -> Map String (Array String)
+printTsProgram x = TsBridge.printTsProgram x <#> String.split (Pattern "\n")

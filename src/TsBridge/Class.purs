@@ -20,7 +20,7 @@ import Data.Traversable (sequence)
 import Data.Tuple.Nested (type (/\))
 import Data.Typelevel.Undefined (undefined)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
-import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsFunction(..), TsImport(..), TsModule(..), TsModuleFile(..), TsName(..), TsQualName(..), TsRecord(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..))
+import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsImport(..), TsModule(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsQualName(..), TsRecord(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..))
 import Type.Proxy (Proxy(..))
 
 -------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
     arg <- toTsBridge (Proxy :: _ a)
     ret <- toTsBridge (Proxy :: _ b)
     in
-      TsTypeFunction $ TsFunction (TsTypeArgsQuant Set.empty)
+      TsTypeFunction (TsTypeArgsQuant Set.empty)
         [ TsFnArg (TsName "_") arg ]
         ret
 
@@ -122,7 +122,7 @@ opaqueType _ _ xs = ado
   tell
     { typeDefs:
         [ TsModuleFile
-            (TsFilePath "Data_Maybe/index")
+            (TsFilePath "Data_Maybe/index.d.ts")
             ( TsModule Set.empty
                 [ TsDeclTypeDef (TsName "Maybe") []
                     (TsTypeRecord (TsRecord []))
@@ -132,6 +132,6 @@ opaqueType _ _ xs = ado
     , imports: Set.singleton $
         TsImport
           (TsName "Data_Maybe")
-          (TsFilePath "Data_Maybe/index")
+          (TsModulePath "Data_Maybe/index")
     }
   in TsTypeConstructor (TsQualName (Just "Data_Maybe") "Maybe") (TsTypeArgs xs')

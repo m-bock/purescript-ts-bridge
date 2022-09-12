@@ -8,7 +8,9 @@ module TsBridge
 
 import Prelude
 
-import Control.Monad.Writer (runWriter)
+import Data.Array as Array
+import Data.Map as Map
+import Data.Set as Set
 import Data.Traversable (sequence)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
@@ -21,15 +23,26 @@ import Type.Proxy (Proxy)
 tsModuleFile :: String -> Array (TsBridge (Array TsDeclaration)) -> Array TsModuleFile
 tsModuleFile n xs =
   let
-    (xs' /\ {imports}) = runTsBridge $ join <$> sequence xs
+    (xs' /\ { typeDefs, imports }) = runTsBridge $ join <$> sequence xs
   in
-    [ TsModuleFile (TsFilePath n) (TsModule imports xs') ]
+    typeDefs <> [ TsModuleFile (TsFilePath n) (TsModule imports xs') ]
+
+mergeModules :: Array TsModuleFile -> TsProgram
+mergeModules xs = xs
+  <#> (\(TsModuleFile mp m) -> mp /\ m)
+  # Map.fromFoldableWith mergeModule
+  # TsProgram
+
+mergeModule :: TsModule -> TsModule -> TsModule
+mergeModule (TsModule is1 ds1) (TsModule is2 ds2) = TsModule
+  (is1 `Set.union` is2)
+  (Array.nub (ds1 <> ds2))
 
 tsModuleWithImports :: String -> Array TsImport -> Array (Array TsImport) -> TsModule
 tsModuleWithImports = undefined
 
 tsProgram :: Array (Array TsModuleFile) -> TsProgram
-tsProgram xs = TsProgram $ join xs
+tsProgram xs = mergeModules $ join xs
 
 tsTypeAlias :: forall a. ToTsBridge a => String -> Proxy a -> TsBridge (Array TsDeclaration)
 tsTypeAlias n p = ado
