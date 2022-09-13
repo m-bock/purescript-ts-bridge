@@ -1,5 +1,5 @@
 module TsBridge.Class
-  ( TsBridge(..)
+  ( TsBridgeM(..)
   , TsBridgeAccum
   , class GenRecord
   , class ToTsBridge
@@ -27,21 +27,21 @@ import Type.Proxy (Proxy(..))
 -- Types / TsBridge
 -------------------------------------------------------------------------------
 
-newtype TsBridge a = TsBridge (Writer TsBridgeAccum a)
+newtype TsBridgeM a = TsBridge (Writer TsBridgeAccum a)
 
 type TsBridgeAccum =
   { typeDefs :: Array TsModuleFile
   , imports :: Set TsImport
   }
 
-derive newtype instance MonadTell TsBridgeAccum TsBridge
-derive newtype instance Monad TsBridge
-derive newtype instance Bind TsBridge
-derive newtype instance Functor TsBridge
-derive newtype instance Apply TsBridge
-derive newtype instance Applicative TsBridge
+derive newtype instance MonadTell TsBridgeAccum TsBridgeM
+derive newtype instance Monad TsBridgeM
+derive newtype instance Bind TsBridgeM
+derive newtype instance Functor TsBridgeM
+derive newtype instance Apply TsBridgeM
+derive newtype instance Applicative TsBridgeM
 
-runTsBridge :: forall a. TsBridge a -> a /\ TsBridgeAccum
+runTsBridge :: forall a. TsBridgeM a -> a /\ TsBridgeAccum
 runTsBridge (TsBridge ma) = runWriter ma
 
 -------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ runTsBridge (TsBridge ma) = runWriter ma
 -------------------------------------------------------------------------------
 
 class ToTsBridge a where
-  toTsBridge :: a -> TsBridge TsType
+  toTsBridge :: a -> TsBridgeM TsType
 
 -------------------------------------------------------------------------------
 -- Class / ToTsBridge / Proxy
@@ -99,7 +99,7 @@ instance ToTsBridge a => ToTsBridge (Maybe a) where
 
 class GenRecord :: RowList Type -> Constraint
 class GenRecord rl where
-  genRecord :: Proxy rl -> TsBridge (Array (TsRecordField))
+  genRecord :: Proxy rl -> TsBridgeM (Array TsRecordField)
 
 instance GenRecord Nil where
   genRecord _ = pure []
@@ -110,13 +110,13 @@ instance (GenRecord rl, ToTsBridge t, IsSymbol s) => GenRecord (Cons s t rl) whe
     xs <- genRecord (Proxy :: _ rl)
     let k = TsName $ reflectSymbol (Proxy :: _ s)
     in
-      A.cons (TsRecordField k x) xs
+      A.cons (TsRecordField k { optional: false, readonly: true } x) xs
 
 -------------------------------------------------------------------------------
 -- Util
 -------------------------------------------------------------------------------
 
-opaqueType :: String -> String -> Array (TsBridge TsType) -> TsBridge TsType
+opaqueType :: String -> String -> Array (TsBridgeM TsType) -> TsBridgeM TsType
 opaqueType _ _ xs = ado
   xs' <- sequence xs
   tell

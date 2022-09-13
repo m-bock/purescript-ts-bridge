@@ -89,7 +89,7 @@ spec = do
           # shouldEqual
           $ Map.fromFoldable
               [ textFile "types.d.ts"
-                  [ "type Foo = { bar: string; foo: number; }" ]
+                  [ "type Foo = { readonly bar: string; readonly foo: number; }" ]
               ]
 
     describe "Function" do
@@ -121,7 +121,7 @@ spec = do
                     , "type Foo = Data_Maybe.Maybe<boolean>"
                     ]
                 , textFile "Data.Maybe/index.d.ts"
-                    [ "type Maybe<A> = { }"
+                    [ "type Maybe<A> = { readonly opaque: unique symbol; readonly args: [A]; }"
                     ]
                 ]
 

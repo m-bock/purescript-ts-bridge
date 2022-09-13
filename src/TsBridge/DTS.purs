@@ -1,5 +1,6 @@
 module TsBridge.DTS
-  ( TsDeclaration(..)
+  ( PropModifiers
+  , TsDeclaration(..)
   , TsFilePath(..)
   , TsFnArg(..)
   , TsImport(..)
@@ -73,6 +74,7 @@ data TsToken
   | TsTokColon
   | TsTokDot
   | TsTokFatArrow
+  | TsTokQuestionMark
 
   -- Formatting 
   | TsTokWhitespace
@@ -120,7 +122,12 @@ data TsFnArg = TsFnArg TsName TsType
 
 newtype TsRecord = TsRecord (Array TsRecordField)
 
-data TsRecordField = TsRecordField TsName TsType
+data TsRecordField = TsRecordField TsName PropModifiers TsType
+
+type PropModifiers =
+  { readonly :: Boolean
+  , optional :: Boolean
+  }
 
 -------------------------------------------------------------------------------
 -- Class / Eq
@@ -161,23 +168,22 @@ derive instance Ord TsFilePath
 -------------------------------------------------------------------------------
 
 wrap :: TsTokens -> TsTokens -> TsTokens -> TsTokens
-wrap p q x = p  <> x <>  q 
+wrap p q x = p <> x <> q
 
 sepBy :: TsTokens -> Array TsTokens -> TsTokens
 sepBy sep xs = intersperse sep xs # join
-
 
 postfix :: TsTokens -> Array TsTokens -> TsTokens
 postfix tok xs = xs <#> (_ <> tok) # join
 
 wrapAngles :: TsTokens -> TsTokens
-wrapAngles = wrap [TsTokOpenAngle] [TsTokCloseAngle]
+wrapAngles = wrap [ TsTokOpenAngle ] [ TsTokCloseAngle ]
 
 wrapBraces :: TsTokens -> TsTokens
-wrapBraces = wrap [TsTokOpenBrace] [TsTokCloseBrace]
+wrapBraces = wrap [ TsTokOpenBrace ] [ TsTokCloseBrace ]
 
 wrapParens :: TsTokens -> TsTokens
-wrapParens = wrap [TsTokOpenParen] [TsTokCloseParen]
+wrapParens = wrap [ TsTokOpenParen ] [ TsTokCloseParen ]
 
 sepByComma :: Array TsTokens -> TsTokens
 sepByComma = sepBy [ TsTokComma ]
@@ -191,6 +197,9 @@ postfixSemicolon = postfix [ TsTokSemicolon ]
 postfixDoubleNewline :: Array TsTokens -> TsTokens
 postfixDoubleNewline = postfix [ TsTokNewline, TsTokNewline ]
 
+postfixNewline :: Array TsTokens -> TsTokens
+postfixNewline = postfix [ TsTokNewline ]
+
 sectionNewline :: (Array TsTokens -> TsTokens) -> Array TsTokens -> TsTokens
 sectionNewline f xs | Array.length xs == 0 = []
 sectionNewline f xs = f xs <> [ TsTokNewline ]
@@ -198,8 +207,6 @@ sectionNewline f xs = f xs <> [ TsTokNewline ]
 applyWhenNotEmpty :: forall a b. (Array a -> Array b) -> Array a -> Array b
 applyWhenNotEmpty f xs | Array.null xs = []
 applyWhenNotEmpty f xs = f xs
-
-
 
 class Tokenize a where
   tokenize :: a -> TsTokens
@@ -248,8 +255,10 @@ instance Tokenize TsRecord where
       [ TsTokWhitespace ] <> (join $ tokenize <$> xs)
 
 instance Tokenize TsRecordField where
-  tokenize (TsRecordField k v) =
-    tokenize k
+  tokenize (TsRecordField k { readonly, optional } v) =
+    (if readonly then [ TsTokReadonly, TsTokWhitespace ] else [])
+      <> tokenize k
+      <> (if optional then [ TsTokWhitespace ] else [])
       <> [ TsTokColon, TsTokWhitespace ]
       <> tokenize v
       <> [ TsTokSemicolon, TsTokWhitespace ]
@@ -264,14 +273,18 @@ instance Tokenize TsDeclaration where
 
 instance Tokenize TsModule where
   tokenize (TsModule is ds) =
-    (is # Set.toUnfoldable <#> tokenize # sectionNewline sepByDoubleNewline)
+    ( is
+        # Set.toUnfoldable
+        <#> tokenize
+        # applyWhenNotEmpty (postfixNewline >>> (_ <> [ TsTokNewline ]))
+    )
       <> (ds <#> tokenize # sepByDoubleNewline)
 
 instance Tokenize TsImport where
   tokenize (TsImport n fp) =
     [ TsTokImport, TsTokWhitespace, TsTokAsterisk, TsTokWhitespace, TsTokAs, TsTokWhitespace ]
       <> tokenize n
-      <> [ TsTokFrom ]
+      <> [ TsTokWhitespace, TsTokFrom, TsTokWhitespace ]
       <> tokenize fp
 
 instance Tokenize TsFilePath where
@@ -348,6 +361,8 @@ printToken = case _ of
     "."
   TsTokFatArrow ->
     "=>"
+  TsTokQuestionMark ->
+    "?"
 
   TsTokWhitespace ->
     " "
