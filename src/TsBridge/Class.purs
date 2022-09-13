@@ -8,6 +8,7 @@ module TsBridge.Class
 import Prelude
 
 import Data.Array as A
+import Data.Either (Either)
 import Data.Maybe (Maybe)
 import Data.Set as Set
 import Data.String (Pattern(..), Replacement(..))
@@ -66,7 +67,14 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
 -------------------------------------------------------------------------------
 
 instance ToTsBridge a => ToTsBridge (Maybe a) where
-  toTsBridge _ = tsOpaqueType "Data.Maybe" "Maybe" [ "A" ] [ toTsBridge (Proxy :: _ a) ]
+  toTsBridge _ = tsOpaqueType "Data.Maybe" "Maybe" [ "A" ]
+    [ toTsBridge (Proxy :: _ a) ]
+
+instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
+  toTsBridge _ = tsOpaqueType "Data.Either" "Either" [ "A", "B" ]
+    [ toTsBridge (Proxy :: _ a)
+    , toTsBridge (Proxy :: _ b)
+    ]
 
 -------------------------------------------------------------------------------
 -- Class / GenRecord

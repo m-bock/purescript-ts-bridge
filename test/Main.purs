@@ -5,6 +5,7 @@ import Prelude
 import Control.Monad.Error.Class (class MonadThrow)
 import Data.Argonaut (class EncodeJson, encodeJson)
 import Data.Argonaut as J
+import Data.Either (Either)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe)
@@ -107,7 +108,7 @@ spec = do
 
     describe "Standard Types" do
       describe "Maybe" do
-        it "generates a type " do
+        it "generates a type alias and adds the type module" do
           tsProgram
             [ tsModuleFile "types"
                 [ tsTypeAlias "Foo" (Proxy :: _ (Maybe Boolean)) ]
@@ -122,6 +123,25 @@ spec = do
                     ]
                 , textFile "Data.Maybe/index.d.ts"
                     [ "type Maybe<A> = { readonly opaque_Maybe: unique symbol; readonly arg0: A; }"
+                    ]
+                ]
+
+      describe "Either" do
+        it "generates a type alias and adds the type module" do
+          tsProgram
+            [ tsModuleFile "types"
+                [ tsTypeAlias "Foo" (Proxy :: _ (Either String Boolean)) ]
+            ]
+            # printTsProgram
+            # shouldEqual
+            $ Map.fromFoldable
+                [ textFile "types.d.ts"
+                    [ "import * as Data_Either from 'Data.Either/index'"
+                    , ""
+                    , "type Foo = Data_Either.Either<string, boolean>"
+                    ]
+                , textFile "Data.Either/index.d.ts"
+                    [ "type Either<A, B> = { readonly opaque_Either: unique symbol; readonly arg0: A; readonly arg1: B; }"
                     ]
                 ]
 

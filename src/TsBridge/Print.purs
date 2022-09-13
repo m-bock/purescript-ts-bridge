@@ -88,7 +88,7 @@ wrapParens :: TsTokens -> TsTokens
 wrapParens = wrap [ TsTokOpenParen ] [ TsTokCloseParen ]
 
 sepByComma :: Array TsTokens -> TsTokens
-sepByComma = sepBy [ TsTokComma ]
+sepByComma = sepBy [ TsTokComma, TsTokWhitespace ]
 
 sepByDoubleNewline :: Array TsTokens -> TsTokens
 sepByDoubleNewline = sepBy [ TsTokNewline, TsTokNewline ]
