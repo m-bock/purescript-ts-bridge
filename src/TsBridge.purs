@@ -14,18 +14,20 @@ import Data.Set as Set
 import Data.Traversable (sequence)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
-import TsBridge.Class (class ToTsBridge, TsBridge, runTsBridge, toTsBridge)
+import TsBridge.Class (class ToTsBridge, toTsBridge)
 import TsBridge.Class (class ToTsBridge, toTsBridge) as Exp
-import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsImport, TsModule(..), TsModuleFile(..), TsName(..), TsProgram(..))
-import TsBridge.DTS (TsDeclaration(..), TsImport, TsModule(..), TsName(..), TsProgram(..), TsType, printTsProgram) as Exp
+import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsImport, TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsName(..), TsProgram(..), TsType, dtsFilePath)
+import TsBridge.DTS (TsDeclaration(..), TsImport, TsModule(..), TsName(..), TsProgram(..), TsType) as Exp
+import TsBridge.Monad (TsBridgeM, opaqueType, runTsBridgeM)
+import TsBridge.Print (printTsProgram) as Exp
 import Type.Proxy (Proxy)
 
-tsModuleFile :: String -> Array (TsBridge (Array TsDeclaration)) -> Array TsModuleFile
+tsModuleFile :: String -> Array (TsBridgeM (Array TsDeclaration)) -> Array TsModuleFile
 tsModuleFile n xs =
   let
-    (xs' /\ { typeDefs, imports }) = runTsBridge $ join <$> sequence xs
+    (xs' /\ { typeDefs, imports }) = runTsBridgeM $ join <$> sequence xs
   in
-    typeDefs <> [ TsModuleFile (TsFilePath n) (TsModule imports xs') ]
+    typeDefs <> [ TsModuleFile (dtsFilePath n) (TsModule imports xs') ]
 
 mergeModules :: Array TsModuleFile -> TsProgram
 mergeModules xs = xs
@@ -44,7 +46,8 @@ tsModuleWithImports = undefined
 tsProgram :: Array (Array TsModuleFile) -> TsProgram
 tsProgram xs = mergeModules $ join xs
 
-tsTypeAlias :: forall a. ToTsBridge a => String -> Proxy a -> TsBridge (Array TsDeclaration)
+tsTypeAlias :: forall a. ToTsBridge a => String -> Proxy a -> TsBridgeM (Array TsDeclaration)
 tsTypeAlias n p = ado
   x <- toTsBridge p
   in [ TsDeclTypeDef (TsName n) [] x ]
+

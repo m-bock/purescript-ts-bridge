@@ -1,48 +1,23 @@
 module TsBridge.Class
-  ( TsBridgeM(..)
-  , TsBridgeAccum
-  , class GenRecord
+  ( class GenRecord
   , class ToTsBridge
   , genRecord
-  , runTsBridge
   , toTsBridge
   ) where
 
 import Prelude
 
-import Control.Monad.Writer (class MonadTell, Writer, runWriter, tell)
 import Data.Array as A
-import Data.Maybe (Maybe(..))
-import Data.Set (Set)
+import Data.Maybe (Maybe)
 import Data.Set as Set
+import Data.String (Pattern(..), Replacement(..))
+import Data.String as Str
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Traversable (sequence)
-import Data.Tuple.Nested (type (/\))
 import Data.Typelevel.Undefined (undefined)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
-import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsImport(..), TsModule(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsQualName(..), TsRecord(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..))
+import TsBridge.DTS (TsFilePath(..), TsFnArg(..), TsModuleAlias(..), TsName(..), TsRecordField(..), TsType(..), TsTypeArgsQuant(..))
+import TsBridge.Monad (TsBridgeM, opaqueType)
 import Type.Proxy (Proxy(..))
-
--------------------------------------------------------------------------------
--- Types / TsBridge
--------------------------------------------------------------------------------
-
-newtype TsBridgeM a = TsBridge (Writer TsBridgeAccum a)
-
-type TsBridgeAccum =
-  { typeDefs :: Array TsModuleFile
-  , imports :: Set TsImport
-  }
-
-derive newtype instance MonadTell TsBridgeAccum TsBridgeM
-derive newtype instance Monad TsBridgeM
-derive newtype instance Bind TsBridgeM
-derive newtype instance Functor TsBridgeM
-derive newtype instance Apply TsBridgeM
-derive newtype instance Applicative TsBridgeM
-
-runTsBridge :: forall a. TsBridgeM a -> a /\ TsBridgeAccum
-runTsBridge (TsBridge ma) = runWriter ma
 
 -------------------------------------------------------------------------------
 -- Class / ToTsBridge
@@ -75,7 +50,7 @@ instance ToTsBridge a => ToTsBridge (Array a) where
   toTsBridge _ = TsTypeArray <$> toTsBridge (Proxy :: _ a)
 
 instance (RowToList r rl, GenRecord rl) => ToTsBridge (Record r) where
-  toTsBridge _ = TsTypeRecord <<< TsRecord <$> genRecord (Proxy :: _ rl)
+  toTsBridge _ = TsTypeRecord <$> genRecord (Proxy :: _ rl)
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
   toTsBridge _ = ado
@@ -91,7 +66,7 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
 -------------------------------------------------------------------------------
 
 instance ToTsBridge a => ToTsBridge (Maybe a) where
-  toTsBridge _ = opaqueType "Data.Maybe" "Maybe" [ toTsBridge (Proxy :: _ a) ]
+  toTsBridge _ = tsOpaqueType "Data.Maybe" "Maybe" [ "A" ] [ toTsBridge (Proxy :: _ a) ]
 
 -------------------------------------------------------------------------------
 -- Class / GenRecord
@@ -116,22 +91,12 @@ instance (GenRecord rl, ToTsBridge t, IsSymbol s) => GenRecord (Cons s t rl) whe
 -- Util
 -------------------------------------------------------------------------------
 
-opaqueType :: String -> String -> Array (TsBridgeM TsType) -> TsBridgeM TsType
-opaqueType _ _ xs = ado
-  xs' <- sequence xs
-  tell
-    { typeDefs:
-        [ TsModuleFile
-            (TsFilePath "Data_Maybe/index.d.ts")
-            ( TsModule Set.empty
-                [ TsDeclTypeDef (TsName "Maybe") []
-                    (TsTypeRecord (TsRecord []))
-                ]
-            )
-        ]
-    , imports: Set.singleton $
-        TsImport
-          (TsName "Data_Maybe")
-          (TsModulePath "Data_Maybe/index")
-    }
-  in TsTypeConstructor (TsQualName (Just "Data_Maybe") "Maybe") (TsTypeArgs xs')
+tsOpaqueType :: String -> String -> Array String -> Array (TsBridgeM TsType) -> TsBridgeM TsType
+tsOpaqueType pursModuleName pursTypeName targs = opaqueType
+  (TsFilePath (pursModuleName <> "/index") "d.ts")
+  (TsModuleAlias $ dotsToLodashes pursModuleName)
+  (TsName pursTypeName)
+  (TsName <$> targs)
+
+dotsToLodashes :: String -> String
+dotsToLodashes = Str.replaceAll (Pattern ".") (Replacement "_")

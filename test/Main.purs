@@ -30,7 +30,7 @@ spec = do
     describe "Number" do
       it "generates a type alias" do
         tsProgram
-          [ tsModuleFile "types.d.ts"
+          [ tsModuleFile "types"
               [ tsTypeAlias "Foo" (Proxy :: _ Number) ]
           ]
           # printTsProgram
@@ -43,7 +43,7 @@ spec = do
     describe "String" do
       it "generates a type alias" do
         tsProgram
-          [ tsModuleFile "types.d.ts"
+          [ tsModuleFile "types"
               [ tsTypeAlias "Foo" (Proxy :: _ String) ]
           ]
           # printTsProgram
@@ -56,7 +56,7 @@ spec = do
     describe "Boolean" do
       it "generates a type alias" do
         tsProgram
-          [ tsModuleFile "types.d.ts"
+          [ tsModuleFile "types"
               [ tsTypeAlias "Foo" (Proxy :: _ Boolean) ]
           ]
           # printTsProgram
@@ -69,7 +69,7 @@ spec = do
     describe "Array" do
       it "generates a type alias" do
         tsProgram
-          [ tsModuleFile "types.d.ts"
+          [ tsModuleFile "types"
               [ tsTypeAlias "Foo" (Proxy :: _ (Array String)) ]
           ]
           # printTsProgram
@@ -82,7 +82,7 @@ spec = do
     describe "Record" do
       it "generates a type alias" do
         tsProgram
-          [ tsModuleFile "types.d.ts"
+          [ tsModuleFile "types"
               [ tsTypeAlias "Foo" (Proxy :: _ { bar :: String, foo :: Number }) ]
           ]
           # printTsProgram
@@ -95,7 +95,7 @@ spec = do
     describe "Function" do
       it "generates a type alias" do
         tsProgram
-          [ tsModuleFile "types.d.ts"
+          [ tsModuleFile "types"
               [ tsTypeAlias "Foo" (Proxy :: _ (String -> Number -> Boolean)) ]
           ]
           # printTsProgram
@@ -109,7 +109,7 @@ spec = do
       describe "Maybe" do
         it "generates a type " do
           tsProgram
-            [ tsModuleFile "types.d.ts"
+            [ tsModuleFile "types"
                 [ tsTypeAlias "Foo" (Proxy :: _ (Maybe Boolean)) ]
             ]
             # printTsProgram
@@ -121,7 +121,7 @@ spec = do
                     , "type Foo = Data_Maybe.Maybe<boolean>"
                     ]
                 , textFile "Data.Maybe/index.d.ts"
-                    [ "type Maybe<A> = { readonly opaque: unique symbol; readonly args: [A]; }"
+                    [ "type Maybe<A> = { readonly opaque_Maybe: unique symbol; readonly arg0: A; }"
                     ]
                 ]
 

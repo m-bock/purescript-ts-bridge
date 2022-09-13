@@ -16,7 +16,8 @@ import Node.FS.Aff (writeTextFile)
 import Options.Applicative (help, helper, info, long, metavar, strOption, (<**>))
 import Options.Applicative as O
 import Sunde as Sun
-import TsBridge.DTS (TsProgram, printTsProgram)
+import TsBridge.DTS (TsProgram)
+import TsBridge.Print (printTsProgram)
 
 -------------------------------------------------------------------------------
 -- Types
