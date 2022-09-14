@@ -18,8 +18,9 @@ import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (runSpec)
-import TsBridge (TsProgram(..), tsModuleFile, tsProgram, tsTypeAlias)
+import TsBridge (TsProgram, tsModuleFile, tsProgram, tsTypeAlias)
 import TsBridge as TsBridge
+import TsBridge.ABC (A, B, C)
 import Type.Proxy (Proxy(..))
 
 main :: Effect Unit
@@ -142,6 +143,35 @@ spec = do
                     ]
                 , textFile "Data.Either/index.d.ts"
                     [ "type Either<A, B> = { readonly opaque_Either: unique symbol; readonly arg0: A; readonly arg1: B; }"
+                    ]
+                ]
+
+    describe "Type Variables" do
+      describe "Singe" do
+        it "generates a type alias with a quantified type variable" do
+          tsProgram
+            [ tsModuleFile "types"
+                [ tsTypeAlias "Foo" (Proxy :: _ A) ]
+            ]
+            # printTsProgram
+            # shouldEqual
+            $ Map.fromFoldable
+                [ textFile "types.d.ts"
+                    [ "type Foo<A> = A"
+                    ]
+                ]
+
+      describe "Multiple" do
+        it "generates a type alias with quantified type variables" do
+          tsProgram
+            [ tsModuleFile "types"
+                [ tsTypeAlias "Foo" (Proxy :: _ { c :: C, sub :: { a :: A, b :: B } }) ]
+            ]
+            # printTsProgram
+            # shouldEqual
+            $ Map.fromFoldable
+                [ textFile "types.d.ts"
+                    [ "type Foo<C, A, B> = { readonly c: C; readonly sub: { readonly a: A; readonly b: B; }; }"
                     ]
                 ]
 

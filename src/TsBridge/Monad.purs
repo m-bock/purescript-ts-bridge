@@ -1,22 +1,28 @@
 module TsBridge.Monad
-  ( TsBridgeAccum
+  ( TsBridgeAccum(..)
   , TsBridgeM(..)
+  , Wrap(..)
   , opaqueType
   , runTsBridgeM
   ) where
 
 import Prelude
 
-import Control.Monad.Writer (class MonadTell, Writer, runWriter, tell)
+import Control.Monad.Writer (class MonadTell, class MonadWriter, Writer, runWriter, tell)
 import Data.Array (mapWithIndex, (:))
-import Data.Maybe (Maybe(..), optional)
+import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype)
 import Data.Set (Set)
 import Data.Set as Set
+import Data.Set.Ordered (OSet)
+import Data.Set.Ordered as OSet
 import Data.Traversable (sequence)
 import Data.Tuple.Nested (type (/\))
-import Data.Typelevel.Undefined (undefined)
-import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsImport(..), TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..))
+import Record as R
+import Safe.Coerce (coerce)
+import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsImport(..), TsModule(..), TsModuleAlias, TsModuleFile(..), TsModulePath(..), TsName(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..))
 import TsBridge.Print (printTsName)
+import TsBridge.DTS as TsBridge.DTS
 
 -------------------------------------------------------------------------------
 -- Types / TsBridge
@@ -24,18 +30,11 @@ import TsBridge.Print (printTsName)
 
 newtype TsBridgeM a = TsBridgeM (Writer TsBridgeAccum a)
 
-type TsBridgeAccum =
+newtype TsBridgeAccum = TsBridgeAccum
   { typeDefs :: Array TsModuleFile
   , imports :: Set TsImport
-  , scope :: Set TsName
+  , scope :: Wrap (OSet TsName)
   }
-
-derive newtype instance MonadTell TsBridgeAccum TsBridgeM
-derive newtype instance Monad TsBridgeM
-derive newtype instance Bind TsBridgeM
-derive newtype instance Functor TsBridgeM
-derive newtype instance Apply TsBridgeM
-derive newtype instance Applicative TsBridgeM
 
 runTsBridgeM :: forall a. TsBridgeM a -> a /\ TsBridgeAccum
 runTsBridgeM (TsBridgeM ma) = runWriter ma
@@ -44,7 +43,7 @@ runTsBridgeM (TsBridgeM ma) = runWriter ma
 -- Util
 -------------------------------------------------------------------------------
 
-opaqueType :: TsFilePath -> TsModuleAlias -> TsName -> Array TsName -> Array (TsBridgeM TsType) -> TsBridgeM TsType
+opaqueType :: TsFilePath -> TsModuleAlias -> TsName -> OSet TsName -> Array (TsBridgeM TsType) -> TsBridgeM TsType
 opaqueType filePath moduleAlias name targs args' = do
   args <- sequence args'
 
@@ -64,13 +63,16 @@ opaqueType filePath moduleAlias name targs args' = do
       ]
 
   tell
-    { typeDefs, imports, scope: Set.empty }
-  pure $ TsTypeConstructor (TsQualName (Just moduleAlias) name) (TsTypeArgs args)
+    $ TsBridgeAccum
+    $ R.union mempty { typeDefs, imports }
 
-mkOpaqueTypeDecl :: TsName -> Array TsName -> TsDeclaration
-mkOpaqueTypeDecl name args = TsDeclTypeDef name args $
+  pure
+    $ TsTypeConstructor (TsQualName (Just moduleAlias) name) (TsTypeArgs args)
+
+mkOpaqueTypeDecl :: TsName -> OSet TsName -> TsDeclaration
+mkOpaqueTypeDecl name args = TsDeclTypeDef name (coerce args) $
   TsTypeRecord
-    (opaqueField : mapWithIndex mkArgFields args)
+    (opaqueField : (mapWithIndex mkArgFields $ OSet.toUnfoldable args))
 
   where
   opaqueField = TsRecordField
@@ -85,3 +87,39 @@ mkOpaqueTypeDecl name args = TsDeclTypeDef name args $
 
 filePathToModulePath :: TsFilePath -> TsModulePath
 filePathToModulePath (TsFilePath x _) = TsModulePath x
+
+-------------------------------------------------------------------------------
+-- Instances
+-------------------------------------------------------------------------------
+
+derive instance Newtype TsBridgeAccum _
+
+derive newtype instance Monoid TsBridgeAccum
+
+derive newtype instance Semigroup TsBridgeAccum
+
+derive newtype instance MonadTell TsBridgeAccum TsBridgeM
+
+derive newtype instance MonadWriter TsBridgeAccum TsBridgeM
+
+derive newtype instance Monad TsBridgeM
+
+derive newtype instance Bind TsBridgeM
+
+derive newtype instance Functor TsBridgeM
+
+derive newtype instance Apply TsBridgeM
+
+derive newtype instance Applicative TsBridgeM
+
+-------------------------------------------------------------------------------
+-- Wrap
+-------------------------------------------------------------------------------
+
+newtype Wrap a = Wrap a
+
+derive instance Newtype (Wrap a) _
+
+derive newtype instance Eq a => Semigroup (Wrap (OSet a))
+instance Eq a => Monoid (Wrap (OSet a)) where
+  mempty = Wrap $ OSet.empty

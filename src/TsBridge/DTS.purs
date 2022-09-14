@@ -15,6 +15,7 @@ module TsBridge.DTS
   , TsType(..)
   , TsTypeArgs(..)
   , TsTypeArgsQuant(..)
+  , Wrap(..)
   , dtsFilePath
   ) where
 
@@ -22,13 +23,16 @@ import Prelude
 
 import Data.Map (Map)
 import Data.Maybe (Maybe)
+import Data.Newtype (class Newtype)
 import Data.Set (Set)
+import Data.Set.Ordered (OSet)
+import Data.Set.Ordered as OSet
 
 -------------------------------------------------------------------------------
 -- Types
 -------------------------------------------------------------------------------
 
-data TsDeclaration = TsDeclTypeDef TsName (Array TsName) TsType
+data TsDeclaration = TsDeclTypeDef TsName (Wrap (OSet TsName)) TsType
 
 data TsType
   = TsTypeNumber
@@ -114,3 +118,26 @@ derive instance Ord TsFilePath
 
 dtsFilePath :: String -> TsFilePath
 dtsFilePath x = TsFilePath x "d.ts"
+
+-------------------------------------------------------------------------------
+-- Wrap
+-------------------------------------------------------------------------------
+
+newtype Wrap a = Wrap a
+
+derive instance Newtype (Wrap a) _
+
+derive newtype instance Eq a => Semigroup (Wrap (OSet a))
+
+instance Ord a => Ord (Wrap (OSet a)) where
+  compare (Wrap o1) (Wrap o2) = toArray o1 `compare` toArray o2
+    where
+    toArray = OSet.toUnfoldable :: _ -> Array _
+
+instance Eq a => Eq (Wrap (OSet a)) where
+  eq (Wrap o1) (Wrap o2) = toArray o1 `eq` toArray o2
+    where
+    toArray = OSet.toUnfoldable :: _ -> Array _
+
+instance Eq a => Monoid (Wrap (OSet a)) where
+  mempty = Wrap $ OSet.empty

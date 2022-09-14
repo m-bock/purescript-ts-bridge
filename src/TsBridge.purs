@@ -8,24 +8,28 @@ module TsBridge
 
 import Prelude
 
+import Control.Monad.Writer (listens)
 import Data.Array as Array
 import Data.Map as Map
+import Data.Newtype (un)
 import Data.Set as Set
 import Data.Traversable (sequence)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
+import Safe.Coerce (coerce)
 import TsBridge.Class (class ToTsBridge, toTsBridge)
 import TsBridge.Class (class ToTsBridge, toTsBridge) as Exp
-import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsImport, TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsName(..), TsProgram(..), TsType, dtsFilePath)
+import TsBridge.DTS (TsDeclaration(..), TsImport, TsModule(..), TsModuleFile(..), TsName(..), TsProgram(..), dtsFilePath)
 import TsBridge.DTS (TsDeclaration(..), TsImport, TsModule(..), TsName(..), TsProgram(..), TsType) as Exp
-import TsBridge.Monad (TsBridgeM, opaqueType, runTsBridgeM)
+import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, runTsBridgeM)
 import TsBridge.Print (printTsProgram) as Exp
 import Type.Proxy (Proxy)
+import TsBridge.DTS as TsBridge.DTS
 
 tsModuleFile :: String -> Array (TsBridgeM (Array TsDeclaration)) -> Array TsModuleFile
 tsModuleFile n xs =
   let
-    (xs' /\ { typeDefs, imports }) = runTsBridgeM $ join <$> sequence xs
+    (xs' /\ TsBridgeAccum { typeDefs, imports }) = runTsBridgeM $ join <$> sequence xs
   in
     typeDefs <> [ TsModuleFile (dtsFilePath n) (TsModule imports xs') ]
 
@@ -48,6 +52,6 @@ tsProgram xs = mergeModules $ join xs
 
 tsTypeAlias :: forall a. ToTsBridge a => String -> Proxy a -> TsBridgeM (Array TsDeclaration)
 tsTypeAlias n p = ado
-  x <- toTsBridge p
-  in [ TsDeclTypeDef (TsName n) [] x ]
+  x /\ scope <- listens (un TsBridgeAccum >>> _.scope) $ toTsBridge p
+  in [ TsDeclTypeDef (TsName n) (coerce scope) x ]
 

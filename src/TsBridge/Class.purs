@@ -11,6 +11,7 @@ import Data.Array as A
 import Data.Either (Either)
 import Data.Maybe (Maybe)
 import Data.Set as Set
+import Data.Set.Ordered as OSet
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -104,7 +105,7 @@ tsOpaqueType pursModuleName pursTypeName targs = opaqueType
   (TsFilePath (pursModuleName <> "/index") "d.ts")
   (TsModuleAlias $ dotsToLodashes pursModuleName)
   (TsName pursTypeName)
-  (TsName <$> targs)
+  (OSet.fromFoldable $ TsName <$> targs)
 
 dotsToLodashes :: String -> String
 dotsToLodashes = Str.replaceAll (Pattern ".") (Replacement "_")

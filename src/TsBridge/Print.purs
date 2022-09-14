@@ -10,7 +10,9 @@ import Data.Array as Array
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (maybe)
+import Data.Newtype (unwrap)
 import Data.Set as Set
+import Data.Set.Ordered as OSet
 import Data.String as S
 import Data.Tuple.Nested (type (/\), (/\))
 import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsImport(..), TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsProgram(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..))
@@ -187,7 +189,10 @@ instance Tokenize TsDeclaration where
     TsDeclTypeDef n targs t ->
       [ TsTokType, TsTokWhitespace ]
         <> tokenize n
-        <> (applyWhenNotEmpty (wrapAngles <<< sepByComma) $ tokenize <$> targs)
+        <>
+          ( applyWhenNotEmpty (wrapAngles <<< sepByComma)
+              $ tokenize <$> (OSet.toUnfoldable $ unwrap targs)
+          )
         <> [ TsTokWhitespace, TsTokEquals, TsTokWhitespace ]
         <> tokenize t
 
