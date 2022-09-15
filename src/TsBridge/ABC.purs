@@ -157,5 +157,12 @@ tsTypeVar x = do
   let tsName = TsName x
   tell
     $ TsBridgeAccum
-    $ { typeDefs: mempty, imports: mempty, scope: coerce $ OSet.singleton tsName }
+    $
+      { typeDefs: mempty
+      , imports: mempty
+      , scope:
+          { floating: coerce $ OSet.singleton tsName
+          , fixed: mempty
+          }
+      }
   pure $ TsTypeVar tsName

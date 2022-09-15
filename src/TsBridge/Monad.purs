@@ -1,5 +1,6 @@
 module TsBridge.Monad
-  ( TsBridgeAccum(..)
+  ( Scope
+  , TsBridgeAccum(..)
   , TsBridgeM(..)
   , Wrap(..)
   , opaqueType
@@ -11,7 +12,7 @@ import Prelude
 import Control.Monad.Writer (class MonadTell, class MonadWriter, Writer, runWriter, tell)
 import Data.Array (mapWithIndex, (:))
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype)
+import Data.Newtype (class Newtype, over, over2, unwrap, wrap)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Set.Ordered (OSet)
@@ -21,8 +22,8 @@ import Data.Tuple.Nested (type (/\))
 import Record as R
 import Safe.Coerce (coerce)
 import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsImport(..), TsModule(..), TsModuleAlias, TsModuleFile(..), TsModulePath(..), TsName(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..))
-import TsBridge.Print (printTsName)
 import TsBridge.DTS as TsBridge.DTS
+import TsBridge.Print (printTsName)
 
 -------------------------------------------------------------------------------
 -- Types / TsBridge
@@ -33,7 +34,12 @@ newtype TsBridgeM a = TsBridgeM (Writer TsBridgeAccum a)
 newtype TsBridgeAccum = TsBridgeAccum
   { typeDefs :: Array TsModuleFile
   , imports :: Set TsImport
-  , scope :: Wrap (OSet TsName)
+  , scope :: Scope
+  }
+
+type Scope =
+  { floating :: Wrap (OSet TsName)
+  , fixed :: Wrap (OSet TsName)
   }
 
 runTsBridgeM :: forall a. TsBridgeM a -> a /\ TsBridgeAccum

@@ -176,18 +176,33 @@ spec = do
                 ]
 
       describe "Function" do
-        it "generates a type alias with quantified type variables" do
-          tsProgram
-            [ tsModuleFile "types"
-                [ tsTypeAlias "Foo" (Proxy :: _ (A -> B -> C)) ]
-            ]
-            # printTsProgram
-            # shouldEqual
-            $ Map.fromFoldable
-                [ textFile "types.d.ts"
-                    [ "type Foo = <A>(_: A) => <B, C>(_: B) => C"
-                    ]
-                ]
+        describe "A" do
+          it "generates a type alias with quantified type variables" do
+            tsProgram
+              [ tsModuleFile "types"
+                  [ tsTypeAlias "Foo" (Proxy :: _ (A -> B -> C)) ]
+              ]
+              # printTsProgram
+              # shouldEqual
+              $ Map.fromFoldable
+                  [ textFile "types.d.ts"
+                      [ "type Foo = <A>(_: A) => <B, C>(_: B) => C"
+                      ]
+                  ]
+
+        describe "B" do
+          it "generates a type alias with quantified type variables" do
+            tsProgram
+              [ tsModuleFile "types"
+                  [ tsTypeAlias "Foo" (Proxy :: _ (A -> A -> A)) ]
+              ]
+              # printTsProgram
+              # shouldEqual
+              $ Map.fromFoldable
+                  [ textFile "types.d.ts"
+                      [ "type Foo = <A>(_: A) => (_: A) => A"
+                      ]
+                  ]
 
 textFile :: String -> Array String -> String /\ Array String
 textFile n lines = n /\ lines

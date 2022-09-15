@@ -7,10 +7,11 @@ module TsBridge.Class
 
 import Prelude
 
-import Control.Monad.Writer (listen, tell)
+import Control.Monad.Writer (censor, listen, tell)
 import Data.Array as A
 import Data.Either (Either)
 import Data.Maybe (Maybe)
+import Data.Newtype (over2, unwrap, wrap)
 import Data.Set.Ordered as OSet
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
@@ -20,9 +21,9 @@ import Data.Typelevel.Undefined (undefined)
 import Debug (spy)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Safe.Coerce (coerce)
-import TsBridge.DTS (TsFilePath(..), TsFnArg(..), TsModuleAlias(..), TsName(..), TsRecordField(..), TsType(..), TsTypeArgsQuant(..))
+import TsBridge.DTS (TsFilePath(..), TsFnArg(..), TsModuleAlias(..), TsName(..), TsRecordField(..), TsType(..), TsTypeArgsQuant(..), mapQuantifier)
 import TsBridge.DTS as TsBridge.DTS
-import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, opaqueType)
+import TsBridge.Monad (Scope, TsBridgeAccum(..), TsBridgeM, opaqueType)
 import Type.Proxy (Proxy(..))
 
 -------------------------------------------------------------------------------
@@ -59,14 +60,30 @@ instance (RowToList r rl, GenRecord rl) => ToTsBridge (Record r) where
   toTsBridge _ = TsTypeRecord <$> genRecord (Proxy :: _ rl)
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
-  toTsBridge _ = ado
-    arg /\ TsBridgeAccum acc1 <- listen $ toTsBridge (Proxy :: _ a)
-    ret /\ TsBridgeAccum acc2 <- listen $ toTsBridge (Proxy :: _ b)
-    let scope = acc1.scope <> acc2.scope
+  toTsBridge _ = censor mapAccum ado
+    arg /\ TsBridgeAccum { scope: scopeArg } <- listen $ toTsBridge (Proxy :: _ a)
+    ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ toTsBridge (Proxy :: _ b)
+    let
+      newFixed = (over2 wrap OSet.intersect scopeArg.fixed scopeRet.fixed)
+        <> scopeArg.floating
+        <> scopeRet.floating
+
+      removeQuant =
+        mapQuantifier $ OSet.filter (_ `OSet.notElem` (unwrap newFixed))
+
     in
-      TsTypeFunction (TsTypeArgsQuant $ coerce scope)
-        [ TsFnArg (TsName "_") arg ]
-        ret
+      TsTypeFunction (TsTypeArgsQuant $ coerce newFixed)
+        [ TsFnArg (TsName "_") (removeQuant arg)
+        ]
+        (removeQuant ret)
+    where
+    mapAccum (TsBridgeAccum x) = TsBridgeAccum $ x { scope = fixScope x.scope }
+
+fixScope :: Scope -> Scope
+fixScope { fixed, floating } =
+  { floating: mempty
+  , fixed: fixed <> floating
+  }
 
 -------------------------------------------------------------------------------
 -- Class / ToTsBridge / Standard Types

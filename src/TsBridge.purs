@@ -53,5 +53,5 @@ tsProgram xs = mergeModules $ join xs
 tsTypeAlias :: forall a. ToTsBridge a => String -> Proxy a -> TsBridgeM (Array TsDeclaration)
 tsTypeAlias n p = ado
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope) $ toTsBridge p
-  in [ TsDeclTypeDef (TsName n) (coerce scope) x ]
+  in [ TsDeclTypeDef (TsName n) (coerce scope.floating) x ]
 

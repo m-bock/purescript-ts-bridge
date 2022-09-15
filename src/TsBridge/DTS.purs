@@ -17,15 +17,14 @@ module TsBridge.DTS
   , TsTypeArgsQuant(..)
   , Wrap(..)
   , dtsFilePath
-  , removeQuant
-  )
-  where
+  , mapQuantifier
+  ) where
 
 import Prelude
 
 import Data.Map (Map)
 import Data.Maybe (Maybe)
-import Data.Newtype (class Newtype)
+import Data.Newtype (class Newtype, over, wrap)
 import Data.Set (Set)
 import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
@@ -47,43 +46,6 @@ data TsType
   | TsTypeConstructor TsQualName TsTypeArgs
   | TsTypeUniqueSymbol
   | TsTypeVar TsName
-
-removeQuant :: OSet TsName -> TsType -> TsType
-removeQuant rs = case _ of
-  TsTypeNumber -> TsTypeNumber
-  TsTypeString -> TsTypeString
-  TsTypeBoolean -> TsTypeBoolean
-  TsTypeArray x -> TsTypeArray $ removeQuant rs x
-  TsTypeRecord x -> TsTypeRecord $ goTsRecordField <$> x
-  TsTypeFunction x y z -> TsTypeFunction
-    (goTsTypeArgsQuant x)
-    (goTsFnArg <$> y)
-    (goTsType z)
-  TsTypeConstructor x y -> TsTypeConstructor
-    (goTsQualName x)
-    (goTsTypeArgs y)
-  TsTypeUniqueSymbol -> TsTypeUniqueSymbol
-  TsTypeVar x -> TsTypeVar $ goTsName x
-
-  where
-  goTsRecordField (TsRecordField x y z) = TsRecordField
-    (goTsName x)
-    (goPropModifiers y)
-    (goTsType z)
-
-  goTsType = removeQuant rs
-
-  goTsTypeArgsQuant = identity
-
-  goTsTypeArgs (TsTypeArgs x) = TsTypeArgs $ goTsType <$> x
-
-  goTsFnArg (TsFnArg x y) = TsFnArg (goTsName x) (goTsType y)
-
-  goTsQualName = identity
-
-  goTsName = identity
-
-  goPropModifiers = identity
 
 data TsModule = TsModule (Set TsImport) (Array TsDeclaration)
 
@@ -158,6 +120,41 @@ derive instance Ord TsFilePath
 
 dtsFilePath :: String -> TsFilePath
 dtsFilePath x = TsFilePath x "d.ts"
+
+mapQuantifier :: (OSet TsName -> OSet TsName) -> TsType -> TsType
+mapQuantifier f = case _ of
+  TsTypeNumber -> TsTypeNumber
+  TsTypeString -> TsTypeString
+  TsTypeBoolean -> TsTypeBoolean
+  TsTypeArray x -> TsTypeArray $ mapQuantifier f x
+  TsTypeRecord x -> TsTypeRecord $ goTsRecordField <$> x
+  TsTypeFunction x y z -> TsTypeFunction
+    (goTsTypeArgsQuant x)
+    (goTsFnArg <$> y)
+    (mapQuantifier f z)
+  TsTypeConstructor x y -> TsTypeConstructor
+    (goTsQualName x)
+    (goTsTypeArgs y)
+  TsTypeUniqueSymbol -> TsTypeUniqueSymbol
+  TsTypeVar x -> TsTypeVar $ goTsName x
+
+  where
+  goTsRecordField (TsRecordField x y z) = TsRecordField
+    (goTsName x)
+    (goPropModifiers y)
+    (mapQuantifier f z)
+
+  goTsTypeArgsQuant (TsTypeArgsQuant oset) = TsTypeArgsQuant $ over wrap f oset
+
+  goTsTypeArgs (TsTypeArgs x) = TsTypeArgs $ mapQuantifier f <$> x
+
+  goTsFnArg (TsFnArg x y) = TsFnArg (goTsName x) (mapQuantifier f y)
+
+  goTsQualName = identity
+
+  goTsName = identity
+
+  goPropModifiers = identity
 
 -------------------------------------------------------------------------------
 -- Wrap
