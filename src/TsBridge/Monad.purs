@@ -3,6 +3,7 @@ module TsBridge.Monad
   , TsBridgeAccum(..)
   , TsBridgeM(..)
   , Wrap(..)
+  , defaultTsBridgeAccum
   , opaqueType
   , runTsBridgeM
   ) where
@@ -12,7 +13,7 @@ import Prelude
 import Control.Monad.Writer (class MonadTell, class MonadWriter, Writer, runWriter, tell)
 import Data.Array (mapWithIndex, (:))
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, over, over2, unwrap, wrap)
+import Data.Newtype (class Newtype)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Set.Ordered (OSet)
@@ -35,6 +36,13 @@ newtype TsBridgeAccum = TsBridgeAccum
   { typeDefs :: Array TsModuleFile
   , imports :: Set TsImport
   , scope :: Scope
+  }
+
+defaultTsBridgeAccum :: TsBridgeAccum
+defaultTsBridgeAccum = TsBridgeAccum
+  { typeDefs: mempty
+  , imports: mempty
+  , scope: mempty
   }
 
 type Scope =

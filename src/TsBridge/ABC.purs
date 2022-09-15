@@ -3,12 +3,11 @@ module TsBridge.ABC where
 import Prelude
 
 import Control.Monad.Writer (tell)
+import Data.Newtype (over, wrap)
 import Data.Set.Ordered as OSet
-import Safe.Coerce (coerce)
 import TsBridge (class ToTsBridge, TsName(..))
 import TsBridge.DTS (TsType(..))
-import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM)
-import TsBridge.Monad as TsBridge.Monad
+import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, defaultTsBridgeAccum)
 
 -------------------------------------------------------------------------------
 -- Types
@@ -154,15 +153,14 @@ instance ToTsBridge Z where
 
 tsTypeVar :: String -> TsBridgeM TsType
 tsTypeVar x = do
-  let tsName = TsName x
-  tell
-    $ TsBridgeAccum
-    $
-      { typeDefs: mempty
-      , imports: mempty
-      , scope:
-          { floating: coerce $ OSet.singleton tsName
-          , fixed: mempty
-          }
+  let
+    tsName = TsName x
+
+    scope =
+      { floating: wrap $ OSet.singleton tsName
+      , fixed: mempty
       }
+
+  tell
+    $ over TsBridgeAccum _ { scope = scope } defaultTsBridgeAccum
   pure $ TsTypeVar tsName

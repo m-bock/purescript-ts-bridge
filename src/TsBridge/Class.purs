@@ -7,18 +7,17 @@ module TsBridge.Class
 
 import Prelude
 
-import Control.Monad.Writer (censor, listen, tell)
+import Control.Monad.Writer (censor, listen)
 import Data.Array as A
 import Data.Either (Either)
 import Data.Maybe (Maybe)
-import Data.Newtype (over2, unwrap, wrap)
+import Data.Newtype (over, over2, unwrap, wrap)
 import Data.Set.Ordered as OSet
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
-import Debug (spy)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Safe.Coerce (coerce)
 import TsBridge.DTS (TsFilePath(..), TsFnArg(..), TsModuleAlias(..), TsName(..), TsRecordField(..), TsType(..), TsTypeArgsQuant(..), mapQuantifier)
@@ -77,7 +76,7 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
         ]
         (removeQuant ret)
     where
-    mapAccum (TsBridgeAccum x) = TsBridgeAccum $ x { scope = fixScope x.scope }
+    mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
 
 fixScope :: Scope -> Scope
 fixScope { fixed, floating } =

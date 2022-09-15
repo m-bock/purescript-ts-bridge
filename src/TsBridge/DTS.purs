@@ -28,7 +28,6 @@ import Data.Newtype (class Newtype, over, wrap)
 import Data.Set (Set)
 import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
-import Data.Typelevel.Undefined (undefined)
 
 -------------------------------------------------------------------------------
 -- Types
