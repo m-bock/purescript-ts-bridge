@@ -147,7 +147,7 @@ spec = do
                 ]
 
     describe "Type Variables" do
-      describe "Singe" do
+      describe "Single" do
         it "generates a type alias with a quantified type variable" do
           tsProgram
             [ tsModuleFile "types"
@@ -172,6 +172,20 @@ spec = do
             $ Map.fromFoldable
                 [ textFile "types.d.ts"
                     [ "type Foo<C, A, B> = { readonly c: C; readonly sub: { readonly a: A; readonly b: B; }; }"
+                    ]
+                ]
+
+      describe "Function" do
+        it "generates a type alias with quantified type variables" do
+          tsProgram
+            [ tsModuleFile "types"
+                [ tsTypeAlias "Foo" (Proxy :: _ (A -> B -> C)) ]
+            ]
+            # printTsProgram
+            # shouldEqual
+            $ Map.fromFoldable
+                [ textFile "types.d.ts"
+                    [ "type Foo = <A>(_: A) => <B, C>(_: B) => C"
                     ]
                 ]
 

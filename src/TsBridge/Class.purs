@@ -7,18 +7,22 @@ module TsBridge.Class
 
 import Prelude
 
+import Control.Monad.Writer (listen, tell)
 import Data.Array as A
 import Data.Either (Either)
 import Data.Maybe (Maybe)
-import Data.Set as Set
 import Data.Set.Ordered as OSet
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
+import Debug (spy)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
+import Safe.Coerce (coerce)
 import TsBridge.DTS (TsFilePath(..), TsFnArg(..), TsModuleAlias(..), TsName(..), TsRecordField(..), TsType(..), TsTypeArgsQuant(..))
-import TsBridge.Monad (TsBridgeM, opaqueType)
+import TsBridge.DTS as TsBridge.DTS
+import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, opaqueType)
 import Type.Proxy (Proxy(..))
 
 -------------------------------------------------------------------------------
@@ -56,10 +60,11 @@ instance (RowToList r rl, GenRecord rl) => ToTsBridge (Record r) where
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
   toTsBridge _ = ado
-    arg <- toTsBridge (Proxy :: _ a)
-    ret <- toTsBridge (Proxy :: _ b)
+    arg /\ TsBridgeAccum acc1 <- listen $ toTsBridge (Proxy :: _ a)
+    ret /\ TsBridgeAccum acc2 <- listen $ toTsBridge (Proxy :: _ b)
+    let scope = acc1.scope <> acc2.scope
     in
-      TsTypeFunction (TsTypeArgsQuant Set.empty)
+      TsTypeFunction (TsTypeArgsQuant $ coerce scope)
         [ TsFnArg (TsName "_") arg ]
         ret
 

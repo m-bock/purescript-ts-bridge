@@ -16,6 +16,7 @@ to generate this file without the comments in this block.
   , "argonaut"
   , "arrays"
   , "console"
+  , "debug"
   , "effect"
   , "either"
   , "exceptions"

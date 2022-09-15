@@ -169,11 +169,11 @@ instance Tokenize TsTypeArgs where
   tokenize (TsTypeArgs xs) = wrapAngles $ sepByComma $ tokenize <$> xs
 
 instance Tokenize TsTypeArgsQuant where
-  tokenize (TsTypeArgsQuant xs) | Set.isEmpty xs = []
+  tokenize (TsTypeArgsQuant xs) | OSet.isEmpty $ unwrap xs = []
   tokenize (TsTypeArgsQuant xs) = wrapAngles
     $ sepByComma
     $ tokenize
-        <$> Set.toUnfoldable xs
+        <$> (OSet.toUnfoldable $ unwrap xs)
 
 instance Tokenize TsRecordField where
   tokenize (TsRecordField k { readonly, optional } v) =

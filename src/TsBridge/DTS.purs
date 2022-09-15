@@ -17,7 +17,9 @@ module TsBridge.DTS
   , TsTypeArgsQuant(..)
   , Wrap(..)
   , dtsFilePath
-  ) where
+  , removeQuant
+  )
+  where
 
 import Prelude
 
@@ -27,6 +29,7 @@ import Data.Newtype (class Newtype)
 import Data.Set (Set)
 import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
+import Data.Typelevel.Undefined (undefined)
 
 -------------------------------------------------------------------------------
 -- Types
@@ -44,6 +47,43 @@ data TsType
   | TsTypeConstructor TsQualName TsTypeArgs
   | TsTypeUniqueSymbol
   | TsTypeVar TsName
+
+removeQuant :: OSet TsName -> TsType -> TsType
+removeQuant rs = case _ of
+  TsTypeNumber -> TsTypeNumber
+  TsTypeString -> TsTypeString
+  TsTypeBoolean -> TsTypeBoolean
+  TsTypeArray x -> TsTypeArray $ removeQuant rs x
+  TsTypeRecord x -> TsTypeRecord $ goTsRecordField <$> x
+  TsTypeFunction x y z -> TsTypeFunction
+    (goTsTypeArgsQuant x)
+    (goTsFnArg <$> y)
+    (goTsType z)
+  TsTypeConstructor x y -> TsTypeConstructor
+    (goTsQualName x)
+    (goTsTypeArgs y)
+  TsTypeUniqueSymbol -> TsTypeUniqueSymbol
+  TsTypeVar x -> TsTypeVar $ goTsName x
+
+  where
+  goTsRecordField (TsRecordField x y z) = TsRecordField
+    (goTsName x)
+    (goPropModifiers y)
+    (goTsType z)
+
+  goTsType = removeQuant rs
+
+  goTsTypeArgsQuant = identity
+
+  goTsTypeArgs (TsTypeArgs x) = TsTypeArgs $ goTsType <$> x
+
+  goTsFnArg (TsFnArg x y) = TsFnArg (goTsName x) (goTsType y)
+
+  goTsQualName = identity
+
+  goTsName = identity
+
+  goPropModifiers = identity
 
 data TsModule = TsModule (Set TsImport) (Array TsDeclaration)
 
@@ -65,7 +105,7 @@ data TsImport = TsImport TsModuleAlias TsModulePath
 
 data TsQualName = TsQualName (Maybe TsModuleAlias) TsName
 
-newtype TsTypeArgsQuant = TsTypeArgsQuant (Set TsName)
+newtype TsTypeArgsQuant = TsTypeArgsQuant (Wrap (OSet TsName))
 
 newtype TsTypeArgs = TsTypeArgs (Array TsType)
 
