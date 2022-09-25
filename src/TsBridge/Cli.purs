@@ -12,7 +12,9 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Node.ChildProcess (Exit(..), defaultSpawnOptions)
 import Node.Encoding (Encoding(..))
-import Node.FS.Aff (writeTextFile)
+import Node.FS.Aff (mkdir', writeTextFile)
+import Node.FS.Perms (all, mkPerm, mkPerms)
+import Node.Path (FilePath, dirname)
 import Options.Applicative (help, helper, info, long, metavar, strOption, (<**>))
 import Options.Applicative as O
 import Sunde as Sun
@@ -57,6 +59,10 @@ mkTypeGenCliAff tsProg = do
         let
           filePath = cliOpts.outputDir <> "/" <> modPath
         log filePath
+        mkdir' (dirname filePath)
+          { recursive: true
+          , mode: mkPerms all all all
+          }
         writeTextFile UTF8 filePath source
     )
   void $ spawn "prettier" [ "--write", cliOpts.outputDir <> "/**/*.d.ts" ]
