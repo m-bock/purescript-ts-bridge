@@ -1,5 +1,6 @@
 module TsBridge.DTS
   ( PropModifiers
+  , TsDeclVisibility(..)
   , TsDeclaration(..)
   , TsFilePath(..)
   , TsFnArg(..)
@@ -33,7 +34,9 @@ import Data.Set.Ordered as OSet
 -- Types
 -------------------------------------------------------------------------------
 
-data TsDeclaration = TsDeclTypeDef TsName (Wrap (OSet TsName)) TsType
+data TsDeclaration = TsDeclTypeDef TsName TsDeclVisibility (Wrap (OSet TsName)) TsType
+
+data TsDeclVisibility = Public | Private
 
 data TsType
   = TsTypeNumber
@@ -95,6 +98,7 @@ derive instance Eq TsType
 derive instance Eq TsName
 derive instance Eq TsModulePath
 derive instance Eq TsFilePath
+derive instance Eq TsDeclVisibility
 
 -------------------------------------------------------------------------------
 -- Class / Ord
@@ -112,6 +116,7 @@ derive instance Ord TsType
 derive instance Ord TsName
 derive instance Ord TsModulePath
 derive instance Ord TsFilePath
+derive instance Ord TsDeclVisibility
 
 -------------------------------------------------------------------------------
 -- 

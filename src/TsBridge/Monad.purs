@@ -22,7 +22,7 @@ import Data.Traversable (sequence)
 import Data.Tuple.Nested (type (/\))
 import Record as R
 import Safe.Coerce (coerce)
-import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsImport(..), TsModule(..), TsModuleAlias, TsModuleFile(..), TsModulePath(..), TsName(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..))
+import TsBridge.DTS (TsDeclVisibility(..), TsDeclaration(..), TsFilePath(..), TsImport(..), TsModule(..), TsModuleAlias, TsModuleFile(..), TsModulePath(..), TsName(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..))
 import TsBridge.DTS as TsBridge.DTS
 import TsBridge.Print (printTsName)
 
@@ -84,7 +84,7 @@ opaqueType filePath moduleAlias name targs args' = do
     $ TsTypeConstructor (TsQualName (Just moduleAlias) name) (TsTypeArgs args)
 
 mkOpaqueTypeDecl :: TsName -> OSet TsName -> TsDeclaration
-mkOpaqueTypeDecl name args = TsDeclTypeDef name (coerce args) $
+mkOpaqueTypeDecl name args = TsDeclTypeDef name Public (coerce args) $
   TsTypeRecord
     (opaqueField : (mapWithIndex mkArgFields $ OSet.toUnfoldable args))
 

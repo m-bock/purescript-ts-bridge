@@ -15,7 +15,7 @@ import Data.Set as Set
 import Data.Set.Ordered as OSet
 import Data.String as S
 import Data.Tuple.Nested (type (/\), (/\))
-import TsBridge.DTS (TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsImport(..), TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsProgram(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..))
+import TsBridge.DTS (TsDeclVisibility(..), TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsImport(..), TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsProgram(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..))
 
 type TsTokens = Array TsToken
 
@@ -184,10 +184,15 @@ instance Tokenize TsRecordField where
       <> tokenize v
       <> [ TsTokSemicolon, TsTokWhitespace ]
 
+instance Tokenize TsDeclVisibility where
+  tokenize Private = []
+  tokenize Public = [ TsTokExport, TsTokWhitespace ]
+
 instance Tokenize TsDeclaration where
   tokenize = case _ of
-    TsDeclTypeDef n targs t ->
-      [ TsTokType, TsTokWhitespace ]
+    TsDeclTypeDef n vis targs t ->
+      tokenize vis
+        <> [ TsTokType, TsTokWhitespace ]
         <> tokenize n
         <>
           ( applyWhenNotEmpty (wrapAngles <<< sepByComma)

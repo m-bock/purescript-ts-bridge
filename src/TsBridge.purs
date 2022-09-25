@@ -19,12 +19,12 @@ import Data.Typelevel.Undefined (undefined)
 import Safe.Coerce (coerce)
 import TsBridge.Class (class ToTsBridge, toTsBridge)
 import TsBridge.Class (class ToTsBridge, toTsBridge) as Exp
-import TsBridge.DTS (TsDeclaration(..), TsImport, TsModule(..), TsModuleFile(..), TsName(..), TsProgram(..), dtsFilePath)
+import TsBridge.DTS (TsDeclVisibility(..), TsDeclaration(..), TsImport, TsModule(..), TsModuleFile(..), TsName(..), TsProgram(..), dtsFilePath)
 import TsBridge.DTS (TsDeclaration(..), TsImport, TsModule(..), TsName(..), TsProgram(..), TsType) as Exp
+import TsBridge.DTS as TsBridge.DTS
 import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, runTsBridgeM)
 import TsBridge.Print (printTsProgram) as Exp
 import Type.Proxy (Proxy)
-import TsBridge.DTS as TsBridge.DTS
 
 tsModuleFile :: String -> Array (TsBridgeM (Array TsDeclaration)) -> Array TsModuleFile
 tsModuleFile n xs =
@@ -53,5 +53,5 @@ tsProgram xs = mergeModules $ join xs
 tsTypeAlias :: forall a. ToTsBridge a => String -> Proxy a -> TsBridgeM (Array TsDeclaration)
 tsTypeAlias n p = ado
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope) $ toTsBridge p
-  in [ TsDeclTypeDef (TsName n) (coerce scope.floating) x ]
+  in [ TsDeclTypeDef (TsName n) Public (coerce scope.floating) x ]
 

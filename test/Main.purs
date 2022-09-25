@@ -39,7 +39,7 @@ spec = do
           # shouldEqual
           $ Map.fromFoldable
               [ textFile "types.d.ts"
-                  [ "type Foo = number" ]
+                  [ "export type Foo = number" ]
               ]
 
     describe "String" do
@@ -52,7 +52,7 @@ spec = do
           # shouldEqual
           $ Map.fromFoldable
               [ textFile "types.d.ts"
-                  [ "type Foo = string" ]
+                  [ "export type Foo = string" ]
               ]
 
     describe "Boolean" do
@@ -65,7 +65,7 @@ spec = do
           # shouldEqual
           $ Map.fromFoldable
               [ textFile "types.d.ts"
-                  [ "type Foo = boolean" ]
+                  [ "export type Foo = boolean" ]
               ]
 
     describe "Array" do
@@ -78,7 +78,7 @@ spec = do
           # shouldEqual
           $ Map.fromFoldable
               [ textFile "types.d.ts"
-                  [ "type Foo = Array<string>" ]
+                  [ "export type Foo = Array<string>" ]
               ]
 
     describe "Record" do
@@ -91,7 +91,7 @@ spec = do
           # shouldEqual
           $ Map.fromFoldable
               [ textFile "types.d.ts"
-                  [ "type Foo = { readonly bar: string; readonly foo: number; }" ]
+                  [ "export type Foo = { readonly bar: string; readonly foo: number; }" ]
               ]
 
     describe "Function" do
@@ -104,7 +104,7 @@ spec = do
           # shouldEqual
           $ Map.fromFoldable
               [ textFile "types.d.ts"
-                  [ "type Foo = (_: string) => (_: number) => boolean" ]
+                  [ "export type Foo = (_: string) => (_: number) => boolean" ]
               ]
 
     describe "Standard Types" do
@@ -120,10 +120,10 @@ spec = do
                 [ textFile "types.d.ts"
                     [ "import * as Data_Maybe from 'Data.Maybe/index'"
                     , ""
-                    , "type Foo = Data_Maybe.Maybe<boolean>"
+                    , "export type Foo = Data_Maybe.Maybe<boolean>"
                     ]
                 , textFile "Data.Maybe/index.d.ts"
-                    [ "type Maybe<A> = { readonly opaque_Maybe: unique symbol; readonly arg0: A; }"
+                    [ "export type Maybe<A> = { readonly opaque_Maybe: unique symbol; readonly arg0: A; }"
                     ]
                 ]
 
@@ -139,10 +139,10 @@ spec = do
                 [ textFile "types.d.ts"
                     [ "import * as Data_Either from 'Data.Either/index'"
                     , ""
-                    , "type Foo = Data_Either.Either<string, boolean>"
+                    , "export type Foo = Data_Either.Either<string, boolean>"
                     ]
                 , textFile "Data.Either/index.d.ts"
-                    [ "type Either<A, B> = { readonly opaque_Either: unique symbol; readonly arg0: A; readonly arg1: B; }"
+                    [ "export type Either<A, B> = { readonly opaque_Either: unique symbol; readonly arg0: A; readonly arg1: B; }"
                     ]
                 ]
 
@@ -157,7 +157,7 @@ spec = do
             # shouldEqual
             $ Map.fromFoldable
                 [ textFile "types.d.ts"
-                    [ "type Foo<A> = A"
+                    [ "export type Foo<A> = A"
                     ]
                 ]
 
@@ -171,7 +171,7 @@ spec = do
             # shouldEqual
             $ Map.fromFoldable
                 [ textFile "types.d.ts"
-                    [ "type Foo<C, A, B> = { readonly c: C; readonly sub: { readonly a: A; readonly b: B; }; }"
+                    [ "export type Foo<C, A, B> = { readonly c: C; readonly sub: { readonly a: A; readonly b: B; }; }"
                     ]
                 ]
 
@@ -186,7 +186,7 @@ spec = do
               # shouldEqual
               $ Map.fromFoldable
                   [ textFile "types.d.ts"
-                      [ "type Foo = <A>(_: A) => <B, C>(_: B) => C"
+                      [ "export type Foo = <A>(_: A) => <B, C>(_: B) => C"
                       ]
                   ]
 
@@ -200,7 +200,7 @@ spec = do
               # shouldEqual
               $ Map.fromFoldable
                   [ textFile "types.d.ts"
-                      [ "type Foo = <A>(_: A) => (_: A) => A"
+                      [ "export type Foo = <A>(_: A) => (_: A) => A"
                       ]
                   ]
 
