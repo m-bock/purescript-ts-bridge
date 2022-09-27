@@ -87,6 +87,21 @@ getPursDef = case _ of
     , vars: []
     }
     _ -> Just $ DefData (Name name)
+
+  -- CST.DeclSignature (CST.Labeled { label, value }) ->
+  --   let
+  --     CST.Name { name: CST.Ident n } = label
+  --   in
+  --     case value of
+  --       CST.TypeConstructor _ -> Just $ DefValue (Name n)
+  --       _ -> Nothing
+
+  CST.DeclType
+    { name: CST.Name { name: CST.Proper name }
+    , vars: []
+    }
+    _
+    _ -> Just $ DefType (Name name)
   _ -> Nothing
 
 getName :: PursDef -> String

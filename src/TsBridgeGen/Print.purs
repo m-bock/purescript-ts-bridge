@@ -11,6 +11,7 @@ import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Traversable (sequence)
 import Data.Tuple.Nested (type (/\))
+import Data.Typelevel.Undefined (undefined)
 import Dodo as Dodo
 import Language.PS.CST as CST
 import TsBridgeGen.Types (ModuleName(..), Name(..), PursDef(..), PursModule(..))
@@ -31,6 +32,24 @@ genInstances modules = printDecls <$> sequence do
           pure $ genOpaqueInstance mn n
       ]
     _ -> []
+
+genTsProgram :: Array PursModule -> ImportWriterM String
+genTsProgram modules = printDecls <<< wrapProgram <$> sequence do
+  (PursModule mn@(ModuleName mn') defs) <- modules
+  pursDef <- defs
+  case pursDef of
+    DefValue n ->
+      [ do
+          tell { imports: Set.singleton ("import " <> mn' <> " as " <> mn') }
+          pure $ gen mn n
+      ]
+    _ -> []
+  where
+    wrapProgram :: Array CST.Expr -> Array CST.Declaration
+    wrapProgram = undefined
+
+gen :: ModuleName -> Name -> CST.Expr
+gen = undefined
 
 printDecls :: Array CST.Declaration -> String
 printDecls = CST.printDeclarations
