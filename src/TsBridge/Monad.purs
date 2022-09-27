@@ -2,7 +2,7 @@ module TsBridge.Monad
   ( Scope
   , TsBridgeAccum(..)
   , TsBridgeM(..)
-  , Wrap(..)
+  , TsBridge_Monad_Wrap(..)
   , defaultTsBridgeAccum
   , opaqueType
   , runTsBridgeM
@@ -46,8 +46,8 @@ defaultTsBridgeAccum = TsBridgeAccum
   }
 
 type Scope =
-  { floating :: Wrap (OSet TsName)
-  , fixed :: Wrap (OSet TsName)
+  { floating :: TsBridge_Monad_Wrap (OSet TsName)
+  , fixed :: TsBridge_Monad_Wrap (OSet TsName)
   }
 
 runTsBridgeM :: forall a. TsBridgeM a -> a /\ TsBridgeAccum
@@ -130,10 +130,11 @@ derive newtype instance Applicative TsBridgeM
 -- Wrap
 -------------------------------------------------------------------------------
 
-newtype Wrap a = Wrap a
+newtype TsBridge_Monad_Wrap a = TsBridge_Monad_Wrap a
 
-derive instance Newtype (Wrap a) _
+derive instance Newtype (TsBridge_Monad_Wrap a) _
 
-derive newtype instance Eq a => Semigroup (Wrap (OSet a))
-instance Eq a => Monoid (Wrap (OSet a)) where
-  mempty = Wrap $ OSet.empty
+derive newtype instance Eq a => Semigroup (TsBridge_Monad_Wrap (OSet a))
+
+instance Eq a => Monoid (TsBridge_Monad_Wrap (OSet a)) where
+  mempty = TsBridge_Monad_Wrap $ OSet.empty

@@ -26,13 +26,16 @@ import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
 import Safe.Coerce (coerce)
 import TsBridge.Class (class ToTsBridge, toTsBridge)
-import TsBridge.Class (class ToTsBridge, toTsBridge) as Exp
 import TsBridge.DTS (TsDeclVisibility(..), TsDeclaration(..), TsFilePath(..), TsImport(..), TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsProgram(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..), dtsFilePath)
-import TsBridge.DTS (TsDeclaration(..), TsImport, TsModule(..), TsName(..), TsProgram(..)) as Exp
 import TsBridge.DTS as TsBridge.DTS
 import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, defaultTsBridgeAccum, runTsBridgeM)
-import TsBridge.Print (printTsProgram) as Exp
 import Type.Proxy (Proxy)
+import TsBridge.DTS as Exp
+import TsBridge.ABC as Exp
+import TsBridge.Class as Exp
+import TsBridge.Monad as Exp
+import TsBridge.Print as Exp
+
 
 tsModuleFile :: String -> Array (TsBridgeM (Array TsDeclaration)) -> Array TsModuleFile
 tsModuleFile n xs =

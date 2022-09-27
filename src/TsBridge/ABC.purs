@@ -5,8 +5,8 @@ import Prelude
 import Control.Monad.Writer (tell)
 import Data.Newtype (over, wrap)
 import Data.Set.Ordered as OSet
-import TsBridge (class ToTsBridge, TsName(..))
-import TsBridge.DTS (TsType(..))
+import TsBridge.Class (class ToTsBridge)
+import TsBridge.DTS (TsName(..), TsType(..))
 import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, defaultTsBridgeAccum)
 
 -------------------------------------------------------------------------------

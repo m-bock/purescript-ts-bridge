@@ -1,8 +1,10 @@
 module TsBridge.Class
   ( class GenRecord
+  , class GenRecordRL
   , class ToTsBridge
   , genRecord
   , toTsBridge
+  , genRecordRL
   ) where
 
 import Prelude
@@ -22,7 +24,7 @@ import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Safe.Coerce (coerce)
 import TsBridge.DTS (TsFilePath(..), TsFnArg(..), TsModuleAlias(..), TsName(..), TsRecordField(..), TsType(..), TsTypeArgsQuant(..), mapQuantifier)
 import TsBridge.DTS as TsBridge.DTS
-import TsBridge.Monad (Scope, TsBridgeAccum(..), TsBridgeM, opaqueType)
+import TsBridge.Monad (TsBridge_Monad_Wrap(..), Scope, TsBridgeAccum(..), TsBridgeM, opaqueType)
 import Type.Proxy (Proxy(..))
 
 -------------------------------------------------------------------------------
@@ -44,39 +46,63 @@ instance ToTsBridge a => ToTsBridge (Proxy a) where
 -------------------------------------------------------------------------------
 
 instance ToTsBridge Number where
-  toTsBridge _ = pure TsTypeNumber
+  toTsBridge _ = defaultNumber
 
 instance ToTsBridge String where
-  toTsBridge _ = pure TsTypeString
+  toTsBridge _ = defaultString
 
 instance ToTsBridge Boolean where
-  toTsBridge _ = pure TsTypeBoolean
+  toTsBridge _ = defaultBoolean
 
 instance ToTsBridge a => ToTsBridge (Array a) where
-  toTsBridge _ = TsTypeArray <$> toTsBridge (Proxy :: _ a)
+  toTsBridge _ = defaultArray (toTsBridge (Proxy :: _ a))
 
-instance (RowToList r rl, GenRecord rl) => ToTsBridge (Record r) where
-  toTsBridge _ = TsTypeRecord <$> genRecord (Proxy :: _ rl)
+instance (GenRecord r) => ToTsBridge (Record r) where
+  toTsBridge _ = defaultRecord (Proxy :: _ r)
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
-  toTsBridge _ = censor mapAccum ado
-    arg /\ TsBridgeAccum { scope: scopeArg } <- listen $ toTsBridge (Proxy :: _ a)
-    ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ toTsBridge (Proxy :: _ b)
-    let
-      newFixed = (over2 wrap OSet.intersect scopeArg.fixed scopeRet.fixed)
-        <> scopeArg.floating
-        <> scopeRet.floating
+  toTsBridge _ = defaultFunction
+    (toTsBridge (Proxy :: _ a))
+    (toTsBridge (Proxy :: _ b))
 
-      removeQuant =
-        mapQuantifier $ OSet.filter (_ `OSet.notElem` (unwrap newFixed))
+-------------------------------------------------------------------------------
+-- Default Implementations
+-------------------------------------------------------------------------------
 
-    in
-      TsTypeFunction (TsTypeArgsQuant $ coerce newFixed)
-        [ TsFnArg (TsName "_") (removeQuant arg)
-        ]
-        (removeQuant ret)
-    where
-    mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
+defaultNumber :: TsBridgeM TsType
+defaultNumber = pure TsTypeNumber
+
+defaultString :: TsBridgeM TsType
+defaultString = pure TsTypeString
+
+defaultBoolean :: TsBridgeM TsType
+defaultBoolean = pure TsTypeBoolean
+
+defaultArray :: TsBridgeM TsType -> TsBridgeM TsType
+defaultArray a = TsTypeArray <$> a
+
+defaultFunction :: TsBridgeM TsType -> TsBridgeM TsType -> TsBridgeM TsType
+defaultFunction a b = censor mapAccum ado
+  arg /\ TsBridgeAccum { scope: scopeArg } <- listen $ a
+  ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ b
+  let
+    newFixed = (over2 wrap OSet.intersect scopeArg.fixed scopeRet.fixed)
+      <> scopeArg.floating
+      <> scopeRet.floating
+
+    removeQuant =
+      mapQuantifier $ OSet.filter (_ `OSet.notElem` (unwrap newFixed))
+
+  in
+    TsTypeFunction (TsTypeArgsQuant $ coerce newFixed)
+      [ TsFnArg (TsName "_") (removeQuant arg)
+      ]
+      (removeQuant ret)
+  where
+  mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
+
+defaultRecord :: forall r. (GenRecord r) => Proxy r -> TsBridgeM TsType
+defaultRecord p = TsTypeRecord <$> genRecord p
 
 fixScope :: Scope -> Scope
 fixScope { fixed, floating } =
@@ -102,17 +128,25 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
 -- Class / GenRecord
 -------------------------------------------------------------------------------
 
-class GenRecord :: RowList Type -> Constraint
-class GenRecord rl where
-  genRecord :: Proxy rl -> TsBridgeM (Array TsRecordField)
+class GenRecord :: Row Type -> Constraint
+class GenRecord r where
+  genRecord :: Proxy r -> TsBridgeM (Array TsRecordField)
 
-instance GenRecord Nil where
-  genRecord _ = pure []
+instance (RowToList r rl, GenRecordRL rl) => GenRecord r
+  where
+  genRecord _ = genRecordRL (Proxy :: _ rl)
 
-instance (GenRecord rl, ToTsBridge t, IsSymbol s) => GenRecord (Cons s t rl) where
-  genRecord _ = ado
+class GenRecordRL :: RowList Type -> Constraint
+class GenRecordRL rl where
+  genRecordRL :: Proxy rl -> TsBridgeM (Array TsRecordField)
+
+instance GenRecordRL Nil where
+  genRecordRL _ = pure []
+
+instance (GenRecordRL rl, ToTsBridge t, IsSymbol s) => GenRecordRL (Cons s t rl) where
+  genRecordRL _ = ado
     x <- toTsBridge (Proxy :: _ t)
-    xs <- genRecord (Proxy :: _ rl)
+    xs <- genRecordRL (Proxy :: _ rl)
     let k = TsName $ reflectSymbol (Proxy :: _ s)
     in
       A.cons (TsRecordField k { optional: false, readonly: true } x) xs
