@@ -11,19 +11,21 @@ import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.String (Pattern(..))
 import Data.String as String
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (fst)
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Typelevel.Undefined (undefined)
 import Effect (Effect)
 import Effect.Aff (Error, launchAff_)
+import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (runSpec)
-import TsBridge (TsBridgeM, TsDeclaration, TsProgram, TsType, runTsBridgeM, tsModuleFile, tsProgram, tsTypeAlias, tsValue)
+import TsBridge (TsBridgeM, TsDeclaration, TsProgram, TsRecordField, TsType(..), runTsBridgeM, tsModuleFile, tsProgram, tsTypeAlias, tsValue)
 import TsBridge as TsBridge
 import TsBridge.ABC (A, B, C)
-import TsBridge.Class (defaultArray, defaultBoolean, defaultFunction, defaultNumber, defaultString, tsOpaqueType, tsTypeVar)
+import TsBridge.Class (defaultArray, defaultBoolean, defaultFunction, defaultGenRecordCons, defaultNumber, defaultString, tsOpaqueType, tsTypeVar)
 import TsBridge.Print (printTsDeclarations, printTsType)
 import Type.Proxy (Proxy(..))
 
@@ -50,6 +52,9 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
     (toTsBridge (Proxy :: _ a))
     (toTsBridge (Proxy :: _ b))
 
+instance (GenRecord rl, RowToList r rl) => ToTsBridge (Record r) where
+  toTsBridge _ = TsTypeRecord <$> genRecord (Proxy :: _ rl)
+
 instance ToTsBridge a => ToTsBridge (Maybe a) where
   toTsBridge _ = tsOpaqueType "Data.Maybe" "Maybe" [ "A" ]
     [ toTsBridge (Proxy :: _ a) ]
@@ -68,6 +73,19 @@ instance ToTsBridge B where
 
 instance ToTsBridge C where
   toTsBridge _ = tsTypeVar "C"
+
+class GenRecord :: RowList Type -> Constraint
+class GenRecord rl where
+  genRecord :: Proxy rl -> TsBridgeM (Array TsRecordField)
+
+instance GenRecord Nil where
+  genRecord _ = pure []
+
+instance (GenRecord rl, ToTsBridge t, IsSymbol s) => GenRecord (Cons s t rl) where
+  genRecord _ = defaultGenRecordCons
+    (toTsBridge (Proxy :: _ t))
+    (genRecord (Proxy :: _ rl))
+    (reflectSymbol (Proxy :: _ s))
 
 main :: Effect Unit
 main = launchAff_ $ runSpec [ consoleReporter ] spec
@@ -95,15 +113,15 @@ spec_dp_tsTypeAlias = do
       (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ A))
       [ "export type Foo<A> = A" ]
 
-  -- describe "Type Variables" do
-  --   testDeclPrint
-  --     (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ { c :: C, sub :: { a :: A, b :: B } }))
-  --     [ "export type Foo<C, A, B> = { readonly c: C; readonly sub: { readonly a: A; readonly b: B; }; }" ]
+  describe "Type Variables" do
+    testDeclPrint
+      (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ { c :: C, sub :: { a :: A, b :: B } }))
+      [ "export type Foo<C, A, B> = { readonly c: C; readonly sub: { readonly a: A; readonly b: B; }; }" ]
 
-  -- describe "" do
-  --   testDeclPrint
-  --     (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ (A -> B -> C)))
-  --     [ "export type Foo = <A>(_: A) => <B, C>(_: B) => C" ]
+  describe "" do
+    testDeclPrint
+      (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ (A -> B -> C)))
+      [ "export type Foo = <A>(_: A) => <B, C>(_: B) => C" ]
 
   describe "" do
     testDeclPrint
@@ -139,9 +157,9 @@ spec_typePrinting = do
     testTypePrint (toTsBridge (Proxy :: _ (String -> Number -> Boolean)))
       "(_: string) => (_: number) => boolean"
 
-  -- describe "Record" do
-  --   testTypePrint (toTsBridge (Proxy :: _ { bar :: String, foo :: Number }))
-  --     "{ readonly bar: string; readonly foo: number; }"
+  describe "Record" do
+    testTypePrint (toTsBridge (Proxy :: _ { bar :: String, foo :: Number }))
+      "{ readonly bar: string; readonly foo: number; }"
 
   describe "Maybe" do
     testTypePrint (toTsBridge (Proxy :: _ (Maybe Boolean)))

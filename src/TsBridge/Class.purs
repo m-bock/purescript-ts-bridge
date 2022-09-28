@@ -1,13 +1,12 @@
 module TsBridge.Class
   ( class GenRecord
-  , class GenRecordRL
   , defaultArray
   , defaultBoolean
   , defaultFunction
+  , defaultGenRecordCons
   , defaultNumber
   , defaultString
   , genRecord
-  , genRecordRL
   , tsOpaqueType
   , tsTypeVar
   )
@@ -64,8 +63,8 @@ instance ToTsBridge Boolean where
 instance ToTsBridge a => ToTsBridge (Array a) where
   toTsBridge _ = defaultArray (toTsBridge (Proxy :: _ a))
 
-instance (GenRecord r) => ToTsBridge (Record r) where
-  toTsBridge _ = defaultRecord (Proxy :: _ r)
+instance (GenRecord rl, RowToList r rl) => ToTsBridge (Record r) where
+  toTsBridge _ = defaultRecord (Proxy :: _ rl)
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
   toTsBridge _ = defaultFunction
@@ -154,28 +153,26 @@ fixScope { fixed, floating } =
 -- Class / GenRecord
 -------------------------------------------------------------------------------
 
-class GenRecord :: Row Type -> Constraint
-class GenRecord r where
-  genRecord :: Proxy r -> TsBridgeM (Array TsRecordField)
+class GenRecord :: RowList Type -> Constraint
+class GenRecord rl where
+  genRecord :: Proxy rl -> TsBridgeM (Array TsRecordField)
 
-instance (RowToList r rl, GenRecordRL rl) => GenRecord r
-  where
-  genRecord _ = genRecordRL (Proxy :: _ rl)
+instance GenRecord Nil where
+  genRecord _ = pure []
 
-class GenRecordRL :: RowList Type -> Constraint
-class GenRecordRL rl where
-  genRecordRL :: Proxy rl -> TsBridgeM (Array TsRecordField)
+instance (GenRecord rl, ToTsBridge t, IsSymbol s) => GenRecord (Cons s t rl) where
+  genRecord _ = defaultGenRecordCons
+    (toTsBridge (Proxy :: _ t))
+    (genRecord (Proxy :: _ rl))
+    (reflectSymbol (Proxy :: _ s))
 
-instance GenRecordRL Nil where
-  genRecordRL _ = pure []
-
-instance (GenRecordRL rl, ToTsBridge t, IsSymbol s) => GenRecordRL (Cons s t rl) where
-  genRecordRL _ = ado
-    x <- toTsBridge (Proxy :: _ t)
-    xs <- genRecordRL (Proxy :: _ rl)
-    let k = TsName $ reflectSymbol (Proxy :: _ s)
-    in
-      A.cons (TsRecordField k { optional: false, readonly: true } x) xs
+defaultGenRecordCons :: TsBridgeM TsType -> TsBridgeM (Array TsRecordField) -> String -> TsBridgeM (Array TsRecordField)
+defaultGenRecordCons mkX mkXs str = ado
+  x <- mkX
+  xs <- mkXs
+  let k = TsName $ str
+  in
+    A.cons (TsRecordField k { optional: false, readonly: true } x) xs
 
 -------------------------------------------------------------------------------
 -- Util

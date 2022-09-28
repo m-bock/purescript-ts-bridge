@@ -28,7 +28,7 @@ import TsBridge.DTS as TsBridge.DTS
 import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, defaultTsBridgeAccum, runTsBridgeM)
 import TsBridge.DTS (PropModifiers, TsDeclVisibility(..), TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsImport(..), TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsProgram(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..), Wrap(..), dtsFilePath, mapQuantifier) as Exp
 import TsBridge.ABC (A(..), B(..), C(..), D(..), E(..), F(..), G(..), H(..), I(..), J(..), K(..), L(..), M(..), N(..), O(..), P(..), Q(..), R(..), S(..), T(..), U(..), V(..), W(..), X(..), Y(..), Z(..)) as Exp
-import TsBridge.Class (class GenRecord, class GenRecordRL, genRecord, genRecordRL) as Exp
+import TsBridge.Class (class GenRecord, genRecord) as Exp
 import TsBridge.Monad (Scope, TsBridgeAccum(..), TsBridgeM(..), TsBridge_Monad_Wrap(..), defaultTsBridgeAccum, opaqueType, runTsBridgeM) as Exp
 import TsBridge.Print (printTsDeclarations, printTsName, printTsProgram, printTsType) as Exp
 
