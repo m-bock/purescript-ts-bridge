@@ -2,40 +2,35 @@ module TsBridge
   ( module Exp
   , tsModuleFile
   , tsModuleWithImports
-  , tsOpaqueType
   , tsProgram
   , tsTypeAlias
-  ) where
+  , tsValue
+  )
+  where
 
 import Prelude
 
 import Control.Monad.Writer (listens, tell)
 import Data.Array ((:))
 import Data.Array as Array
-import Data.List.Lazy (Pattern)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Newtype (over, un)
 import Data.Set as Set
-import Data.Set.Ordered (OSet)
-import Data.Set.Ordered as OSet
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Traversable (sequence)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
 import Safe.Coerce (coerce)
-import TsBridge.Class (class ToTsBridge, toTsBridge)
 import TsBridge.DTS (TsDeclVisibility(..), TsDeclaration(..), TsFilePath(..), TsImport(..), TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsProgram(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..), dtsFilePath)
 import TsBridge.DTS as TsBridge.DTS
 import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, defaultTsBridgeAccum, runTsBridgeM)
-import Type.Proxy (Proxy)
-import TsBridge.DTS as Exp
-import TsBridge.ABC as Exp
-import TsBridge.Class as Exp
-import TsBridge.Monad as Exp
-import TsBridge.Print as Exp
-
+import TsBridge.DTS (PropModifiers, TsDeclVisibility(..), TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsImport(..), TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsProgram(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..), Wrap(..), dtsFilePath, mapQuantifier) as Exp
+import TsBridge.ABC (A(..), B(..), C(..), D(..), E(..), F(..), G(..), H(..), I(..), J(..), K(..), L(..), M(..), N(..), O(..), P(..), Q(..), R(..), S(..), T(..), U(..), V(..), W(..), X(..), Y(..), Z(..)) as Exp
+import TsBridge.Class (class GenRecord, class GenRecordRL, genRecord, genRecordRL) as Exp
+import TsBridge.Monad (Scope, TsBridgeAccum(..), TsBridgeM(..), TsBridge_Monad_Wrap(..), defaultTsBridgeAccum, opaqueType, runTsBridgeM) as Exp
+import TsBridge.Print (printTsDeclarations, printTsName, printTsProgram, printTsType) as Exp
 
 tsModuleFile :: String -> Array (TsBridgeM (Array TsDeclaration)) -> Array TsModuleFile
 tsModuleFile n xs =
@@ -63,54 +58,64 @@ tsModuleWithImports = undefined
 tsProgram :: Array (Array TsModuleFile) -> TsProgram
 tsProgram xs = mergeModules $ join xs
 
-tsTypeAlias :: forall a. ToTsBridge a => String -> Proxy a -> TsBridgeM (Array TsDeclaration)
-tsTypeAlias n p = ado
-  x /\ scope <- listens (un TsBridgeAccum >>> _.scope) $ toTsBridge p
+-- tsTypeAlias :: forall a. ToTsBridge a => String -> Proxy a -> TsBridgeM (Array TsDeclaration)
+-- tsTypeAlias n p = ado
+--   x /\ scope <- listens (un TsBridgeAccum >>> _.scope) $ toTsBridge p
+--   in [ TsDeclTypeDef (TsName n) Public (coerce scope.floating) x ]
+
+tsTypeAlias :: String -> TsBridgeM TsType -> TsBridgeM (Array TsDeclaration)
+tsTypeAlias n t = ado
+  x /\ scope <- listens (un TsBridgeAccum >>> _.scope) t
   in [ TsDeclTypeDef (TsName n) Public (coerce scope.floating) x ]
 
-tsOpaqueType :: forall a. String -> String -> Array TsType -> a -> TsBridgeM TsType
-tsOpaqueType m n args _ = do
-  --x /\ scope <- listens (un TsBridgeAccum >>> _.scope) $ toTsBridge p
-  let
-    moduleAlias = TsModuleAlias $ sanatizeName m
-    modulePath = TsModulePath ("~/" <> m)
-    imports = Set.singleton $ TsImport moduleAlias modulePath
+tsValue :: String -> TsBridgeM TsType -> TsBridgeM (Array TsDeclaration)
+tsValue n mt = do
+  t <- mt
+  pure [ TsDeclValueDef (TsName n) Public t ]
 
-    opaqueType =
-      TsTypeRecord
-        ( TsRecordField
-            (TsName "brand")
-            { readonly: true, optional: false }
-            TsTypeUniqueSymbol
-            :
-              Array.mapWithIndex mkTypeArgField args
-        )
+-- tsOpaqueType :: forall a. String -> String -> Array TsType -> a -> TsBridgeM TsType
+-- tsOpaqueType m n args _ = do
+--   --x /\ scope <- listens (un TsBridgeAccum >>> _.scope) $ toTsBridge p
+--   let
+--     moduleAlias = TsModuleAlias $ sanatizeName m
+--     modulePath = TsModulePath ("~/" <> m)
+--     imports = Set.singleton $ TsImport moduleAlias modulePath
 
-    mkTypeArgField :: Int -> TsType -> TsRecordField
-    mkTypeArgField idx ty = TsRecordField
-      (TsName ("_arg" <> show idx))
-      { readonly: true, optional: false }
-      ty
+--     opaqueType =
+--       TsTypeRecord
+--         ( TsRecordField
+--             (TsName "brand")
+--             { readonly: true, optional: false }
+--             TsTypeUniqueSymbol
+--             :
+--               Array.mapWithIndex mkTypeArgField args
+--         )
 
-    typeDefs =
-      [ TsModuleFile
-          (TsFilePath (m <> "/index") "d.ts")
-          ( TsModule Set.empty
-              [ TsDeclTypeDef (TsName n) Public mempty opaqueType
-              ]
-          )
-      ]
+--     mkTypeArgField :: Int -> TsType -> TsRecordField
+--     mkTypeArgField idx ty = TsRecordField
+--       (TsName ("_arg" <> show idx))
+--       { readonly: true, optional: false }
+--       ty
 
-  tell
-    $ over TsBridgeAccum
-        _
-          { imports = imports
-          , typeDefs = typeDefs
-          }
-        defaultTsBridgeAccum
-  pure $ TsTypeConstructor
-    (TsQualName (Just $ moduleAlias) (TsName n))
-    (TsTypeArgs args)
+--     typeDefs =
+--       [ TsModuleFile
+--           (TsFilePath (m <> "/index") "d.ts")
+--           ( TsModule Set.empty
+--               [ TsDeclTypeDef (TsName n) Public mempty opaqueType
+--               ]
+--           )
+--       ]
+
+--   tell
+--     $ over TsBridgeAccum
+--         _
+--           { imports = imports
+--           , typeDefs = typeDefs
+--           }
+--         defaultTsBridgeAccum
+--   pure $ TsTypeConstructor
+--     (TsQualName (Just $ moduleAlias) (TsName n))
+--     (TsTypeArgs args)
 
 sanatizeName :: String -> String
 sanatizeName = Str.replaceAll (Pattern ".") (Replacement "_")

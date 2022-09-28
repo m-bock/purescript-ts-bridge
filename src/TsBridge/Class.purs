@@ -1,15 +1,21 @@
 module TsBridge.Class
   ( class GenRecord
   , class GenRecordRL
-  , class ToTsBridge
+  , defaultArray
+  , defaultBoolean
+  , defaultFunction
+  , defaultNumber
+  , defaultString
   , genRecord
-  , toTsBridge
   , genRecordRL
-  ) where
+  , tsOpaqueType
+  , tsTypeVar
+  )
+  where
 
 import Prelude
 
-import Control.Monad.Writer (censor, listen)
+import Control.Monad.Writer (censor, listen, tell)
 import Data.Array as A
 import Data.Either (Either)
 import Data.Maybe (Maybe)
@@ -22,9 +28,10 @@ import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Safe.Coerce (coerce)
+import TsBridge.ABC (A, B, C)
 import TsBridge.DTS (TsFilePath(..), TsFnArg(..), TsModuleAlias(..), TsName(..), TsRecordField(..), TsType(..), TsTypeArgsQuant(..), mapQuantifier)
 import TsBridge.DTS as TsBridge.DTS
-import TsBridge.Monad (TsBridge_Monad_Wrap(..), Scope, TsBridgeAccum(..), TsBridgeM, opaqueType)
+import TsBridge.Monad (Scope, TsBridgeAccum(..), TsBridgeM, TsBridge_Monad_Wrap(..), defaultTsBridgeAccum, opaqueType)
 import Type.Proxy (Proxy(..))
 
 -------------------------------------------------------------------------------
@@ -65,9 +72,42 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
     (toTsBridge (Proxy :: _ a))
     (toTsBridge (Proxy :: _ b))
 
+instance ToTsBridge a => ToTsBridge (Maybe a) where
+  toTsBridge _ = tsOpaqueType "Data.Maybe" "Maybe" [ "A" ]
+    [ toTsBridge (Proxy :: _ a) ]
+
+instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
+  toTsBridge _ = tsOpaqueType "Data.Either" "Either" [ "A", "B" ]
+    [ toTsBridge (Proxy :: _ a)
+    , toTsBridge (Proxy :: _ b)
+    ]
+
+instance ToTsBridge A where
+  toTsBridge _ = tsTypeVar "A"
+
+instance ToTsBridge B where
+  toTsBridge _ = tsTypeVar "B"
+
+instance ToTsBridge C where
+  toTsBridge _ = tsTypeVar "C"
+
 -------------------------------------------------------------------------------
 -- Default Implementations
 -------------------------------------------------------------------------------
+
+tsTypeVar :: String -> TsBridgeM TsType
+tsTypeVar x = do
+  let
+    tsName = TsName x
+
+    scope =
+      { floating: wrap $ OSet.singleton tsName
+      , fixed: mempty
+      }
+
+  tell
+    $ over TsBridgeAccum _ { scope = scope } defaultTsBridgeAccum
+  pure $ TsTypeVar tsName
 
 defaultNumber :: TsBridgeM TsType
 defaultNumber = pure TsTypeNumber
@@ -109,20 +149,6 @@ fixScope { fixed, floating } =
   { floating: mempty
   , fixed: fixed <> floating
   }
-
--------------------------------------------------------------------------------
--- Class / ToTsBridge / Standard Types
--------------------------------------------------------------------------------
-
-instance ToTsBridge a => ToTsBridge (Maybe a) where
-  toTsBridge _ = tsOpaqueType "Data.Maybe" "Maybe" [ "A" ]
-    [ toTsBridge (Proxy :: _ a) ]
-
-instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
-  toTsBridge _ = tsOpaqueType "Data.Either" "Either" [ "A", "B" ]
-    [ toTsBridge (Proxy :: _ a)
-    , toTsBridge (Proxy :: _ b)
-    ]
 
 -------------------------------------------------------------------------------
 -- Class / GenRecord

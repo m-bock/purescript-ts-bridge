@@ -1,7 +1,10 @@
 module TsBridge.Print
-  ( printTsName
+  ( printTsDeclarations
+  , printTsName
   , printTsProgram
-  ) where
+  , printTsType
+  )
+  where
 
 import Prelude
 
@@ -201,6 +204,13 @@ instance Tokenize TsDeclaration where
         <> [ TsTokWhitespace, TsTokEquals, TsTokWhitespace ]
         <> tokenize t
 
+    TsDeclValueDef n vis t ->
+      tokenize vis
+        <> [ TsTokConst, TsTokWhitespace ]
+        <> tokenize n
+        <> [ TsTokWhitespace, TsTokColon, TsTokWhitespace ]
+        <> tokenize t
+
 instance Tokenize TsModule where
   tokenize (TsModule is ds) =
     ( is
@@ -309,6 +319,13 @@ printTsName x = tokenize x <#> printToken # S.joinWith ""
 
 printTsModule :: TsModule -> String
 printTsModule x = tokenize x <#> printToken # S.joinWith ""
+
+printTsType :: TsType -> String
+printTsType x = tokenize x <#> printToken # S.joinWith ""
+
+
+printTsDeclarations :: Array TsDeclaration -> Array String
+printTsDeclarations x = x <#> tokenize <#> map printToken >>> S.joinWith ""
 
 printTsFilePath :: TsFilePath -> String
 printTsFilePath (TsFilePath x y) = x <> "." <> y

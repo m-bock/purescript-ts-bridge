@@ -11,198 +11,182 @@ import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.String (Pattern(..))
 import Data.String as String
+import Data.Tuple (fst)
 import Data.Tuple.Nested (type (/\), (/\))
+import Data.Typelevel.Undefined (undefined)
 import Effect (Effect)
 import Effect.Aff (Error, launchAff_)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (runSpec)
-import TsBridge (TsProgram, tsModuleFile, tsProgram, tsTypeAlias)
+import TsBridge (TsBridgeM, TsDeclaration, TsProgram, TsType, runTsBridgeM, tsModuleFile, tsProgram, tsTypeAlias, tsValue)
 import TsBridge as TsBridge
 import TsBridge.ABC (A, B, C)
+import TsBridge.Class (defaultArray, defaultBoolean, defaultFunction, defaultNumber, defaultString, tsOpaqueType, tsTypeVar)
+import TsBridge.Print (printTsDeclarations, printTsType)
 import Type.Proxy (Proxy(..))
+
+class ToTsBridge a where
+  toTsBridge :: a -> TsBridgeM TsType
+
+instance ToTsBridge a => ToTsBridge (Proxy a) where
+  toTsBridge _ = toTsBridge (undefined :: a)
+
+instance ToTsBridge Number where
+  toTsBridge _ = defaultNumber
+
+instance ToTsBridge String where
+  toTsBridge _ = defaultString
+
+instance ToTsBridge Boolean where
+  toTsBridge _ = defaultBoolean
+
+instance ToTsBridge a => ToTsBridge (Array a) where
+  toTsBridge _ = defaultArray (toTsBridge (Proxy :: _ a))
+
+instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
+  toTsBridge _ = defaultFunction
+    (toTsBridge (Proxy :: _ a))
+    (toTsBridge (Proxy :: _ b))
+
+instance ToTsBridge a => ToTsBridge (Maybe a) where
+  toTsBridge _ = tsOpaqueType "Data.Maybe" "Maybe" [ "A" ]
+    [ toTsBridge (Proxy :: _ a) ]
+
+instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
+  toTsBridge _ = tsOpaqueType "Data.Either" "Either" [ "A", "B" ]
+    [ toTsBridge (Proxy :: _ a)
+    , toTsBridge (Proxy :: _ b)
+    ]
+
+instance ToTsBridge A where
+  toTsBridge _ = tsTypeVar "A"
+
+instance ToTsBridge B where
+  toTsBridge _ = tsTypeVar "B"
+
+instance ToTsBridge C where
+  toTsBridge _ = tsTypeVar "C"
 
 main :: Effect Unit
 main = launchAff_ $ runSpec [ consoleReporter ] spec
 
 spec :: Spec Unit
 spec = do
-  describe "Primitives" do
-    describe "Number" do
-      it "generates a type alias" do
-        tsProgram
-          [ tsModuleFile "types"
-              [ tsTypeAlias "Foo" (Proxy :: _ Number) ]
-          ]
-          # printTsProgram
-          # shouldEqual
-          $ Map.fromFoldable
-              [ textFile "types.d.ts"
-                  [ "export type Foo = number" ]
-              ]
+  describe "Program Printing" spec_programPrinting
 
-    describe "String" do
-      it "generates a type alias" do
-        tsProgram
-          [ tsModuleFile "types"
-              [ tsTypeAlias "Foo" (Proxy :: _ String) ]
-          ]
-          # printTsProgram
-          # shouldEqual
-          $ Map.fromFoldable
-              [ textFile "types.d.ts"
-                  [ "export type Foo = string" ]
-              ]
+  describe "Declaration Printing" do
+    describe "tsTypeAlias" spec_dp_tsTypeAlias
 
-    describe "Boolean" do
-      it "generates a type alias" do
-        tsProgram
-          [ tsModuleFile "types"
-              [ tsTypeAlias "Foo" (Proxy :: _ Boolean) ]
-          ]
-          # printTsProgram
-          # shouldEqual
-          $ Map.fromFoldable
-              [ textFile "types.d.ts"
-                  [ "export type Foo = boolean" ]
-              ]
+    describe "tsValue" spec_dp_tsValue
 
-    describe "Array" do
-      it "generates a type alias" do
-        tsProgram
-          [ tsModuleFile "types"
-              [ tsTypeAlias "Foo" (Proxy :: _ (Array String)) ]
-          ]
-          # printTsProgram
-          # shouldEqual
-          $ Map.fromFoldable
-              [ textFile "types.d.ts"
-                  [ "export type Foo = Array<string>" ]
-              ]
+  describe "Type Printing" spec_typePrinting
 
-    describe "Record" do
-      it "generates a type alias" do
-        tsProgram
-          [ tsModuleFile "types"
-              [ tsTypeAlias "Foo" (Proxy :: _ { bar :: String, foo :: Number }) ]
-          ]
-          # printTsProgram
-          # shouldEqual
-          $ Map.fromFoldable
-              [ textFile "types.d.ts"
-                  [ "export type Foo = { readonly bar: string; readonly foo: number; }" ]
-              ]
+spec_dp_tsTypeAlias :: Spec Unit
+spec_dp_tsTypeAlias = do
+  describe "Number" do
+    testDeclPrint
+      (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ Number))
+      [ "export type Foo = number" ]
 
-    describe "Function" do
-      it "generates a type alias" do
-        tsProgram
-          [ tsModuleFile "types"
-              [ tsTypeAlias "Foo" (Proxy :: _ (String -> Number -> Boolean)) ]
-          ]
-          # printTsProgram
-          # shouldEqual
-          $ Map.fromFoldable
-              [ textFile "types.d.ts"
-                  [ "export type Foo = (_: string) => (_: number) => boolean" ]
-              ]
+  describe "Type Variable" do
+    testDeclPrint
+      (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ A))
+      [ "export type Foo<A> = A" ]
 
-    describe "Standard Types" do
-      describe "Maybe" do
-        it "generates a type alias and adds the type module" do
-          tsProgram
-            [ tsModuleFile "types"
-                [ tsTypeAlias "Foo" (Proxy :: _ (Maybe Boolean)) ]
-            ]
-            # printTsProgram
-            # shouldEqual
-            $ Map.fromFoldable
-                [ textFile "types.d.ts"
-                    [ "import * as Data_Maybe from 'Data.Maybe/index'"
-                    , ""
-                    , "export type Foo = Data_Maybe.Maybe<boolean>"
-                    ]
-                , textFile "Data.Maybe/index.d.ts"
-                    [ "export type Maybe<A> = { readonly opaque_Maybe: unique symbol; readonly arg0: A; }"
-                    ]
+  -- describe "Type Variables" do
+  --   testDeclPrint
+  --     (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ { c :: C, sub :: { a :: A, b :: B } }))
+  --     [ "export type Foo<C, A, B> = { readonly c: C; readonly sub: { readonly a: A; readonly b: B; }; }" ]
+
+  -- describe "" do
+  --   testDeclPrint
+  --     (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ (A -> B -> C)))
+  --     [ "export type Foo = <A>(_: A) => <B, C>(_: B) => C" ]
+
+  describe "" do
+    testDeclPrint
+      (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ (A -> A -> A)))
+      [ "export type Foo = <A>(_: A) => (_: A) => A" ]
+
+spec_dp_tsValue :: Spec Unit
+spec_dp_tsValue = do
+  describe "Number" do
+    testDeclPrint
+      (tsValue "foo" $ toTsBridge 13.0)
+      [ "export const foo : number" ]
+
+spec_typePrinting :: Spec Unit
+spec_typePrinting = do
+  describe "Number" do
+    testTypePrint (toTsBridge (Proxy :: _ Number))
+      "number"
+
+  describe "String" do
+    testTypePrint (toTsBridge (Proxy :: _ String))
+      "string"
+
+  describe "Boolean" do
+    testTypePrint (toTsBridge (Proxy :: _ Boolean))
+      "boolean"
+
+  describe "Array" do
+    testTypePrint (toTsBridge (Proxy :: _ (Array Boolean)))
+      "Array<boolean>"
+
+  describe "Function" do
+    testTypePrint (toTsBridge (Proxy :: _ (String -> Number -> Boolean)))
+      "(_: string) => (_: number) => boolean"
+
+  -- describe "Record" do
+  --   testTypePrint (toTsBridge (Proxy :: _ { bar :: String, foo :: Number }))
+  --     "{ readonly bar: string; readonly foo: number; }"
+
+  describe "Maybe" do
+    testTypePrint (toTsBridge (Proxy :: _ (Maybe Boolean)))
+      "Data_Maybe.Maybe<boolean>"
+
+  describe "Either" do
+    testTypePrint (toTsBridge (Proxy :: _ (Either String Boolean)))
+      "Data_Either.Either<string, boolean>"
+
+spec_programPrinting :: Spec Unit
+spec_programPrinting = do
+  describe "Program with imports" do
+    it "generates a type alias and adds the type module" do
+      tsProgram
+        [ tsModuleFile "types"
+            [ tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ (Either String Boolean)) ]
+        ]
+        # printTsProgram
+        # shouldEqual
+        $ Map.fromFoldable
+            [ textFile "types.d.ts"
+                [ "import * as Data_Either from 'Data.Either/index'"
+                , ""
+                , "export type Foo = Data_Either.Either<string, boolean>"
                 ]
-
-      describe "Either" do
-        it "generates a type alias and adds the type module" do
-          tsProgram
-            [ tsModuleFile "types"
-                [ tsTypeAlias "Foo" (Proxy :: _ (Either String Boolean)) ]
-            ]
-            # printTsProgram
-            # shouldEqual
-            $ Map.fromFoldable
-                [ textFile "types.d.ts"
-                    [ "import * as Data_Either from 'Data.Either/index'"
-                    , ""
-                    , "export type Foo = Data_Either.Either<string, boolean>"
-                    ]
-                , textFile "Data.Either/index.d.ts"
-                    [ "export type Either<A, B> = { readonly opaque_Either: unique symbol; readonly arg0: A; readonly arg1: B; }"
-                    ]
+            , textFile "Data.Either/index.d.ts"
+                [ "export type Either<A, B> = { readonly opaque_Either: unique symbol; readonly arg0: A; readonly arg1: B; }"
                 ]
-
-    describe "Type Variables" do
-      describe "Single" do
-        it "generates a type alias with a quantified type variable" do
-          tsProgram
-            [ tsModuleFile "types"
-                [ tsTypeAlias "Foo" (Proxy :: _ A) ]
             ]
-            # printTsProgram
-            # shouldEqual
-            $ Map.fromFoldable
-                [ textFile "types.d.ts"
-                    [ "export type Foo<A> = A"
-                    ]
-                ]
 
-      describe "Multiple" do
-        it "generates a type alias with quantified type variables" do
-          tsProgram
-            [ tsModuleFile "types"
-                [ tsTypeAlias "Foo" (Proxy :: _ { c :: C, sub :: { a :: A, b :: B } }) ]
-            ]
-            # printTsProgram
-            # shouldEqual
-            $ Map.fromFoldable
-                [ textFile "types.d.ts"
-                    [ "export type Foo<C, A, B> = { readonly c: C; readonly sub: { readonly a: A; readonly b: B; }; }"
-                    ]
-                ]
+testDeclPrint :: TsBridgeM (Array TsDeclaration) -> Array String -> Spec Unit
+testDeclPrint x s =
+  it "prints the correct declaration" do
+    runTsBridgeM x
+      # fst
+      # printTsDeclarations
+      # shouldEqual s
 
-      describe "Function" do
-        describe "A" do
-          it "generates a type alias with quantified type variables" do
-            tsProgram
-              [ tsModuleFile "types"
-                  [ tsTypeAlias "Foo" (Proxy :: _ (A -> B -> C)) ]
-              ]
-              # printTsProgram
-              # shouldEqual
-              $ Map.fromFoldable
-                  [ textFile "types.d.ts"
-                      [ "export type Foo = <A>(_: A) => <B, C>(_: B) => C"
-                      ]
-                  ]
-
-        describe "B" do
-          it "generates a type alias with quantified type variables" do
-            tsProgram
-              [ tsModuleFile "types"
-                  [ tsTypeAlias "Foo" (Proxy :: _ (A -> A -> A)) ]
-              ]
-              # printTsProgram
-              # shouldEqual
-              $ Map.fromFoldable
-                  [ textFile "types.d.ts"
-                      [ "export type Foo = <A>(_: A) => (_: A) => A"
-                      ]
-                  ]
+testTypePrint :: TsBridgeM TsType -> String -> Spec Unit
+testTypePrint x s =
+  it "prints the correct type" do
+    runTsBridgeM x
+      # fst
+      # printTsType
+      # shouldEqual s
 
 textFile :: String -> Array String -> String /\ Array String
 textFile n lines = n /\ lines

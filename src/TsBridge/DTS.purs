@@ -34,7 +34,9 @@ import Data.Set.Ordered as OSet
 -- Types
 -------------------------------------------------------------------------------
 
-data TsDeclaration = TsDeclTypeDef TsName TsDeclVisibility (Wrap (OSet TsName)) TsType
+data TsDeclaration
+  = TsDeclTypeDef TsName TsDeclVisibility (Wrap (OSet TsName)) TsType
+  | TsDeclValueDef TsName TsDeclVisibility TsType
 
 data TsDeclVisibility = Public | Private
 
