@@ -11,6 +11,8 @@ module TsBridge.Class
   , tsOpaqueType
   , tsOpaqueType1
   , tsOpaqueType2
+  , tsOpaqueType3
+  , tsOpaqueType4
   , tsTypeVar
   ) where
 
@@ -79,6 +81,7 @@ instance ToTsBridge a => ToTsBridge (Maybe a) where
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
   toTsBridge = tsOpaqueType2 MappingToTsBridge "Data.Either" "Either" "A" "B"
+
 instance ToTsBridge A where
   toTsBridge _ = tsTypeVar "A"
 
@@ -233,6 +236,50 @@ tsOpaqueType2 mp pursModuleName pursTypeName targ1 targ2 _ =
   tsOpaqueType pursModuleName pursTypeName [ targ1, targ2 ]
     [ mapping mp (Proxy :: _ a)
     , mapping mp (Proxy :: _ b)
+    ]
+
+tsOpaqueType3
+  :: forall a b c mp f
+   . Mapping mp (Proxy a) (TsBridgeM TsType)
+  => Mapping mp (Proxy b) (TsBridgeM TsType)
+  => Mapping mp (Proxy c) (TsBridgeM TsType)
+  => mp
+  -> String
+  -> String
+  -> String
+  -> String
+  -> String
+  -> f a b c
+  -> TsBridgeM TsType
+tsOpaqueType3 mp pursModuleName pursTypeName targ1 targ2 targ3 _ =
+  tsOpaqueType pursModuleName pursTypeName [ targ1, targ2, targ3 ]
+    [ mapping mp (Proxy :: _ a)
+    , mapping mp (Proxy :: _ b)
+    , mapping mp (Proxy :: _ c)
+
+    ]
+
+tsOpaqueType4
+  :: forall a b c d mp f
+   . Mapping mp (Proxy a) (TsBridgeM TsType)
+  => Mapping mp (Proxy b) (TsBridgeM TsType)
+  => Mapping mp (Proxy c) (TsBridgeM TsType)
+  => Mapping mp (Proxy d) (TsBridgeM TsType)
+  => mp
+  -> String
+  -> String
+  -> String
+  -> String
+  -> String
+  -> String
+  -> f a b c d
+  -> TsBridgeM TsType
+tsOpaqueType4 mp pursModuleName pursTypeName targ1 targ2 targ3 targ4 _ =
+  tsOpaqueType pursModuleName pursTypeName [ targ1, targ2, targ3, targ4 ]
+    [ mapping mp (Proxy :: _ a)
+    , mapping mp (Proxy :: _ b)
+    , mapping mp (Proxy :: _ c)
+    , mapping mp (Proxy :: _ d)
     ]
 
 dotsToLodashes :: String -> String
