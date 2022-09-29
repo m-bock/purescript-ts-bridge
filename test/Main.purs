@@ -21,7 +21,7 @@ import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (runSpec)
-import TsBridge (class GenRecord, TsDeclaration, TsProgram, TsType, runTsBridgeM, tsModuleFile, tsProgram, tsTypeAlias, tsValue)
+import TsBridge (tsValue, tsTypeAlias, class GenRecord, TsDeclaration, TsProgram, TsType, runTsBridgeM, tsModuleFile, tsProgram)
 import TsBridge as TsBridge
 import TsBridge.ABC (A, B, C)
 import TsBridge.Class (defaultArray, defaultBoolean, defaultFunction, defaultNumber, defaultProxy, defaultRecord, defaultString, tsOpaqueType1, tsOpaqueType2, tsTypeVar)
@@ -45,31 +45,33 @@ instance ToTsBridge Boolean where
   toTsBridge = defaultBoolean
 
 instance ToTsBridge a => ToTsBridge (Array a) where
-  toTsBridge = defaultArray MappingToTsBridge
+  toTsBridge = defaultArray mp
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
-  toTsBridge = defaultFunction MappingToTsBridge
+  toTsBridge = defaultFunction mp
 
 instance (GenRecord MappingToTsBridge rl, RowToList r rl) => ToTsBridge (Record r) where
-  toTsBridge = defaultRecord MappingToTsBridge
+  toTsBridge = defaultRecord mp
 
 instance ToTsBridge a => ToTsBridge (Maybe a) where
-  toTsBridge = tsOpaqueType1 MappingToTsBridge "Data.Maybe" "Maybe" "A"
+  toTsBridge = tsOpaqueType1 mp "Data.Maybe" "Maybe" "A"
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
-  toTsBridge = tsOpaqueType2 MappingToTsBridge "Data.Either" "Either" "A" "B"
+  toTsBridge = tsOpaqueType2 mp "Data.Either" "Either" "A" "B"
 
 instance ToTsBridge A where
   toTsBridge _ = tsTypeVar "A"
 
 instance ToTsBridge B where
   toTsBridge _ = tsTypeVar "B"
-
 instance ToTsBridge C where
   toTsBridge _ = tsTypeVar "C"
 
 --
 
+
+mp :: MappingToTsBridge
+mp = MappingToTsBridge
 data MappingToTsBridge = MappingToTsBridge
 
 instance ToTsBridge a => Mapping MappingToTsBridge a (TsBridgeM TsType) where
@@ -95,34 +97,34 @@ spec_dp_tsTypeAlias :: Spec Unit
 spec_dp_tsTypeAlias = do
   describe "Number" do
     testDeclPrint
-      (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ Number))
+      (tsTypeAlias mp "Foo" (Proxy :: _ Number))
       [ "export type Foo = number" ]
 
   describe "Type Variable" do
     testDeclPrint
-      (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ A))
+      (tsTypeAlias mp "Foo" (Proxy :: _ A))
       [ "export type Foo<A> = A" ]
 
   describe "Type Variables" do
     testDeclPrint
-      (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ { c :: C, sub :: { a :: A, b :: B } }))
+      (tsTypeAlias mp "Foo" (Proxy :: _ { c :: C, sub :: { a :: A, b :: B } }))
       [ "export type Foo<C, A, B> = { readonly c: C; readonly sub: { readonly a: A; readonly b: B; }; }" ]
 
   describe "" do
     testDeclPrint
-      (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ (A -> B -> C)))
+      (tsTypeAlias mp "Foo" (Proxy :: _ (A -> B -> C)))
       [ "export type Foo = <A>(_: A) => <B, C>(_: B) => C" ]
 
   describe "" do
     testDeclPrint
-      (tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ (A -> A -> A)))
+      (tsTypeAlias mp "Foo" (Proxy :: _ (A -> A -> A)))
       [ "export type Foo = <A>(_: A) => (_: A) => A" ]
 
 spec_dp_tsValue :: Spec Unit
 spec_dp_tsValue = do
   describe "Number" do
     testDeclPrint
-      (tsValue "foo" $ toTsBridge 13.0)
+      (tsValue mp "foo" 13.0)
       [ "export const foo : number" ]
 
 spec_typePrinting :: Spec Unit
@@ -165,7 +167,7 @@ spec_programPrinting = do
     it "generates a type alias and adds the type module" do
       tsProgram
         [ tsModuleFile "types"
-            [ tsTypeAlias "Foo" $ toTsBridge (Proxy :: _ (Either String Boolean)) ]
+            [ tsTypeAlias mp "Foo" (Proxy :: _ (Either String Boolean)) ]
         ]
         # printTsProgram
         # shouldEqual
