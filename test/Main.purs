@@ -64,14 +64,15 @@ instance ToTsBridge A where
 
 instance ToTsBridge B where
   toTsBridge _ = tsTypeVar "B"
+
 instance ToTsBridge C where
   toTsBridge _ = tsTypeVar "C"
 
 --
 
-
 mp :: MappingToTsBridge
 mp = MappingToTsBridge
+
 data MappingToTsBridge = MappingToTsBridge
 
 instance ToTsBridge a => Mapping MappingToTsBridge a (TsBridgeM TsType) where
