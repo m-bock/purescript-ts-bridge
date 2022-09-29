@@ -25,7 +25,7 @@ import Data.Set.Ordered as OSet
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Tuple.Nested (type (/\), (/\))
+import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
 import Heterogeneous.Mapping (class Mapping, mapping)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
@@ -75,15 +75,10 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
   toTsBridge = defaultFunction MappingToTsBridge
 
 instance ToTsBridge a => ToTsBridge (Maybe a) where
-  toTsBridge _ = tsOpaqueType "Data.Maybe" "Maybe" [ "A" ]
-    [ toTsBridge (Proxy :: _ a) ]
+  toTsBridge = tsOpaqueType1 MappingToTsBridge "Data.Maybe" "Maybe" "A"
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
-  toTsBridge _ = tsOpaqueType "Data.Either" "Either" [ "A", "B" ]
-    [ toTsBridge (Proxy :: _ a)
-    , toTsBridge (Proxy :: _ b)
-    ]
-
+  toTsBridge = tsOpaqueType2 MappingToTsBridge "Data.Either" "Either" "A" "B"
 instance ToTsBridge A where
   toTsBridge _ = tsTypeVar "A"
 
@@ -164,7 +159,7 @@ defaultRecord
   => mp
   -> { | r }
   -> TsBridgeM TsType
-defaultRecord mp r = TsTypeRecord <$> genRecord mp (Proxy :: _ rl)
+defaultRecord mp _ = TsTypeRecord <$> genRecord mp (Proxy :: _ rl)
 
 fixScope :: Scope -> Scope
 fixScope { fixed, floating } =
