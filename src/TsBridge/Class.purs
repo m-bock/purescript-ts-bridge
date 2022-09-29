@@ -202,12 +202,23 @@ instance
 -- Util
 -------------------------------------------------------------------------------
 
-tsOpaqueType :: String -> String -> Array String -> Array (TsBridgeM TsType) -> TsBridgeM TsType
-tsOpaqueType pursModuleName pursTypeName targs = opaqueType
+tsOpaqueTypeImpl :: String -> String -> Array String -> Array (TsBridgeM TsType) -> TsBridgeM TsType
+tsOpaqueTypeImpl pursModuleName pursTypeName targs = opaqueType
   (TsFilePath (pursModuleName <> "/index") "d.ts")
   (TsModuleAlias $ dotsToLodashes pursModuleName)
   (TsName pursTypeName)
   (OSet.fromFoldable $ TsName <$> targs)
+
+tsOpaqueType
+  :: forall a mp f
+   . Mapping mp (Proxy a) (TsBridgeM TsType)
+  => mp
+  -> String
+  -> String
+  -> f a
+  -> TsBridgeM TsType
+tsOpaqueType _ pursModuleName pursTypeName _ =
+  tsOpaqueTypeImpl pursModuleName pursTypeName [] []
 
 tsOpaqueType1
   :: forall a mp f
@@ -219,7 +230,7 @@ tsOpaqueType1
   -> f a
   -> TsBridgeM TsType
 tsOpaqueType1 mp pursModuleName pursTypeName targ _ =
-  tsOpaqueType pursModuleName pursTypeName [ targ ] [ mapping mp (Proxy :: _ a) ]
+  tsOpaqueTypeImpl pursModuleName pursTypeName [ targ ] [ mapping mp (Proxy :: _ a) ]
 
 tsOpaqueType2
   :: forall a b mp f
@@ -233,7 +244,7 @@ tsOpaqueType2
   -> f a b
   -> TsBridgeM TsType
 tsOpaqueType2 mp pursModuleName pursTypeName targ1 targ2 _ =
-  tsOpaqueType pursModuleName pursTypeName [ targ1, targ2 ]
+  tsOpaqueTypeImpl pursModuleName pursTypeName [ targ1, targ2 ]
     [ mapping mp (Proxy :: _ a)
     , mapping mp (Proxy :: _ b)
     ]
@@ -252,7 +263,7 @@ tsOpaqueType3
   -> f a b c
   -> TsBridgeM TsType
 tsOpaqueType3 mp pursModuleName pursTypeName targ1 targ2 targ3 _ =
-  tsOpaqueType pursModuleName pursTypeName [ targ1, targ2, targ3 ]
+  tsOpaqueTypeImpl pursModuleName pursTypeName [ targ1, targ2, targ3 ]
     [ mapping mp (Proxy :: _ a)
     , mapping mp (Proxy :: _ b)
     , mapping mp (Proxy :: _ c)
@@ -275,7 +286,7 @@ tsOpaqueType4
   -> f a b c d
   -> TsBridgeM TsType
 tsOpaqueType4 mp pursModuleName pursTypeName targ1 targ2 targ3 targ4 _ =
-  tsOpaqueType pursModuleName pursTypeName [ targ1, targ2, targ3, targ4 ]
+  tsOpaqueTypeImpl pursModuleName pursTypeName [ targ1, targ2, targ3, targ4 ]
     [ mapping mp (Proxy :: _ a)
     , mapping mp (Proxy :: _ b)
     , mapping mp (Proxy :: _ c)
