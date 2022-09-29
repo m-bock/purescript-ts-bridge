@@ -210,12 +210,12 @@ tsOpaqueTypeImpl pursModuleName pursTypeName targs = opaqueType
   (OSet.fromFoldable $ TsName <$> targs)
 
 tsOpaqueType
-  :: forall a mp f
+  :: forall a mp
    . Mapping mp (Proxy a) (TsBridgeM TsType)
   => mp
   -> String
   -> String
-  -> f a
+  -> a
   -> TsBridgeM TsType
 tsOpaqueType _ pursModuleName pursTypeName _ =
   tsOpaqueTypeImpl pursModuleName pursTypeName [] []
