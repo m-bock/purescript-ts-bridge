@@ -36,7 +36,32 @@ spec = do
         # parseDecl
         # recResToMaybe
         >>= getPursDef
-        # shouldEqual (Just $ DefData (Name "Foos"))
+        # shouldEqual (Just $ DefData (Name "Foo"))
+
+  describe "" do
+    it "" do
+      "x :: Int"
+        # parseDecl
+        # recResToMaybe
+        >>= getPursDef
+        # shouldEqual (Just $ DefValue (Name "x"))
+
+  describe "" do
+    it "" do
+      "type Foo = Int"
+        # parseDecl
+        # recResToMaybe
+        >>= getPursDef
+        # shouldEqual (Just $ DefType (Name "Foo"))
+
+  describe "" do
+    it "" do
+      "newtype Foo = Foo Int"
+        # parseDecl
+        # recResToMaybe
+        >>= getPursDef
+        # shouldEqual (Just $ DefNewtype (Name "Foo"))
+
 
   describe "" do
     it "" do

@@ -27,6 +27,7 @@ import Node.Encoding (Encoding(..))
 import Node.FS.Aff as FS
 import Node.Glob.Basic as Glob
 import PureScript.CST (RecoveredParserResult(..), parseModule) as CST
+import PureScript.CST.Types (Proper(..))
 import PureScript.CST.Types as CST
 import Safe.Coerce (coerce)
 import Sunde as Sun
@@ -88,13 +89,17 @@ getPursDef = case _ of
     }
     _ -> Just $ DefData (Name name)
 
-  -- CST.DeclSignature (CST.Labeled { label, value }) ->
-  --   let
-  --     CST.Name { name: CST.Ident n } = label
-  --   in
-  --     case value of
-  --       CST.TypeConstructor _ -> Just $ DefValue (Name n)
-  --       _ -> Nothing
+  CST.DeclSignature (CST.Labeled { label, value }) ->
+    let
+      CST.Name { name: CST.Ident n } = label
+
+    in
+      case value of
+        CST.TypeConstructor _ -> Just $ DefValue (Name n)
+        _ -> Nothing
+
+  CST.DeclNewtype _ _ (CST.Name { name: CST.Proper n }) _ ->
+    Just $ DefNewtype (Name n)
 
   CST.DeclType
     { name: CST.Name { name: CST.Proper name }

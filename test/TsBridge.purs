@@ -18,9 +18,8 @@ import Prim.RowList (class RowToList)
 import Test.Spec (Spec, describe, it)
 import Test.Util (shouldEqual)
 import TsBridge (tsValue, tsTypeAlias, class GenRecord, TsDeclaration, TsProgram, TsType, runTsBridgeM, tsModuleFile, tsProgram)
-import TsBridge as TsBridge
+import TsBridge as TSB
 import TsBridge.ABC (A, B, C)
-import TsBridge.Class (defaultArray, defaultBoolean, defaultFunction, defaultNumber, defaultProxy, defaultRecord, defaultString, tsOpaqueType1, tsOpaqueType2, tsTypeVar)
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
 import Type.Proxy (Proxy(..))
@@ -29,47 +28,45 @@ class ToTsBridge a where
   toTsBridge :: a -> TsBridgeM TsType
 
 instance ToTsBridge a => ToTsBridge (Proxy a) where
-  toTsBridge = defaultProxy MappingToTsBridge
+  toTsBridge = TSB.defaultProxy Mp
 
 instance ToTsBridge Number where
-  toTsBridge = defaultNumber
+  toTsBridge = TSB.defaultNumber
 
 instance ToTsBridge String where
-  toTsBridge = defaultString
+  toTsBridge = TSB.defaultString
 
 instance ToTsBridge Boolean where
-  toTsBridge = defaultBoolean
+  toTsBridge = TSB.defaultBoolean
 
 instance ToTsBridge a => ToTsBridge (Array a) where
-  toTsBridge = defaultArray mp
+  toTsBridge = TSB.defaultArray Mp
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
-  toTsBridge = defaultFunction mp
+  toTsBridge = TSB.defaultFunction Mp
 
 instance (GenRecord MappingToTsBridge rl, RowToList r rl) => ToTsBridge (Record r) where
-  toTsBridge = defaultRecord mp
+  toTsBridge = TSB.defaultRecord Mp
 
 instance ToTsBridge a => ToTsBridge (Maybe a) where
-  toTsBridge = tsOpaqueType1 mp "Data.Maybe" "Maybe" "A"
+  toTsBridge = TSB.tsOpaqueType1 Mp "Data.Maybe" "Maybe" "A"
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
-  toTsBridge = tsOpaqueType2 mp "Data.Either" "Either" "A" "B"
+  toTsBridge = TSB.tsOpaqueType2 Mp "Data.Either" "Either" "A" "B"
 
 instance ToTsBridge A where
-  toTsBridge _ = tsTypeVar "A"
+  toTsBridge _ = TSB.tsTypeVar "A"
 
 instance ToTsBridge B where
-  toTsBridge _ = tsTypeVar "B"
+  toTsBridge _ = TSB.tsTypeVar "B"
 
 instance ToTsBridge C where
-  toTsBridge _ = tsTypeVar "C"
+  toTsBridge _ = TSB.tsTypeVar "C"
 
 --
 
-mp :: MappingToTsBridge
-mp = MappingToTsBridge
 
-data MappingToTsBridge = MappingToTsBridge
+data MappingToTsBridge = Mp
 
 instance ToTsBridge a => Mapping MappingToTsBridge a (TsBridgeM TsType) where
   mapping _ = toTsBridge
@@ -83,7 +80,7 @@ spec = do
       it "generates a type alias and adds the type module" do
         tsProgram
           [ tsModuleFile "types"
-              [ tsTypeAlias mp "Foo" (Proxy :: _ (Either String Boolean)) ]
+              [ tsTypeAlias Mp "Foo" (Proxy :: _ (Either String Boolean)) ]
           ]
           # printTsProgram
           # shouldEqual
@@ -102,33 +99,33 @@ spec = do
     describe "tsTypeAlias" do
       describe "Number" do
         testDeclPrint
-          (tsTypeAlias mp "Foo" (Proxy :: _ Number))
+          (tsTypeAlias Mp "Foo" (Proxy :: _ Number))
           [ "export type Foo = number" ]
 
       describe "Type Variable" do
         testDeclPrint
-          (tsTypeAlias mp "Foo" (Proxy :: _ A))
+          (tsTypeAlias Mp "Foo" (Proxy :: _ A))
           [ "export type Foo<A> = A" ]
 
       describe "Type Variables" do
         testDeclPrint
-          (tsTypeAlias mp "Foo" (Proxy :: _ { c :: C, sub :: { a :: A, b :: B } }))
+          (tsTypeAlias Mp "Foo" (Proxy :: _ { c :: C, sub :: { a :: A, b :: B } }))
           [ "export type Foo<C, A, B> = { readonly c: C; readonly sub: { readonly a: A; readonly b: B; }; }" ]
 
       describe "" do
         testDeclPrint
-          (tsTypeAlias mp "Foo" (Proxy :: _ (A -> B -> C)))
+          (tsTypeAlias Mp "Foo" (Proxy :: _ (A -> B -> C)))
           [ "export type Foo = <A>(_: A) => <B, C>(_: B) => C" ]
 
       describe "" do
         testDeclPrint
-          (tsTypeAlias mp "Foo" (Proxy :: _ (A -> A -> A)))
+          (tsTypeAlias Mp "Foo" (Proxy :: _ (A -> A -> A)))
           [ "export type Foo = <A>(_: A) => (_: A) => A" ]
 
     describe "tsValue" do
       describe "Number" do
         testDeclPrint
-          (tsValue mp "foo" 13.0)
+          (tsValue Mp "foo" 13.0)
           [ "export const foo : number" ]
 
   describe "Type Printing" do
@@ -184,4 +181,4 @@ textFile :: String -> Array String -> String /\ Array String
 textFile n lines = n /\ lines
 
 printTsProgram :: TsProgram -> Map String (Array String)
-printTsProgram x = TsBridge.printTsProgram x <#> String.split (Pattern "\n")
+printTsProgram x = TSB.printTsProgram x <#> String.split (Pattern "\n")
