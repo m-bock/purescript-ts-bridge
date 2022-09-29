@@ -2,6 +2,10 @@ module TsBridgeGen.Types where
 
 import Prelude
 
+import Data.Argonaut (class EncodeJson, encodeJson)
+import Data.Generic.Rep (class Generic)
+import Data.Show.Generic (genericShow)
+
 newtype Glob = Glob String
 
 newtype ModuleName = ModuleName String
@@ -16,3 +20,24 @@ data PursDef
   | DefType Name
   | DefValue Name
 
+derive instance Generic PursDef _
+derive instance Generic Name _
+derive instance Generic PursModule _
+derive instance Generic ModuleName _
+
+derive instance Eq PursModule
+derive instance Eq ModuleName
+derive instance Eq PursDef
+derive instance Eq Name
+
+instance Show PursDef where
+  show = genericShow
+
+instance Show Name where
+  show = genericShow
+
+instance Show PursModule where
+  show = genericShow
+
+instance Show ModuleName where
+  show = genericShow

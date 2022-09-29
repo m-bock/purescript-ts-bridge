@@ -3,7 +3,6 @@ module TsBridgeGen.Print where
 import Prelude
 
 import Control.Monad.Writer (Writer, runWriter, tell)
-import Data.Array (catMaybes)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
@@ -11,9 +10,8 @@ import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Traversable (sequence, traverse)
 import Data.Tuple.Nested (type (/\))
-import Data.Typelevel.Undefined (undefined)
 import Dodo as Dodo
-import Language.PS.CST (Declaration(..), Expr(..), Guarded(..), Ident(..), InstanceBinding(..), PSType(..), ProperName(..), ProperNameType_TypeConstructor, QualifiedName, mkModuleName, nonQualifiedName, printDeclarations, qualifiedName)
+import Language.PS.CST (Declaration(..), Expr(..), Guarded(..), Ident(..), InstanceBinding(..), PSType(..), ProperName(..), ProperNameType_TypeConstructor, QualifiedName, mkModuleName, nonQualifiedName, printDeclaration, printDeclarations, qualifiedName)
 import TsBridgeGen.Types (ModuleName(..), Name(..), PursDef(..), PursModule(..))
 
 type ImportWriterM a = Writer { imports :: Set String } a
@@ -21,8 +19,8 @@ type ImportWriterM a = Writer { imports :: Set String } a
 runImportWriterM :: forall a. ImportWriterM a -> a /\ String
 runImportWriterM = runWriter >>> map (_.imports >>> Set.toUnfoldable >>> Str.joinWith "\n")
 
-genInstances :: Array PursModule -> ImportWriterM String
-genInstances modules = printDecls <$> sequence do
+genInstances :: Array PursModule -> ImportWriterM (Array Declaration)
+genInstances modules = sequence do
   (PursModule mn@(ModuleName mn') defs) <- modules
   pursDef <- defs
   case pursDef of
@@ -34,7 +32,6 @@ genInstances modules = printDecls <$> sequence do
             ( (ExprIdent $ nonQualifiedName (Ident "tsOpaqueType"))
                 `ExprApp` (ExprString mn')
                 `ExprApp` (ExprString n')
-                `ExprApp` (ExprArray [])
             )
 
     DefNewtype n@(Name n') ->
@@ -138,6 +135,11 @@ genProxy qn = ExprTyped
 
 printDecls :: Array Declaration -> String
 printDecls = printDeclarations
+  >>> Dodo.print Dodo.plainText Dodo.twoSpaces
+  >>> instName.replace
+
+printDecl :: Declaration -> String
+printDecl = printDeclaration
   >>> Dodo.print Dodo.plainText Dodo.twoSpaces
   >>> instName.replace
 

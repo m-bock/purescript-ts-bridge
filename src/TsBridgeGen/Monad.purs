@@ -21,11 +21,6 @@ data TsBridgeGenError
   | ErrReadFile String
   | ErrExpandGlobs
 
-derive instance Generic TsBridgeGenError _
-
-instance Show TsBridgeGenError where
-  show = genericShow
-
 newtype TsBridgeGenM a = TsBridgeGenM (ExceptT TsBridgeGenError Aff a)
 
 runTsBridgeGenM :: forall a. TsBridgeGenM a -> Effect Unit
@@ -57,3 +52,10 @@ derive newtype instance Applicative TsBridgeGenM
 derive newtype instance MonadError TsBridgeGenError TsBridgeGenM
 derive newtype instance MonadThrow TsBridgeGenError TsBridgeGenM
 derive newtype instance Functor TsBridgeGenM
+
+derive instance Generic TsBridgeGenError _
+
+derive instance Eq TsBridgeGenError
+
+instance Show TsBridgeGenError where
+  show = genericShow

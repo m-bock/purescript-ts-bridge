@@ -58,7 +58,7 @@ tsTypeAlias mp n x = ado
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope) t
   in [ TsDeclTypeDef (TsName n) Public (coerce scope.floating) x ]
   where
-    t = mapping mp x
+  t = mapping mp x
 
 tsValue :: forall mp a. Mapping mp a (TsBridgeM TsType) => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
 tsValue mp n x = do
