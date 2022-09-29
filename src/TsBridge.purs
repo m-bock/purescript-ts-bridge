@@ -5,8 +5,7 @@ module TsBridge
   , tsProgram
   , tsTypeAlias
   , tsValue
-  )
-  where
+  ) where
 
 import Prelude
 

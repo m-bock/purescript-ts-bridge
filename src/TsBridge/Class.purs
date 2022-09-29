@@ -3,14 +3,16 @@ module TsBridge.Class
   , defaultArray
   , defaultBoolean
   , defaultFunction
-  , defaultGenRecordCons
   , defaultNumber
+  , defaultProxy
+  , defaultRecord
   , defaultString
   , genRecord
   , tsOpaqueType
+  , tsOpaqueType1
+  , tsOpaqueType2
   , tsTypeVar
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -23,8 +25,9 @@ import Data.Set.Ordered as OSet
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Tuple.Nested ((/\))
+import Data.Tuple.Nested (type (/\), (/\))
 import Data.Typelevel.Undefined (undefined)
+import Heterogeneous.Mapping (class Mapping, mapping)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Safe.Coerce (coerce)
 import TsBridge.ABC (A, B, C)
@@ -40,6 +43,11 @@ import Type.Proxy (Proxy(..))
 class ToTsBridge a where
   toTsBridge :: a -> TsBridgeM TsType
 
+data MappingToTsBridge = MappingToTsBridge
+
+instance ToTsBridge a => Mapping MappingToTsBridge a (TsBridgeM TsType) where
+  mapping _ = toTsBridge
+
 -------------------------------------------------------------------------------
 -- Class / ToTsBridge / Proxy
 -------------------------------------------------------------------------------
@@ -52,24 +60,19 @@ instance ToTsBridge a => ToTsBridge (Proxy a) where
 -------------------------------------------------------------------------------
 
 instance ToTsBridge Number where
-  toTsBridge _ = defaultNumber
+  toTsBridge = defaultNumber
 
 instance ToTsBridge String where
-  toTsBridge _ = defaultString
+  toTsBridge = defaultString
 
 instance ToTsBridge Boolean where
-  toTsBridge _ = defaultBoolean
+  toTsBridge = defaultBoolean
 
 instance ToTsBridge a => ToTsBridge (Array a) where
-  toTsBridge _ = defaultArray (toTsBridge (Proxy :: _ a))
-
-instance (GenRecord rl, RowToList r rl) => ToTsBridge (Record r) where
-  toTsBridge _ = defaultRecord (Proxy :: _ rl)
+  toTsBridge = defaultArray MappingToTsBridge
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
-  toTsBridge _ = defaultFunction
-    (toTsBridge (Proxy :: _ a))
-    (toTsBridge (Proxy :: _ b))
+  toTsBridge = defaultFunction MappingToTsBridge
 
 instance ToTsBridge a => ToTsBridge (Maybe a) where
   toTsBridge _ = tsOpaqueType "Data.Maybe" "Maybe" [ "A" ]
@@ -108,22 +111,36 @@ tsTypeVar x = do
     $ over TsBridgeAccum _ { scope = scope } defaultTsBridgeAccum
   pure $ TsTypeVar tsName
 
-defaultNumber :: TsBridgeM TsType
-defaultNumber = pure TsTypeNumber
+defaultProxy :: forall f a. Mapping f a (TsBridgeM TsType) => f -> Proxy a -> TsBridgeM TsType
+defaultProxy mp _ = mapping mp (undefined :: a)
 
-defaultString :: TsBridgeM TsType
-defaultString = pure TsTypeString
+defaultNumber :: Number -> TsBridgeM TsType
+defaultNumber _ = pure TsTypeNumber
 
-defaultBoolean :: TsBridgeM TsType
-defaultBoolean = pure TsTypeBoolean
+defaultString :: String -> TsBridgeM TsType
+defaultString _ = pure TsTypeString
 
-defaultArray :: TsBridgeM TsType -> TsBridgeM TsType
-defaultArray a = TsTypeArray <$> a
+defaultBoolean :: Boolean -> TsBridgeM TsType
+defaultBoolean _ = pure TsTypeBoolean
 
-defaultFunction :: TsBridgeM TsType -> TsBridgeM TsType -> TsBridgeM TsType
-defaultFunction a b = censor mapAccum ado
-  arg /\ TsBridgeAccum { scope: scopeArg } <- listen $ a
-  ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ b
+defaultArray
+  :: forall a f
+   . Mapping f (Proxy a) (TsBridgeM TsType)
+  => f
+  -> Array a
+  -> TsBridgeM TsType
+defaultArray f _ = TsTypeArray <$> mapping f (Proxy :: _ a)
+
+defaultFunction
+  :: forall f a b
+   . Mapping f (Proxy a) (TsBridgeM TsType)
+  => Mapping f (Proxy b) (TsBridgeM TsType)
+  => f
+  -> (a -> b)
+  -> TsBridgeM TsType
+defaultFunction f _ = censor mapAccum ado
+  arg /\ TsBridgeAccum { scope: scopeArg } <- listen $ mapping f (Proxy :: _ a)
+  ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ mapping f (Proxy :: _ b)
   let
     newFixed = (over2 wrap OSet.intersect scopeArg.fixed scopeRet.fixed)
       <> scopeArg.floating
@@ -140,8 +157,14 @@ defaultFunction a b = censor mapAccum ado
   where
   mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
 
-defaultRecord :: forall r. (GenRecord r) => Proxy r -> TsBridgeM TsType
-defaultRecord p = TsTypeRecord <$> genRecord p
+defaultRecord
+  :: forall mp r rl
+   . GenRecord mp rl
+  => RowToList r rl
+  => mp
+  -> { | r }
+  -> TsBridgeM TsType
+defaultRecord mp r = TsTypeRecord <$> genRecord mp (Proxy :: _ rl)
 
 fixScope :: Scope -> Scope
 fixScope { fixed, floating } =
@@ -153,26 +176,29 @@ fixScope { fixed, floating } =
 -- Class / GenRecord
 -------------------------------------------------------------------------------
 
-class GenRecord :: RowList Type -> Constraint
-class GenRecord rl where
-  genRecord :: Proxy rl -> TsBridgeM (Array TsRecordField)
+class GenRecord :: Type -> RowList Type -> Constraint
+class GenRecord mp rl where
+  genRecord :: mp -> Proxy rl -> TsBridgeM (Array TsRecordField)
 
-instance GenRecord Nil where
-  genRecord _ = pure []
+instance GenRecord mp Nil where
+  genRecord _ _ = pure []
 
-instance (GenRecord rl, ToTsBridge t, IsSymbol s) => GenRecord (Cons s t rl) where
-  genRecord _ = defaultGenRecordCons
-    (toTsBridge (Proxy :: _ t))
-    (genRecord (Proxy :: _ rl))
-    (reflectSymbol (Proxy :: _ s))
-
-defaultGenRecordCons :: TsBridgeM TsType -> TsBridgeM (Array TsRecordField) -> String -> TsBridgeM (Array TsRecordField)
-defaultGenRecordCons mkX mkXs str = ado
-  x <- mkX
-  xs <- mkXs
-  let k = TsName $ str
-  in
-    A.cons (TsRecordField k { optional: false, readonly: true } x) xs
+instance
+  ( Mapping mp (Proxy t) (TsBridgeM TsType)
+  , GenRecord mp rl
+  , IsSymbol s
+  ) =>
+  GenRecord mp (Cons s t rl) where
+  genRecord mp _ = do
+    let
+      mkX = mapping mp (Proxy :: _ t)
+      mkXs = genRecord mp (Proxy :: _ rl)
+      str = reflectSymbol (Proxy :: _ s)
+    x <- mkX
+    xs <- mkXs
+    let k = TsName $ str
+    pure $
+      A.cons (TsRecordField k { optional: false, readonly: true } x) xs
 
 -------------------------------------------------------------------------------
 -- Util
@@ -184,6 +210,35 @@ tsOpaqueType pursModuleName pursTypeName targs = opaqueType
   (TsModuleAlias $ dotsToLodashes pursModuleName)
   (TsName pursTypeName)
   (OSet.fromFoldable $ TsName <$> targs)
+
+tsOpaqueType1
+  :: forall a mp f
+   . Mapping mp (Proxy a) (TsBridgeM TsType)
+  => mp
+  -> String
+  -> String
+  -> String
+  -> f a
+  -> TsBridgeM TsType
+tsOpaqueType1 mp pursModuleName pursTypeName targ _ =
+  tsOpaqueType pursModuleName pursTypeName [ targ ] [ mapping mp (Proxy :: _ a) ]
+
+tsOpaqueType2
+  :: forall a b mp f
+   . Mapping mp (Proxy a) (TsBridgeM TsType)
+  => Mapping mp (Proxy b) (TsBridgeM TsType)
+  => mp
+  -> String
+  -> String
+  -> String
+  -> String
+  -> f a b
+  -> TsBridgeM TsType
+tsOpaqueType2 mp pursModuleName pursTypeName targ1 targ2 _ =
+  tsOpaqueType pursModuleName pursTypeName [ targ1, targ2 ]
+    [ mapping mp (Proxy :: _ a)
+    , mapping mp (Proxy :: _ b)
+    ]
 
 dotsToLodashes :: String -> String
 dotsToLodashes = Str.replaceAll (Pattern ".") (Replacement "_")

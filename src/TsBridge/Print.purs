@@ -3,8 +3,7 @@ module TsBridge.Print
   , printTsName
   , printTsProgram
   , printTsType
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -322,7 +321,6 @@ printTsModule x = tokenize x <#> printToken # S.joinWith ""
 
 printTsType :: TsType -> String
 printTsType x = tokenize x <#> printToken # S.joinWith ""
-
 
 printTsDeclarations :: Array TsDeclaration -> Array String
 printTsDeclarations x = x <#> tokenize <#> map printToken >>> S.joinWith ""

@@ -11,21 +11,21 @@ import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.String (Pattern(..))
 import Data.String as String
-import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (fst)
 import Data.Tuple.Nested (type (/\), (/\))
-import Data.Typelevel.Undefined (undefined)
 import Effect (Effect)
 import Effect.Aff (Error, launchAff_)
-import Prim.RowList (class RowToList, Cons, Nil, RowList)
+import Heterogeneous.Mapping (class Mapping)
+import Prim.RowList (class RowToList)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (runSpec)
-import TsBridge (TsBridgeM, TsDeclaration, TsProgram, TsRecordField, TsType(..), runTsBridgeM, tsModuleFile, tsProgram, tsTypeAlias, tsValue)
+import TsBridge (class GenRecord, TsDeclaration, TsProgram, TsType, runTsBridgeM, tsModuleFile, tsProgram, tsTypeAlias, tsValue)
 import TsBridge as TsBridge
 import TsBridge.ABC (A, B, C)
-import TsBridge.Class (defaultArray, defaultBoolean, defaultFunction, defaultGenRecordCons, defaultNumber, defaultString, tsOpaqueType, tsTypeVar)
+import TsBridge.Class (defaultArray, defaultBoolean, defaultFunction, defaultNumber, defaultProxy, defaultRecord, defaultString, tsOpaqueType1, tsOpaqueType2, tsTypeVar)
+import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
 import Type.Proxy (Proxy(..))
 
@@ -33,37 +33,31 @@ class ToTsBridge a where
   toTsBridge :: a -> TsBridgeM TsType
 
 instance ToTsBridge a => ToTsBridge (Proxy a) where
-  toTsBridge _ = toTsBridge (undefined :: a)
+  toTsBridge = defaultProxy MappingToTsBridge
 
 instance ToTsBridge Number where
-  toTsBridge _ = defaultNumber
+  toTsBridge = defaultNumber
 
 instance ToTsBridge String where
-  toTsBridge _ = defaultString
+  toTsBridge = defaultString
 
 instance ToTsBridge Boolean where
-  toTsBridge _ = defaultBoolean
+  toTsBridge = defaultBoolean
 
 instance ToTsBridge a => ToTsBridge (Array a) where
-  toTsBridge _ = defaultArray (toTsBridge (Proxy :: _ a))
+  toTsBridge = defaultArray MappingToTsBridge
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
-  toTsBridge _ = defaultFunction
-    (toTsBridge (Proxy :: _ a))
-    (toTsBridge (Proxy :: _ b))
+  toTsBridge = defaultFunction MappingToTsBridge
 
-instance (GenRecord rl, RowToList r rl) => ToTsBridge (Record r) where
-  toTsBridge _ = TsTypeRecord <$> genRecord (Proxy :: _ rl)
+instance (GenRecord MappingToTsBridge rl, RowToList r rl) => ToTsBridge (Record r) where
+  toTsBridge = defaultRecord MappingToTsBridge
 
 instance ToTsBridge a => ToTsBridge (Maybe a) where
-  toTsBridge _ = tsOpaqueType "Data.Maybe" "Maybe" [ "A" ]
-    [ toTsBridge (Proxy :: _ a) ]
+  toTsBridge = tsOpaqueType1 MappingToTsBridge "Data.Maybe" "Maybe" "A"
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
-  toTsBridge _ = tsOpaqueType "Data.Either" "Either" [ "A", "B" ]
-    [ toTsBridge (Proxy :: _ a)
-    , toTsBridge (Proxy :: _ b)
-    ]
+  toTsBridge = tsOpaqueType2 MappingToTsBridge "Data.Either" "Either" "A" "B"
 
 instance ToTsBridge A where
   toTsBridge _ = tsTypeVar "A"
@@ -74,18 +68,14 @@ instance ToTsBridge B where
 instance ToTsBridge C where
   toTsBridge _ = tsTypeVar "C"
 
-class GenRecord :: RowList Type -> Constraint
-class GenRecord rl where
-  genRecord :: Proxy rl -> TsBridgeM (Array TsRecordField)
+--
 
-instance GenRecord Nil where
-  genRecord _ = pure []
+data MappingToTsBridge = MappingToTsBridge
 
-instance (GenRecord rl, ToTsBridge t, IsSymbol s) => GenRecord (Cons s t rl) where
-  genRecord _ = defaultGenRecordCons
-    (toTsBridge (Proxy :: _ t))
-    (genRecord (Proxy :: _ rl))
-    (reflectSymbol (Proxy :: _ s))
+instance ToTsBridge a => Mapping MappingToTsBridge a (TsBridgeM TsType) where
+  mapping _ = toTsBridge
+
+--
 
 main :: Effect Unit
 main = launchAff_ $ runSpec [ consoleReporter ] spec
