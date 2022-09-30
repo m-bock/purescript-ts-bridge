@@ -13,7 +13,9 @@ newtype Name = Name String
 
 data PursModule = PursModule ModuleName (Array PursDef)
 
-data Import = Import { from :: ModuleName, as :: Name, auto :: Boolean }
+data Import
+  = ImportAuto { from :: ModuleName, as :: Name }
+  | ImportUser String
 
 data PursDef
   = DefData Name

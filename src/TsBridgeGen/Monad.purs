@@ -1,9 +1,14 @@
-module TsBridgeGen.Monad where
+module TsBridgeGen.Monad
+  ( TsBridgeGenError(..)
+  , TsBridgeGenM
+  , runTsBridgeGenM
+  ) where
 
 import Prelude
 
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, try)
 import Control.Monad.Except (ExceptT, runExceptT)
+import Control.Monad.Reader (class MonadAsk, ReaderT, runReaderT)
 import Data.Either (either)
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
@@ -21,11 +26,21 @@ data TsBridgeGenError
   | ErrReadFile String
   | ErrExpandGlobs
 
-newtype TsBridgeGenM a = TsBridgeGenM (ExceptT TsBridgeGenError Aff a)
+type TsBridgeGenEnv =
+  { classFile :: String
+  , modulesFile :: String
+  }
 
-runTsBridgeGenM :: forall a. TsBridgeGenM a -> Effect Unit
-runTsBridgeGenM (TsBridgeGenM ma) = ma
+newtype TsBridgeGenM a = TsBridgeGenM
+  ( ReaderT TsBridgeGenEnv
+      (ExceptT TsBridgeGenError Aff)
+      a
+  )
+
+runTsBridgeGenM :: forall a. TsBridgeGenEnv -> TsBridgeGenM a -> Effect Unit
+runTsBridgeGenM env (TsBridgeGenM ma) = ma
   <#> const unit
+  # flip runReaderT env
   # runExceptT
   >>= either handleAppError pure
   # try
@@ -52,6 +67,7 @@ derive newtype instance Applicative TsBridgeGenM
 derive newtype instance MonadError TsBridgeGenError TsBridgeGenM
 derive newtype instance MonadThrow TsBridgeGenError TsBridgeGenM
 derive newtype instance Functor TsBridgeGenM
+derive newtype instance MonadAsk TsBridgeGenEnv TsBridgeGenM
 
 derive instance Generic TsBridgeGenError _
 

@@ -1,0 +1,11 @@
+{
+  "name": "purescript-typescript-bridge",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:thought2/purescript-typescript-bridge.git",
+  "author": "Michael Bock <no-day@posteo.net>",
+  "license": "MIT",
+  "bin": {
+    "ts-bridge": "spago --quiet --no-psa run --main TsBridgeGen.Cli"
+  }
+}

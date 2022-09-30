@@ -19,3 +19,46 @@ in  upstream
     , repo = "https://github.com/natefaubion/purescript-node-glob-basic.git"
     , version = "v1.2.2"
     }
+  with record-extra =
+    { dependencies =
+      [ "arrays", "functions", "lists", "record", "typelevel-prelude" ]
+    , repo = "https://github.com/justinwoo/purescript-record-extra.git"
+    , version = "0.15.0-starter-kit"
+    }
+  with node-workerbees =
+    { dependencies =
+      [ "aff"
+      , "argonaut-core"
+      , "arraybuffer-types"
+      , "avar"
+      , "effect"
+      , "either"
+      , "exceptions"
+      , "maybe"
+      , "newtype"
+      , "parallel"
+      , "variant"
+      ]
+    , repo = "https://github.com/natefaubion/purescript-node-workerbees.git"
+    , version = "node-esm"
+    }
+  with tidy =
+    { dependencies =
+      [ "arrays"
+      , "control"
+      , "dodo-printer"
+      , "either"
+      , "foldable-traversable"
+      , "lists"
+      , "maybe"
+      , "newtype"
+      , "ordered-collections"
+      , "partial"
+      , "prelude"
+      , "language-cst-parser"
+      , "strings"
+      , "tuples"
+      ]
+    , repo = "https://github.com/natefaubion/purescript-tidy.git"
+    , version = "fa1c7c7b251341f3a22ca4e402f46614486878db"
+    }

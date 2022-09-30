@@ -9,7 +9,7 @@ import Data.Tuple (fst)
 import PureScript.CST (RecoveredParserResult(..), parseDecl)
 import Test.Spec (Spec, describe, it)
 import Test.Util (shouldEqual)
-import TsBridgeGen (ModuleName(..), Name(..), PursDef(..), PursModule(..), genInstances, getPursDef, printDecls, runImportWriterM)
+import TsBridgeGen (ModuleName(..), Name(..), PursDef(..), PursModule(..), genInstances, getPursDef, patchClassFile, printDecls, runImportWriterM)
 
 recResToMaybe :: forall f. RecoveredParserResult f -> Maybe (f Void)
 recResToMaybe = case _ of
@@ -30,38 +30,92 @@ spec = do
   --         <#> getPursModule
   --         # shouldEqual (Right $ PursModule (ModuleName "my") [ DefData (Name "Foo") ])
 
-  describe "" do
-    it "" do
+  describe "patchClassFile" do
+    it "patches a class file correctly" do
+      patchClassFile
+        [ PursModule (ModuleName "Module1") [ DefData (Name "Foo1") ]
+        , PursModule (ModuleName "Module2") [ DefData (Name "Foo2") ]
+        ]
+        ( Str.joinWith "\n"
+            [ "module MyApp.TsBridgeClass where"
+            , ""
+            , "{-GEN:imports"
+            , "{ \"autoPrefix\": \"Auto\" }"
+            , "-}"
+            , ""
+            , "import Data.Either (Either)"
+            , ""
+            , "{-GEN:END-}"
+            , ""
+            , "{-GEN:instances"
+            , "{ \"include\": \"\""
+            , ", \"exclude\": \"\""
+            , "}"
+            , "-}"
+            , ""
+            , "{-GEN:END-}"
+            ]
+        )
+        # Str.split (Pattern "\n")
+        # shouldEqual
+            [ "module MyApp.TsBridgeClass where"
+            , ""
+            , "{-GEN:imports"
+            , "{ \"autoPrefix\": \"Auto\" }"
+            , "-}"
+            , ""
+            , "import Module1 as Auto.Module1"
+            , "import Module2 as Auto.Module2"
+            , "import Data.Either (Either)"
+            , ""
+            , "{-GEN:END-}"
+            , ""
+            , "{-GEN:instances"
+            , "{ \"include\": \"\""
+            , ", \"exclude\": \"\""
+            , "}"
+            , "-}"
+            , ""
+            , "instance ToTsBridge Auto.Module1.Foo1 where"
+            , "  toTsBridge = tsOpaqueType \"Module1\" \"Foo1\""
+            , ""
+            , "instance ToTsBridge Auto.Module2.Foo1 where"
+            , "  toTsBridge = tsOpaqueType \"Module1\" \"Foo2\""
+            , ""
+            , "{-GEN:END-}"
+            ]
+
+  describe "Data Type" do
+    it "parses correctly" do
       "data Foo = Bar | Baz"
         # parseDecl
         # recResToMaybe
         >>= getPursDef
         # shouldEqual (Just $ DefData (Name "Foo"))
 
-  describe "" do
-    it "" do
+  describe "Value" do
+    it "parses correctly" do
       "x :: Int"
         # parseDecl
         # recResToMaybe
         >>= getPursDef
         # shouldEqual (Just $ DefValue (Name "x"))
 
-  describe "" do
-    it "" do
+  describe "Type Alias" do
+    it "parses correctly" do
       "type Foo = Int"
         # parseDecl
         # recResToMaybe
         >>= getPursDef
         # shouldEqual (Just $ DefType (Name "Foo"))
 
-  describe "" do
-    it "" do
+  describe "Newtype" do
+    it "parses correctly" do
       "newtype Foo = Foo Int"
         # parseDecl
         # recResToMaybe
         >>= getPursDef
         # shouldEqual (Just $ DefNewtype (Name "Foo"))
-
 
   describe "" do
     it "" do

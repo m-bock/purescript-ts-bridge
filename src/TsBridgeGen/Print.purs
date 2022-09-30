@@ -28,10 +28,9 @@ genInstances modules = sequence do
     DefData n@(Name n') ->
       pure do
         tell
-          { imports: Set.singleton $ Import
+          { imports: Set.singleton $ ImportAuto
               { from: mn
-              , as: Name ("Auto" <> n')
-              , auto: true
+              , as: Name ("Auto." <> mn')
               }
           }
         pure $
@@ -44,10 +43,9 @@ genInstances modules = sequence do
     DefNewtype n@(Name n') ->
       pure do
         tell
-          { imports: Set.singleton $ Import
+          { imports: Set.singleton $ ImportAuto
               { from: mn
-              , as: Name ("Auto" <> n')
-              , auto: true
+              , as: Name ("Auto." <> mn')
               }
           }
         pure $
@@ -59,9 +57,6 @@ genInstances modules = sequence do
             )
 
     _ -> mempty
-
-parseImports :: String -> Maybe (Array Import)
-parseImports = undefined
 
 genTsProgram :: Array PursModule -> ImportWriterM String
 genTsProgram = genTsProgram' >>> map printDecls
@@ -101,10 +96,9 @@ genTsModuleFile (PursModule mn defs) = do
   let ModuleName mn' = mn
 
   tell
-    { imports: Set.singleton $ Import
+    { imports: Set.singleton $ ImportAuto
         { from: mn
-        , as: Name ("Auto" <> mn')
-        , auto: true
+        , as: Name ("Auto." <> mn')
         }
     }
 
@@ -172,8 +166,10 @@ printImports x = x
   # Str.joinWith "\n"
 
 printImport :: Import -> String
-printImport (Import { from: ModuleName mn, as: Name n, auto }) =
-  "import " <> mn <> " as " <> if auto then "Auto." else "" <> n
+printImport = case _ of
+  ImportAuto { from: ModuleName mn, as: Name n } ->
+    "import " <> mn <> " as " <> "Auto." <> n
+  ImportUser s -> s
 
 instName :: { name :: String, replace :: String -> String }
 instName = { name, replace }
@@ -196,7 +192,7 @@ genTsBridgeInstance (ModuleName mn) (Name n) expr = DeclInstanceChain
     , instClass: nonQualifiedName
         (ProperName "ToTsBridge")
     , instTypes: pure $ TypeConstructor $ qualifiedName
-        (mkModuleName $ pure mn)
+        (mkModuleName $ pure ("Auto." <> mn))
         (ProperName n)
     }
 

@@ -2,58 +2,34 @@ module TsBridgeGen.Core where
 
 import Prelude
 
-import Control.Monad.Error.Class (liftEither, throwError, try)
-import Control.Monad.Writer (WriterT)
+import Control.Monad.Error.Class (throwError)
+import Control.Monad.Rec.Class (class MonadRec)
+import Control.Monad.Writer (lift)
+import Data.Argonaut (class DecodeJson, decodeJson, jsonParser, printJsonDecodeError)
 import Data.Array (catMaybes, elem, (:))
 import Data.Array as A
 import Data.Bifunctor (lmap)
-import Data.Either (Either)
-import Data.Maybe (Maybe(..))
+import Data.Either (Either, either)
+import Data.Identity (Identity(..))
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Newtype (un)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.String (Pattern(..))
 import Data.String as Str
-import Data.String.Regex (replace, replace') as R
-import Data.String.Regex.Flags (noFlags) as R
-import Data.String.Regex.Unsafe (unsafeRegex) as R
-import Data.Traversable (for)
-import Data.Tuple (fst, snd)
+import Data.Traversable (sequence)
+import Data.Tuple (Tuple(..), fst, snd)
+import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
-import Effect.Aff (Aff)
-import Effect.Aff.Class (liftAff)
-import Effect.Exception (Error)
-import Node.ChildProcess (Exit(..), defaultSpawnOptions)
-import Node.Encoding (Encoding(..))
-import Node.FS.Aff as FS
-import Node.Glob.Basic as Glob
-import Partial.Unsafe (unsafePartial)
-import PureScript.CST (RecoveredParserResult(..), parseModule) as CST
-import PureScript.CST.Types (Proper(..))
-import PureScript.CST.Types as CST
-import Safe.Coerce (coerce)
-import Sunde as Sun
-import TsBridgeGen.Monad (TsBridgeGenError(..), TsBridgeGenM)
-import TsBridgeGen.Types (Glob(..), ModuleName(..), Name(..), PursDef(..), PursModule(..))
-
-spawn :: String -> Array String -> TsBridgeGenM { stderr :: String, stdout :: String }
-spawn cmd args = do
-  { exit, stderr, stdout } <-
-    liftAff $ Sun.spawn { cmd, args, stdin: Nothing }
-      defaultSpawnOptions
-  case exit of
-    Normally 0 -> pure { stderr, stdout }
-    _ -> throwError $ ErrSpawn cmd args
-
-getSpagoGlobs :: TsBridgeGenM (Array Glob)
-getSpagoGlobs = spawn "spago" [ "sources" ]
-  <#> _.stdout
-    >>> Str.split (Pattern "\n")
-    >>> map Glob
-
-getPaths :: Array Glob -> TsBridgeGenM (Array String)
-getPaths globs = Glob.expandGlobsCwd (coerce globs)
-  # liftAffWithErr (const ErrExpandGlobs)
-  <#> (Set.toUnfoldable :: _ -> Array _)
+import Debug (spy)
+import Parsing (fail) as P
+import Parsing.String (anyTill, string) as P
+import Parsing.String.Replace (replaceT) as P
+import PureScript.CST (RecoveredParserResult(..), parseImportDecl, parseModule) as CST
+import PureScript.CST.Types (Declaration(..), Export(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Proper(..), Separated(..), Type(..), Wrapped(..)) as CST
+import TsBridgeGen.Monad (TsBridgeGenError(..))
+import TsBridgeGen.Print (genInstances, printDecls, printImports, runImportWriterM)
+import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..))
 
 parseCstModule :: String -> Either TsBridgeGenError (CST.Module Void)
 parseCstModule mod = case CST.parseModule mod of
@@ -115,33 +91,68 @@ getName = case _ of
   DefData (Name n) -> n
   _ -> ""
 
-readTextFile :: String -> TsBridgeGenM String
-readTextFile path = FS.readTextFile UTF8 path
-  # liftAffWithErr (const $ ErrReadFile path)
-
-liftAffWithErr :: forall a. (Error -> TsBridgeGenError) -> Aff a -> TsBridgeGenM a
-liftAffWithErr mkError ma = ma
-  # try
-  <#> lmap mkError
-  # liftAff
-  >>= liftEither
-
-getPursModules :: Array Glob -> TsBridgeGenM (Array PursModule)
-getPursModules globs = do
-  paths <- getPaths globs
-  sources <- for paths readTextFile
-  cstModules <- for sources (liftEither <<< parseCstModule)
-  pure $ getPursModule <$> cstModules
-
-replaceComment :: String -> (String -> String) -> String -> String
-replaceComment id f = R.replace'
-  (R.unsafeRegex (regexStart <> regexMiddle <> regexEnd) R.noFlags)
-  (unsafePartial matchFn)
+replaceComment :: forall m a. MonadRec m => DecodeJson a => String -> (a -> String -> m String) -> String -> m String
+replaceComment id f i = P.replaceT i do
+  genStartOpen <- P.string ("{-GEN:" <> id <> "\n")
+  let _ = spy "x" "x"
+  json /\ genStartClose <- P.anyTill (P.string "\n-}\n")
+  let _ = spy "json" json
+  data_ <- decode json
+  let _ = spy "z" "z"
+  content /\ genEnd <- P.anyTill (P.string "\n{-GEN:END-}")
+  newContent <- lift $ f data_ content
+  pure (genStartOpen <> json <> genStartClose <> "\n" <> newContent <> "\n" <> genEnd)
   where
-  regexStart = "({-GEN:" <> id <> "-})"
-  regexMiddle = "([\\s\\S]*?)"
-  regexEnd = "({-GEN:END-})"
+  decode str = str
+    # jsonParser
+    # spy "a"
+    >>= decodeJson >>> lmap printJsonDecodeError
+    # either P.fail pure
 
-  matchFn :: Partial => _
-  matchFn _ [ (Just matchStart), (Just matchMiddle), (Just matchEnd) ] =
-    matchStart <> "\n\n" <> f matchMiddle <> "\n\n" <> matchEnd
+parseUserImports :: String -> Maybe (Set String)
+parseUserImports s = s
+  # Str.split (Pattern "\n")
+  >>= f
+  # sequence
+  <#> Set.fromFoldable
+  where
+  f "" = []
+  f s' = case CST.parseImportDecl s' of
+    CST.ParseSucceeded (CST.ImportDecl decl) -> case decl of
+      { qualified: Just (Tuple _ (CST.Name { name: CST.ModuleName mn })) } -> case Str.stripPrefix (Pattern "Auto.") mn of
+        Just _ -> []
+        Nothing -> [ pure s' ]
+      _ -> [ pure s' ]
+    _ -> [ Nothing ]
+
+patchModulesFile :: Array PursModule -> String -> String
+patchModulesFile = undefined
+
+type ReplaceInstancesOpts = {}
+
+type ReplaceImportsOpts = {}
+
+patchClassFile :: Array PursModule -> String -> String
+patchClassFile defs file = file
+  # replaceComment "instances"
+      ( \(_ :: ReplaceInstancesOpts) _ -> do
+          instances <- defs # genInstances
+          pure $ printDecls instances
+      )
+  # runImportWriterM
+  #
+    ( \(file' /\ { imports }) -> file'
+        # replaceComment "imports"
+            ( \(_ :: ReplaceImportsOpts) oldImports -> do
+
+                oldImports
+                  # parseUserImports
+                  <#> Set.map ImportUser
+                  # fromMaybe Set.empty
+                  # Set.union imports
+                  # printImports
+                  # pure
+            )
+
+    )
+  # un Identity
