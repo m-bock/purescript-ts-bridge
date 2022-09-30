@@ -85,42 +85,6 @@ type PropModifiers =
   }
 
 -------------------------------------------------------------------------------
--- Class / Eq
--------------------------------------------------------------------------------
-
-derive instance Eq TsRecordField
-derive instance Eq TsFnArg
-derive instance Eq TsTypeArgs
-derive instance Eq TsImport
-derive instance Eq TsModuleAlias
-derive instance Eq TsQualName
-derive instance Eq TsTypeArgsQuant
-derive instance Eq TsDeclaration
-derive instance Eq TsType
-derive instance Eq TsName
-derive instance Eq TsModulePath
-derive instance Eq TsFilePath
-derive instance Eq TsDeclVisibility
-
--------------------------------------------------------------------------------
--- Class / Ord
--------------------------------------------------------------------------------
-
-derive instance Ord TsFnArg
-derive instance Ord TsRecordField
-derive instance Ord TsTypeArgs
-derive instance Ord TsImport
-derive instance Ord TsModuleAlias
-derive instance Ord TsQualName
-derive instance Ord TsTypeArgsQuant
-derive instance Ord TsDeclaration
-derive instance Ord TsType
-derive instance Ord TsName
-derive instance Ord TsModulePath
-derive instance Ord TsFilePath
-derive instance Ord TsDeclVisibility
-
--------------------------------------------------------------------------------
 -- 
 -------------------------------------------------------------------------------
 
@@ -184,3 +148,35 @@ instance Eq a => Eq (TsBridge_DTS_Wrap (OSet a)) where
 
 instance Eq a => Monoid (TsBridge_DTS_Wrap (OSet a)) where
   mempty = TsBridge_DTS_Wrap $ OSet.empty
+
+-------------------------------------------------------------------------------
+-- Class
+-------------------------------------------------------------------------------
+
+derive instance Eq TsRecordField
+derive instance Eq TsFnArg
+derive instance Eq TsTypeArgs
+derive instance Eq TsImport
+derive instance Eq TsModuleAlias
+derive instance Eq TsQualName
+derive instance Eq TsTypeArgsQuant
+derive instance Eq TsDeclaration
+derive instance Eq TsType
+derive instance Eq TsName
+derive instance Eq TsModulePath
+derive instance Eq TsFilePath
+derive instance Eq TsDeclVisibility
+
+derive instance Ord TsFnArg
+derive instance Ord TsRecordField
+derive instance Ord TsTypeArgs
+derive instance Ord TsImport
+derive instance Ord TsModuleAlias
+derive instance Ord TsQualName
+derive instance Ord TsTypeArgsQuant
+derive instance Ord TsDeclaration
+derive instance Ord TsType
+derive instance Ord TsName
+derive instance Ord TsModulePath
+derive instance Ord TsFilePath
+derive instance Ord TsDeclVisibility

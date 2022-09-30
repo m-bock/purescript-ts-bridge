@@ -10,14 +10,15 @@ import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Traversable (sequence, traverse)
 import Data.Tuple.Nested (type (/\))
+import Data.Typelevel.Undefined (undefined)
 import Dodo as Dodo
 import Language.PS.CST (Declaration(..), Expr(..), Guarded(..), Ident(..), InstanceBinding(..), PSType(..), ProperName(..), ProperNameType_TypeConstructor, QualifiedName, mkModuleName, nonQualifiedName, printDeclaration, printDeclarations, qualifiedName)
-import TsBridgeGen.Types (ModuleName(..), Name(..), PursDef(..), PursModule(..))
+import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..))
 
-type ImportWriterM a = Writer { imports :: Set String } a
+type ImportWriterM a = Writer { imports :: Set Import } a
 
-runImportWriterM :: forall a. ImportWriterM a -> a /\ String
-runImportWriterM = runWriter >>> map (_.imports >>> Set.toUnfoldable >>> Str.joinWith "\n")
+runImportWriterM :: forall a. ImportWriterM a -> a /\ { imports :: Set Import }
+runImportWriterM = runWriter
 
 genInstances :: Array PursModule -> ImportWriterM (Array Declaration)
 genInstances modules = sequence do
@@ -26,7 +27,13 @@ genInstances modules = sequence do
   case pursDef of
     DefData n@(Name n') ->
       pure do
-        tell { imports: Set.singleton ("import " <> mn' <> " as " <> mn') }
+        tell
+          { imports: Set.singleton $ Import
+              { from: mn
+              , as: Name ("Auto" <> n')
+              , auto: true
+              }
+          }
         pure $
           genTsBridgeInstance mn n
             ( (ExprIdent $ nonQualifiedName (Ident "tsOpaqueType"))
@@ -36,7 +43,13 @@ genInstances modules = sequence do
 
     DefNewtype n@(Name n') ->
       pure do
-        tell { imports: Set.singleton ("import " <> mn' <> " as " <> mn') }
+        tell
+          { imports: Set.singleton $ Import
+              { from: mn
+              , as: Name ("Auto" <> n')
+              , auto: true
+              }
+          }
         pure $
           genTsBridgeInstance mn n
             ( (ExprIdent $ nonQualifiedName (Ident "tsNewtype"))
@@ -46,6 +59,9 @@ genInstances modules = sequence do
             )
 
     _ -> mempty
+
+parseImports :: String -> Maybe (Array Import)
+parseImports = undefined
 
 genTsProgram :: Array PursModule -> ImportWriterM String
 genTsProgram = genTsProgram' >>> map printDecls
@@ -84,7 +100,13 @@ genTsModuleFile (PursModule mn defs) = do
   let xs = defs <#> genTsDef mn
   let ModuleName mn' = mn
 
-  tell { imports: Set.singleton ("import " <> mn' <> " as " <> mn') }
+  tell
+    { imports: Set.singleton $ Import
+        { from: mn
+        , as: Name ("Auto" <> mn')
+        , auto: true
+        }
+    }
 
   pure $ ExprIdent (nonQualifiedName $ Ident "toTsModuleFile")
     `ExprApp` ExprString (mn' <> "/index")
@@ -142,6 +164,16 @@ printDecl :: Declaration -> String
 printDecl = printDeclaration
   >>> Dodo.print Dodo.plainText Dodo.twoSpaces
   >>> instName.replace
+
+printImports :: Set Import -> String
+printImports x = x
+  # (Set.toUnfoldable :: _ -> Array _)
+  <#> printImport
+  # Str.joinWith "\n"
+
+printImport :: Import -> String
+printImport (Import { from: ModuleName mn, as: Name n, auto }) =
+  "import " <> mn <> " as " <> if auto then "Auto." else "" <> n
 
 instName :: { name :: String, replace :: String -> String }
 instName = { name, replace }

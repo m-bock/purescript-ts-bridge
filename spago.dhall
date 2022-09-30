@@ -26,6 +26,7 @@
   , "optparse"
   , "ordered-collections"
   , "ordered-set"
+  , "partial"
   , "prelude"
   , "ps-cst"
   , "record"

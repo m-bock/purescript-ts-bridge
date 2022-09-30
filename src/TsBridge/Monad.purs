@@ -45,6 +45,19 @@ runTsBridgeM :: forall a. TsBridgeM a -> a /\ TsBridgeAccum
 runTsBridgeM (TsBridgeM ma) = runWriter ma
 
 -------------------------------------------------------------------------------
+-- Wrap
+-------------------------------------------------------------------------------
+
+newtype TsBridge_Monad_Wrap a = TsBridge_Monad_Wrap a
+
+derive instance Newtype (TsBridge_Monad_Wrap a) _
+
+derive newtype instance Eq a => Semigroup (TsBridge_Monad_Wrap (OSet a))
+
+instance Eq a => Monoid (TsBridge_Monad_Wrap (OSet a)) where
+  mempty = TsBridge_Monad_Wrap $ OSet.empty
+
+-------------------------------------------------------------------------------
 -- Instances
 -------------------------------------------------------------------------------
 
@@ -67,16 +80,3 @@ derive newtype instance Functor TsBridgeM
 derive newtype instance Apply TsBridgeM
 
 derive newtype instance Applicative TsBridgeM
-
--------------------------------------------------------------------------------
--- Wrap
--------------------------------------------------------------------------------
-
-newtype TsBridge_Monad_Wrap a = TsBridge_Monad_Wrap a
-
-derive instance Newtype (TsBridge_Monad_Wrap a) _
-
-derive newtype instance Eq a => Semigroup (TsBridge_Monad_Wrap (OSet a))
-
-instance Eq a => Monoid (TsBridge_Monad_Wrap (OSet a)) where
-  mempty = TsBridge_Monad_Wrap $ OSet.empty

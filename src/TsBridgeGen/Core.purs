@@ -13,7 +13,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.String (Pattern(..))
 import Data.String as Str
-import Data.String.Regex (replace) as R
+import Data.String.Regex (replace, replace') as R
 import Data.String.Regex.Flags (noFlags) as R
 import Data.String.Regex.Unsafe (unsafeRegex) as R
 import Data.Traversable (for)
@@ -26,6 +26,7 @@ import Node.ChildProcess (Exit(..), defaultSpawnOptions)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff as FS
 import Node.Glob.Basic as Glob
+import Partial.Unsafe (unsafePartial)
 import PureScript.CST (RecoveredParserResult(..), parseModule) as CST
 import PureScript.CST.Types (Proper(..))
 import PureScript.CST.Types as CST
@@ -132,12 +133,15 @@ getPursModules globs = do
   cstModules <- for sources (liftEither <<< parseCstModule)
   pure $ getPursModule <$> cstModules
 
-replaceComment :: String -> String -> String -> String
-replaceComment id rep = R.replace
-  (R.unsafeRegex (start <> middle <> end) R.noFlags)
-  ("$1\n\n" <> rep <> "\n\n$2")
+replaceComment :: String -> (String -> String) -> String -> String
+replaceComment id f = R.replace'
+  (R.unsafeRegex (regexStart <> regexMiddle <> regexEnd) R.noFlags)
+  (unsafePartial matchFn)
   where
-  start = "({-GEN:" <> id <> "-})"
-  middle = "[\\s\\S]*?"
-  end = "({-GEN:END-})"
+  regexStart = "({-GEN:" <> id <> "-})"
+  regexMiddle = "([\\s\\S]*?)"
+  regexEnd = "({-GEN:END-})"
 
+  matchFn :: Partial => _
+  matchFn _ [ (Just matchStart), (Just matchMiddle), (Just matchEnd) ] =
+    matchStart <> "\n\n" <> f matchMiddle <> "\n\n" <> matchEnd
