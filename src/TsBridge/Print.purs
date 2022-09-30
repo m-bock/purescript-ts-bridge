@@ -97,21 +97,21 @@ sepByComma = sepBy [ TsTokComma, TsTokWhitespace ]
 sepByDoubleNewline :: Array TsTokens -> TsTokens
 sepByDoubleNewline = sepBy [ TsTokNewline, TsTokNewline ]
 
-postfixSemicolon :: Array TsTokens -> TsTokens
-postfixSemicolon = postfix [ TsTokSemicolon ]
+-- postfixSemicolon :: Array TsTokens -> TsTokens
+-- postfixSemicolon = postfix [ TsTokSemicolon ]
 
-postfixDoubleNewline :: Array TsTokens -> TsTokens
-postfixDoubleNewline = postfix [ TsTokNewline, TsTokNewline ]
+-- postfixDoubleNewline :: Array TsTokens -> TsTokens
+-- postfixDoubleNewline = postfix [ TsTokNewline, TsTokNewline ]
 
 postfixNewline :: Array TsTokens -> TsTokens
 postfixNewline = postfix [ TsTokNewline ]
 
-sectionNewline :: (Array TsTokens -> TsTokens) -> Array TsTokens -> TsTokens
-sectionNewline f xs | Array.length xs == 0 = []
-sectionNewline f xs = f xs <> [ TsTokNewline ]
+-- sectionNewline :: (Array TsTokens -> TsTokens) -> Array TsTokens -> TsTokens
+-- sectionNewline f xs | Array.length xs == 0 = []
+-- sectionNewline f xs = f xs <> [ TsTokNewline ]
 
 applyWhenNotEmpty :: forall a b. (Array a -> Array b) -> Array a -> Array b
-applyWhenNotEmpty f xs | Array.null xs = []
+applyWhenNotEmpty _ xs | Array.null xs = []
 applyWhenNotEmpty f xs = f xs
 
 class Tokenize a where
@@ -328,8 +328,8 @@ printTsDeclarations x = x <#> tokenize <#> map printToken >>> S.joinWith ""
 printTsFilePath :: TsFilePath -> String
 printTsFilePath (TsFilePath x y) = x <> "." <> y
 
-printTsModuleFile :: TsModuleFile -> String /\ String
-printTsModuleFile (TsModuleFile fp m) = printTsFilePath fp /\ printTsModule m
+-- printTsModuleFile :: TsModuleFile -> String /\ String
+-- printTsModuleFile (TsModuleFile fp m) = printTsFilePath fp /\ printTsModule m
 
 printTsProgram :: TsProgram -> Map String String
 printTsProgram (TsProgram xs) = xs

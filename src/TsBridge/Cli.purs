@@ -13,8 +13,8 @@ import Effect.Class.Console (log)
 import Node.ChildProcess (Exit(..), defaultSpawnOptions)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (mkdir', writeTextFile)
-import Node.FS.Perms (all, mkPerm, mkPerms)
-import Node.Path (FilePath, dirname)
+import Node.FS.Perms (all, mkPerms)
+import Node.Path (dirname)
 import Options.Applicative (help, helper, info, long, metavar, strOption, (<**>))
 import Options.Applicative as O
 import Sunde as Sun

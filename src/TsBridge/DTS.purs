@@ -16,7 +16,7 @@ module TsBridge.DTS
   , TsType(..)
   , TsTypeArgs(..)
   , TsTypeArgsQuant(..)
-  , Wrap(..)
+  , TsBridge_DTS_Wrap(..)
   , dtsFilePath
   , mapQuantifier
   ) where
@@ -35,7 +35,7 @@ import Data.Set.Ordered as OSet
 -------------------------------------------------------------------------------
 
 data TsDeclaration
-  = TsDeclTypeDef TsName TsDeclVisibility (Wrap (OSet TsName)) TsType
+  = TsDeclTypeDef TsName TsDeclVisibility (TsBridge_DTS_Wrap (OSet TsName)) TsType
   | TsDeclValueDef TsName TsDeclVisibility TsType
 
 data TsDeclVisibility = Public | Private
@@ -71,7 +71,7 @@ data TsImport = TsImport TsModuleAlias TsModulePath
 
 data TsQualName = TsQualName (Maybe TsModuleAlias) TsName
 
-newtype TsTypeArgsQuant = TsTypeArgsQuant (Wrap (OSet TsName))
+newtype TsTypeArgsQuant = TsTypeArgsQuant (TsBridge_DTS_Wrap (OSet TsName))
 
 newtype TsTypeArgs = TsTypeArgs (Array TsType)
 
@@ -166,21 +166,21 @@ mapQuantifier f = case _ of
 -- Wrap
 -------------------------------------------------------------------------------
 
-newtype Wrap a = Wrap a
+newtype TsBridge_DTS_Wrap a = TsBridge_DTS_Wrap a
 
-derive instance Newtype (Wrap a) _
+derive instance Newtype (TsBridge_DTS_Wrap a) _
 
-derive newtype instance Eq a => Semigroup (Wrap (OSet a))
+derive newtype instance Eq a => Semigroup (TsBridge_DTS_Wrap (OSet a))
 
-instance Ord a => Ord (Wrap (OSet a)) where
-  compare (Wrap o1) (Wrap o2) = toArray o1 `compare` toArray o2
+instance Ord a => Ord (TsBridge_DTS_Wrap (OSet a)) where
+  compare (TsBridge_DTS_Wrap o1) (TsBridge_DTS_Wrap o2) = toArray o1 `compare` toArray o2
     where
     toArray = OSet.toUnfoldable :: _ -> Array _
 
-instance Eq a => Eq (Wrap (OSet a)) where
-  eq (Wrap o1) (Wrap o2) = toArray o1 `eq` toArray o2
+instance Eq a => Eq (TsBridge_DTS_Wrap (OSet a)) where
+  eq (TsBridge_DTS_Wrap o1) (TsBridge_DTS_Wrap o2) = toArray o1 `eq` toArray o2
     where
     toArray = OSet.toUnfoldable :: _ -> Array _
 
-instance Eq a => Monoid (Wrap (OSet a)) where
-  mempty = Wrap $ OSet.empty
+instance Eq a => Monoid (TsBridge_DTS_Wrap (OSet a)) where
+  mempty = TsBridge_DTS_Wrap $ OSet.empty

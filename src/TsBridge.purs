@@ -3,7 +3,6 @@ module TsBridge
   ) where
 
 import TsBridge.ABC as Exp
-import TsBridge.Class as Exp
 import TsBridge.Cli as Exp
 import TsBridge.Core as Exp
 import TsBridge.DTS as Exp
