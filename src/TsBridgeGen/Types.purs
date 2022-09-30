@@ -4,6 +4,14 @@ import Prelude
 
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
+import TypedEnv as TypedEnv
+
+data TsBridgeGenError
+  = ErrSpawn String (Array String)
+  | ErrParseModule
+  | ErrReadFile String
+  | ErrExpandGlobs
+  | ErrParseEnvVars TypedEnv.EnvError
 
 newtype Glob = Glob String
 
@@ -48,4 +56,11 @@ instance Show PursModule where
   show = genericShow
 
 instance Show ModuleName where
+  show = genericShow
+
+derive instance Generic TsBridgeGenError _
+
+derive instance Eq TsBridgeGenError
+
+instance Show TsBridgeGenError where
   show = genericShow

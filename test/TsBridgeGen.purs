@@ -79,8 +79,8 @@ spec = do
             , "instance ToTsBridge Auto.Module1.Foo1 where"
             , "  toTsBridge = tsOpaqueType \"Module1\" \"Foo1\""
             , ""
-            , "instance ToTsBridge Auto.Module2.Foo1 where"
-            , "  toTsBridge = tsOpaqueType \"Module1\" \"Foo2\""
+            , "instance ToTsBridge Auto.Module2.Foo2 where"
+            , "  toTsBridge = tsOpaqueType \"Module2\" \"Foo2\""
             , ""
             , "{-GEN:END-}"
             ]

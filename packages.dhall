@@ -62,3 +62,23 @@ in  upstream
     , repo = "https://github.com/natefaubion/purescript-tidy.git"
     , version = "fa1c7c7b251341f3a22ca4e402f46614486878db"
     }
+  with typedenv =
+    { dependencies =
+      [ "aff"
+      , "effect"
+      , "either"
+      , "foldable-traversable"
+      , "foreign-object"
+      , "integers"
+      , "maybe"
+      , "numbers"
+      , "prelude"
+      , "record"
+      , "spec"
+      , "strings"
+      , "type-equality"
+      , "typelevel-prelude"
+      ]
+    , repo = "https://github.com/thought2/purescript-typedenv.git"
+    , version = "purs15"
+    }

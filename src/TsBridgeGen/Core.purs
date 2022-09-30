@@ -27,9 +27,8 @@ import Parsing.String (anyTill, string) as P
 import Parsing.String.Replace (replaceT) as P
 import PureScript.CST (RecoveredParserResult(..), parseImportDecl, parseModule) as CST
 import PureScript.CST.Types (Declaration(..), Export(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Proper(..), Separated(..), Type(..), Wrapped(..)) as CST
-import TsBridgeGen.Monad (TsBridgeGenError(..))
 import TsBridgeGen.Print (genInstances, printDecls, printImports, runImportWriterM)
-import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..))
+import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), TsBridgeGenError(..))
 
 parseCstModule :: String -> Either TsBridgeGenError (CST.Module Void)
 parseCstModule mod = case CST.parseModule mod of

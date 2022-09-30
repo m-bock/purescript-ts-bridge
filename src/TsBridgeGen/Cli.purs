@@ -5,14 +5,16 @@ import Prelude
 import Control.Monad.Error.Class (liftEither)
 import Data.Bifunctor (lmap)
 import Data.Foldable (fold)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Set as Set
 import Data.String (Pattern(..))
 import Data.String as Str
 import Data.Traversable (for)
+import Data.Typelevel.Undefined (undefined)
 import Effect (Effect)
 import Effect.Aff (Aff, Error, throwError, try)
 import Effect.Aff.Class (liftAff)
+import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Node.ChildProcess (Exit(..), defaultSpawnOptions)
 import Node.Encoding (Encoding(..))
@@ -20,56 +22,21 @@ import Node.FS.Aff (writeTextFile)
 import Node.FS.Aff as FS
 import Node.Glob.Basic as Glob
 import Node.Path (FilePath)
-import Options.Applicative (help, helper, info, long, metavar, strOption, value, (<**>))
+import Options.Applicative (ReadM, help, helper, info, long, metavar, strOption, value, (<**>))
 import Options.Applicative as O
+import Options.Applicative as Opt
+import Options.Applicative.Types (ReadM(..), optional)
+import Record.Extra (sequenceRecord)
 import Safe.Coerce (coerce)
 import Sunde as Sun
 import TsBridgeGen (getPursModule, parseCstModule, patchClassFile)
-import TsBridgeGen.Monad (TsBridgeGenError(..), TsBridgeGenM, runTsBridgeGenM)
-import TsBridgeGen.Types (Glob(..), PursModule)
-
--------------------------------------------------------------------------------
--- Types
--------------------------------------------------------------------------------
-type TsBridgeGenCliOpts =
-  { classFile :: String
-  , modulesFile :: String
-  }
-
-defaults :: TsBridgeGenCliOpts
-defaults =
-  { classFile: "src/MyApp/TsBridgeClass.purs"
-  , modulesFile: "src/MyApp/TsBridgeModules.purs"
-  }
-
--------------------------------------------------------------------------------
--- CLI Options
--------------------------------------------------------------------------------
-parserTsBridgeCliOpts :: O.Parser TsBridgeGenCliOpts
-parserTsBridgeCliOpts = ado
-  classFile <-
-    strOption
-      $ fold
-          [ long "output-dir"
-          , metavar "OUTPUT_DIR"
-          , help "Dictionary the CLI will write the output d.ts files to."
-          , value defaults.classFile
-          ]
-  modulesFile <-
-    strOption
-      $ fold
-          [ long "output-dir"
-          , metavar "OUTPUT_DIR"
-          , help "Dictionary the CLI will write the output d.ts files to."
-          , value defaults.modulesFile
-          ]
-  in { classFile, modulesFile }
-
-parserInfoTsBridgeCliOpts :: O.ParserInfo TsBridgeGenCliOpts
-parserInfoTsBridgeCliOpts = info (parserTsBridgeCliOpts <**> helper) mempty
+import TsBridgeGen.Config (getConfig, runInitM)
+import TsBridgeGen.Monad (TsBridgeGenM, runTsBridgeGenM)
+import TsBridgeGen.Types (TsBridgeGenError(..), Glob(..), PursModule)
 
 -------------------------------------------------------------------------------
 -- App
+-------------------------------------------------------------------------------
 
 getPursModules :: Array Glob -> TsBridgeGenM (Array PursModule)
 getPursModules globs = do
@@ -125,5 +92,5 @@ app = do
 
 main :: Effect Unit
 main = do
-  cliOpts <- O.execParser parserInfoTsBridgeCliOpts
-  runTsBridgeGenM cliOpts app
+  appConfig <- runInitM getConfig
+  runTsBridgeGenM appConfig app

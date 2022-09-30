@@ -1,6 +1,5 @@
 module TsBridgeGen.Monad
-  ( TsBridgeGenError(..)
-  , TsBridgeGenM
+  ( TsBridgeGenM
   , runTsBridgeGenM
   ) where
 
@@ -19,25 +18,17 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console as Eff
 import Node.Process as Process
-
-data TsBridgeGenError
-  = ErrSpawn String (Array String)
-  | ErrParseModule
-  | ErrReadFile String
-  | ErrExpandGlobs
-
-type TsBridgeGenEnv =
-  { classFile :: String
-  , modulesFile :: String
-  }
+import TsBridgeGen.Config (AppConfig(..))
+import TsBridgeGen.Types (TsBridgeGenError(..))
+import TypedEnv as TypedEnv
 
 newtype TsBridgeGenM a = TsBridgeGenM
-  ( ReaderT TsBridgeGenEnv
+  ( ReaderT AppConfig
       (ExceptT TsBridgeGenError Aff)
       a
   )
 
-runTsBridgeGenM :: forall a. TsBridgeGenEnv -> TsBridgeGenM a -> Effect Unit
+runTsBridgeGenM :: forall a. AppConfig -> TsBridgeGenM a -> Effect Unit
 runTsBridgeGenM env (TsBridgeGenM ma) = ma
   <#> const unit
   # flip runReaderT env
@@ -67,11 +58,5 @@ derive newtype instance Applicative TsBridgeGenM
 derive newtype instance MonadError TsBridgeGenError TsBridgeGenM
 derive newtype instance MonadThrow TsBridgeGenError TsBridgeGenM
 derive newtype instance Functor TsBridgeGenM
-derive newtype instance MonadAsk TsBridgeGenEnv TsBridgeGenM
+derive newtype instance MonadAsk AppConfig TsBridgeGenM
 
-derive instance Generic TsBridgeGenError _
-
-derive instance Eq TsBridgeGenError
-
-instance Show TsBridgeGenError where
-  show = genericShow

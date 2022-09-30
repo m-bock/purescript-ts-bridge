@@ -11,6 +11,7 @@
   , "either"
   , "exceptions"
   , "foldable-traversable"
+  , "foreign-object"
   , "heterogeneous"
   , "identity"
   , "language-cst-parser"
@@ -41,6 +42,7 @@
   , "tidy"
   , "transformers"
   , "tuples"
+  , "typedenv"
   , "typelevel"
   ]
 , packages = ./packages.dhall
