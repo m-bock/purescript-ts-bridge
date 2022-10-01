@@ -5,6 +5,7 @@
   , "arrays"
   , "bifunctors"
   , "console"
+  , "control"
   , "debug"
   , "dodo-printer"
   , "effect"
@@ -44,6 +45,7 @@
   , "tuples"
   , "typedenv"
   , "typelevel"
+  , "typelevel-prelude"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

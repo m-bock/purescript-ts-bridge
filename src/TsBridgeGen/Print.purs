@@ -2,7 +2,9 @@ module TsBridgeGen.Print where
 
 import Prelude
 
-import Control.Monad.Writer (Writer, runWriter, tell)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow)
+import Control.Monad.Rec.Class (class MonadRec)
+import Control.Monad.Writer (class MonadTell, class MonadTrans, Writer, WriterT, lift, runWriter, runWriterT, tell)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
@@ -13,14 +15,40 @@ import Data.Tuple.Nested (type (/\))
 import Data.Typelevel.Undefined (undefined)
 import Dodo as Dodo
 import Language.PS.CST (Declaration(..), Expr(..), Guarded(..), Ident(..), InstanceBinding(..), PSType(..), ProperName(..), ProperNameType_TypeConstructor, QualifiedName, mkModuleName, nonQualifiedName, printDeclaration, printDeclarations, qualifiedName)
-import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..))
+import TsBridgeGen.Monad (class MonadLog, class MonadWarn, log, warn, warnCount)
+import TsBridgeGen.Types (AppLog, AppWarning, Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..))
 
-type ImportWriterM a = Writer { imports :: Set Import } a
+newtype ImportWriterM a = ImportWriterM (Writer Accum a)
+newtype ImportWriterT m a = ImportWriterT (WriterT Accum m a)
+
+type Accum = { imports :: Set Import }
+
+derive newtype instance Bind m => Bind (ImportWriterT m)
+derive newtype instance Monad m => Monad (ImportWriterT m)
+derive newtype instance Apply m => Apply (ImportWriterT m)
+derive newtype instance Applicative m => Applicative (ImportWriterT m)
+derive newtype instance Functor m => Functor (ImportWriterT m)
+derive newtype instance MonadRec m => MonadRec (ImportWriterT m)
+derive newtype instance Monad m => MonadTell Accum (ImportWriterT m)
+derive newtype instance MonadTrans ImportWriterT
+derive newtype instance MonadThrow e m => MonadThrow e (ImportWriterT m)
+derive newtype instance MonadError e m => MonadError e (ImportWriterT m)
+
+instance MonadWarn AppWarning m => MonadWarn AppWarning (ImportWriterT m) where
+  warn = warn >>> lift
+  warnCount = warnCount # lift
+
+instance MonadLog AppLog m => MonadLog AppLog (ImportWriterT m) where
+  log = log >>> lift
+
 
 runImportWriterM :: forall a. ImportWriterM a -> a /\ { imports :: Set Import }
-runImportWriterM = runWriter
+runImportWriterM (ImportWriterM ma) = runWriter ma
 
-genInstances :: Array PursModule -> ImportWriterM (Array Declaration)
+runImportWriterT :: forall m a. ImportWriterT m a -> m (a /\ { imports :: Set Import })
+runImportWriterT (ImportWriterT ma) = runWriterT ma
+
+genInstances :: forall m. Monad m => Array PursModule -> ImportWriterT m (Array Declaration)
 genInstances modules = sequence do
   (PursModule mn@(ModuleName mn') defs) <- modules
   pursDef <- defs
@@ -58,10 +86,10 @@ genInstances modules = sequence do
 
     _ -> mempty
 
-genTsProgram :: Array PursModule -> ImportWriterM String
+genTsProgram :: forall m. Monad m => Array PursModule -> ImportWriterT m String
 genTsProgram = genTsProgram' >>> map printDecls
 
-genTsProgram' :: Array PursModule -> ImportWriterM (Array Declaration)
+genTsProgram' :: forall m. Monad m => Array PursModule -> ImportWriterT m (Array Declaration)
 genTsProgram' modules = do
   ms <- modules
     # traverse genTsModuleFile
@@ -90,7 +118,7 @@ genTsProgram' modules = do
 
   pure [ signature, valueDef ]
 
-genTsModuleFile :: PursModule -> ImportWriterM Expr
+genTsModuleFile :: forall m. Monad m => PursModule -> ImportWriterT m Expr
 genTsModuleFile (PursModule mn defs) = do
   let xs = defs <#> genTsDef mn
   let ModuleName mn' = mn

@@ -17,11 +17,11 @@ import Data.Either.Nested (type (\/))
 import Data.Foldable (fold)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Symbol (class IsSymbol)
-import Data.Typelevel.Undefined (undefined)
+import Dodo as Dodo
 import Effect (Effect)
-import Effect.Aff (Aff, Error, runAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (error)
+import Effect.Exception (Error)
 import Heterogeneous.Mapping (class HMapWithIndex, class MappingWithIndex, hmapWithIndex)
 import Node.Process (exit, getEnv)
 import Options.Applicative ((<**>))
@@ -29,37 +29,27 @@ import Options.Applicative as O
 import Options.Applicative as Opt
 import Options.Applicative.Types (optional)
 import Prim.Row as Row
+import PureScript.CST (RecoveredParserResult(..), parseExpr)
+import PureScript.CST.Types (Expr)
 import Record as R
 import Record as Record
 import Record.Extra (sequenceRecord)
 import Safe.Coerce (coerce)
-import TsBridgeGen.Types (TsBridgeGenError(..))
+import Tidy (defaultFormatOptions, formatExpr)
+import Tidy.Doc (FormatDoc(..))
+import TsBridgeGen.Types (AppError(..))
 import Type.Function (type ($))
 import Type.Proxy (Proxy(..))
 import Type.Row (type (+))
 import TypedEnv as TypedEnv
 
-type InitM a = ExceptT TsBridgeGenError Effect a
+type InitM a = ExceptT AppError Effect a
 
 runInitM :: forall a. InitM a -> Effect a
 runInitM ma = ma
   # runExceptT
   # try
   >>= handleErrors
-
-handleErrors :: forall a. Error \/ TsBridgeGenError \/ a -> Effect a
-handleErrors = case _ of
-  Left _ -> quitWithError "Unexpected Error"
-  Right (Left appError) -> quitWithError $ printError appError
-  Right (Right x) -> pure x
-
-quitWithError :: forall a. String -> Effect a
-quitWithError msg = do
-  error msg
-  exit 1
-
-printError :: TsBridgeGenError -> String
-printError _ = "error"
 
 --------------------------------------------------------------------------------
 -- Config
@@ -73,17 +63,19 @@ type AppConfig_Mandatory r =
   | r
   )
 
-type AppConfig_Optional :: forall k. (Type -> k) -> Row k -> Row k
+type AppConfig_Optional :: (Type -> Type) -> Row Type -> Row Type
 type AppConfig_Optional maybe r =
   ( modulesFile :: maybe String
   , classFile :: maybe String
+  , debug :: maybe Boolean
   | r
   )
 
 defaults :: { | AppConfig_Optional It () }
 defaults =
-  { modulesFile: "src/MyApp/TsBridgeModules.purs"
-  , classFile: "src/MyApp/TsBridgeClass.purs"
+  { modulesFile: "src/MyTsBridgeModules.purs"
+  , classFile: "src/MyTsBridgeClass.purs"
+  , debug: false
   }
 
 --------------------------------------------------------------------------------
@@ -122,6 +114,7 @@ newtype AppEnvVars = AppEnvVars
 type AppEnvVars_Spec :: forall k. (Symbol -> Type -> k) -> (Type -> Type) -> Row k
 type AppEnvVars_Spec f wrap =
   ( assetsDir :: f "ASSETS_DIR" $ String
+  , debug :: f "DEBUG" $ Maybe Boolean
   )
 
 getEnvVars :: InitM AppEnvVars
@@ -152,6 +145,7 @@ mergeCfg (AppCliArgs cli) (AppEnvVars env) =
   optional =
     { modulesFile: cli.modulesFile
     , classFile: cli.classFile
+    , debug: env.debug
     }
 
   mandatory =
@@ -166,7 +160,12 @@ newtype Wrap a = Wrap a
 type It :: forall k. k -> k
 type It a = a
 
-fromMaybeRecord :: forall r1 r2 r3. HMapWithIndex (MappingFromMaybeRecord r1) { | r2 } { | r3 } => { | r1 } -> { | r2 } -> { | r3 }
+fromMaybeRecord
+  :: forall r1 r2 r3
+   . HMapWithIndex (MappingFromMaybeRecord r1) { | r2 } { | r3 }
+  => { | r1 }
+  -> { | r2 }
+  -> { | r3 }
 fromMaybeRecord = hmapWithIndex <<< MappingFromMaybeRecord
 
 newtype MappingFromMaybeRecord r = MappingFromMaybeRecord { | r }
@@ -191,3 +190,28 @@ class ReadM a where
 
 instance ReadM String where
   readM = Opt.str
+
+handleErrors :: forall a. Error \/ AppError \/ a -> Effect a
+handleErrors = case _ of
+  Left _ -> quitWithError "Unexpected Error"
+  Right (Left appError) -> quitWithError $ printError appError
+  Right (Right x) -> pure x
+
+quitWithError :: forall a. String -> Effect a
+quitWithError msg = do
+  error msg
+  exit 1
+
+printError :: AppError -> String
+printError = showPretty
+
+showPretty :: forall a. Show a => a -> String
+showPretty = show >>> parseExpr >>> case _ of
+  ParseSucceeded m -> printExpr m
+  _ -> "<invalid>"
+
+printExpr :: Expr Void -> String
+printExpr expr =
+  formatExpr defaultFormatOptions expr
+    # (\(FormatDoc { doc }) -> doc)
+    # Dodo.print Dodo.plainText Dodo.twoSpaces

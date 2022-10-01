@@ -1,6 +1,12 @@
 module TsBridgeGen.Monad
-  ( TsBridgeGenM
-  , runTsBridgeGenM
+  ( AppEnv(..)
+  , AppM
+  , class MonadLog
+  , class MonadWarn
+  , warn
+  , warnCount
+  , runAppM
+  , log
   ) where
 
 import Prelude
@@ -8,55 +14,91 @@ import Prelude
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, try)
 import Control.Monad.Except (ExceptT, runExceptT)
 import Control.Monad.Reader (class MonadAsk, ReaderT, runReaderT)
-import Data.Either (either)
-import Data.Generic.Rep (class Generic)
-import Data.Show.Generic (genericShow)
+import Control.Monad.Rec.Class (class MonadRec)
+import Data.Either (Either(..))
+import Data.Either.Nested (type (\/))
+import Dodo as Dodo
 import Effect (Effect)
-import Effect.Aff (Aff, launchAff_)
-import Effect.Aff as JS
+import Effect.Aff (Aff, Error, launchAff_)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Class.Console as Eff
-import Node.Process as Process
-import TsBridgeGen.Config (AppConfig(..))
-import TsBridgeGen.Types (TsBridgeGenError(..))
-import TypedEnv as TypedEnv
+import Effect.Class.Console (error)
+import Effect.Class.Console as E
+import Node.Process (exit)
+import PureScript.CST (RecoveredParserResult(..), parseExpr)
+import PureScript.CST.Types (Expr)
+import Tidy (defaultFormatOptions, formatExpr)
+import Tidy.Doc (FormatDoc(..))
+import TsBridgeGen.Config (AppConfig)
+import TsBridgeGen.Types (AppError, AppLog, AppWarning)
 
-newtype TsBridgeGenM a = TsBridgeGenM
-  ( ReaderT AppConfig
-      (ExceptT TsBridgeGenError Aff)
+newtype AppM a = AppM
+  ( ReaderT AppEnv
+      (ExceptT AppError Aff)
       a
   )
 
-runTsBridgeGenM :: forall a. AppConfig -> TsBridgeGenM a -> Effect Unit
-runTsBridgeGenM env (TsBridgeGenM ma) = ma
+newtype AppEnv = AppEnv { config :: AppConfig }
+
+runAppM :: forall a. AppEnv -> AppM a -> Effect Unit
+runAppM env (AppM ma) = ma
   <#> const unit
   # flip runReaderT env
   # runExceptT
-  >>= either handleAppError pure
   # try
-  >>= either handleNativeError pure
+  >>= handleErrors >>> liftEffect
   # launchAff_
 
-exit :: String -> Aff Unit
-exit msg = do
-  Eff.error msg
-  liftEffect $ Process.exit 1
+derive newtype instance MonadAff AppM
+derive newtype instance MonadEffect AppM
+derive newtype instance Bind AppM
+derive newtype instance Monad AppM
+derive newtype instance Apply AppM
+derive newtype instance Applicative AppM
+derive newtype instance MonadError AppError AppM
+derive newtype instance MonadThrow AppError AppM
+derive newtype instance Functor AppM
+derive newtype instance MonadAsk AppEnv AppM
+derive newtype instance MonadRec AppM
 
-handleAppError :: TsBridgeGenError -> Aff Unit
-handleAppError err = exit ("Error: " <> show err)
 
-handleNativeError :: JS.Error -> Aff Unit
-handleNativeError e = exit ("Unexpected Error: " <> JS.message e)
+instance MonadLog AppLog AppM  where
+  log = showPretty >>> E.log
 
-derive newtype instance MonadAff TsBridgeGenM
-derive newtype instance MonadEffect TsBridgeGenM
-derive newtype instance Bind TsBridgeGenM
-derive newtype instance Monad TsBridgeGenM
-derive newtype instance Apply TsBridgeGenM
-derive newtype instance Applicative TsBridgeGenM
-derive newtype instance MonadError TsBridgeGenError TsBridgeGenM
-derive newtype instance MonadThrow TsBridgeGenError TsBridgeGenM
-derive newtype instance Functor TsBridgeGenM
-derive newtype instance MonadAsk AppConfig TsBridgeGenM
+instance MonadWarn AppWarning AppM where
+  warn = showPretty >>> E.warn
+  warnCount = pure 99
 
+class Monad m <= MonadLog l m where
+  log :: l -> m Unit
+
+class Monad m <= MonadWarn w m | m -> w where
+  warn :: w -> m Unit
+  warnCount :: m Int
+
+
+handleErrors :: forall a. Error \/ AppError \/ a -> Effect a
+handleErrors = case _ of
+  Left _ -> quitWithError "Unexpected Error"
+  Right (Left appError) -> quitWithError $ printError appError
+  Right (Right x) -> pure x
+
+quitWithError :: forall a. String -> Effect a
+quitWithError msg = do
+  error msg
+  exit 1
+
+printError :: AppError -> String
+printError = showPretty
+
+showPretty :: forall a. Show a => a -> String
+showPretty = show >>> parseExpr >>> case _ of
+  ParseSucceeded m -> printExpr m
+  _ -> "<invalid>"
+
+
+printExpr :: Expr Void -> String
+printExpr expr =
+  formatExpr defaultFormatOptions expr
+    # (\(FormatDoc { doc }) -> doc)
+    # Dodo.print Dodo.plainText Dodo.twoSpaces

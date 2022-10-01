@@ -6,6 +6,12 @@
   "author": "Michael Bock <no-day@posteo.net>",
   "license": "MIT",
   "bin": {
-    "ts-bridge": "spago --quiet --no-psa run --main TsBridgeGen.Cli"
-  }
+    "ts-bridge": "bin/index.js"
+  },
+  "type": "module",
+  "files": [
+    "bin/index.js",
+    "output/**/*.js",
+    "assets/**/*.*"
+  ]
 }

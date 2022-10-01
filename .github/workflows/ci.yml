@@ -9,8 +9,8 @@ jobs:
       with:
         extra_nix_config: |
           access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-    - run: nix develop --command spago test
-    - run: nix develop --command spago docs --no-search
+    - run: nix develop --command just test
+    - run: nix develop --command just docs
 
     - name: Deploy 🚀
       uses: JamesIves/github-pages-deploy-action@v4

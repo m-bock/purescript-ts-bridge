@@ -2,35 +2,37 @@ module TsBridgeGen.Core where
 
 import Prelude
 
-import Control.Monad.Error.Class (throwError)
+import Control.Alt ((<|>))
+import Control.Monad.Error.Class (class MonadError, catchError, liftEither, throwError, try)
 import Control.Monad.Rec.Class (class MonadRec)
 import Control.Monad.Writer (lift)
-import Data.Argonaut (class DecodeJson, decodeJson, jsonParser, printJsonDecodeError)
-import Data.Array (catMaybes, elem, (:))
+import Data.Argonaut (class DecodeJson, Json, decodeJson, jsonParser, printJsonDecodeError)
+import Data.Array (catMaybes, elem, uncons, (:))
 import Data.Array as A
 import Data.Bifunctor (lmap)
 import Data.Either (Either, either)
-import Data.Identity (Identity(..))
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Newtype (un)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.String (Pattern(..))
 import Data.String as Str
 import Data.Traversable (sequence)
-import Data.Tuple (Tuple(..), fst, snd)
+import Data.Tuple (Tuple(..), snd)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
-import Debug (spy)
+import Node.Path (FilePath)
+import Parsing (ParserT, Position(..), fail, position, runParser)
 import Parsing (fail) as P
-import Parsing.String (anyTill, string) as P
+import Parsing.String (anyTill, eof, string) as P
+import Parsing.String.Basic (intDecimal) as P
 import Parsing.String.Replace (replaceT) as P
 import PureScript.CST (RecoveredParserResult(..), parseImportDecl, parseModule) as CST
 import PureScript.CST.Types (Declaration(..), Export(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Proper(..), Separated(..), Type(..), Wrapped(..)) as CST
-import TsBridgeGen.Print (genInstances, printDecls, printImports, runImportWriterM)
-import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), TsBridgeGenError(..))
+import TsBridgeGen.Monad (class MonadLog, log)
+import TsBridgeGen.Print (genInstances, printDecls, printImports, runImportWriterT)
+import TsBridgeGen.Types (AppError(..), AppLog(..), ErrorParseToJson(..), Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), SourcePosition(..))
 
-parseCstModule :: String -> Either TsBridgeGenError (CST.Module Void)
+parseCstModule :: String -> Either AppError (CST.Module Void)
 parseCstModule mod = case CST.parseModule mod of
   CST.ParseSucceeded m -> pure m
   _ -> throwError ErrParseModule
@@ -90,23 +92,113 @@ getName = case _ of
   DefData (Name n) -> n
   _ -> ""
 
-replaceComment :: forall m a. MonadRec m => DecodeJson a => String -> (a -> String -> m String) -> String -> m String
-replaceComment id f i = P.replaceT i do
+replaceComment'
+  :: forall m a
+   . MonadRec m
+  => MonadError AppError m
+  => DecodeJson a
+  => String
+  -> (a -> String -> m String)
+  -> String
+  -> m String
+replaceComment' id f i = P.replaceT i do
   genStartOpen <- P.string ("{-GEN:" <> id <> "\n")
-  let _ = spy "x" "x"
   json /\ genStartClose <- P.anyTill (P.string "\n-}\n")
-  let _ = spy "json" json
+  _ <- lift $ throwError $ ErrLiteral "tada"
   data_ <- decode json
-  let _ = spy "z" "z"
   content /\ genEnd <- P.anyTill (P.string "\n{-GEN:END-}")
   newContent <- lift $ f data_ content
   pure (genStartOpen <> json <> genStartClose <> "\n" <> newContent <> "\n" <> genEnd)
   where
   decode str = str
     # jsonParser
-    # spy "a"
     >>= decodeJson >>> lmap printJsonDecodeError
     # either P.fail pure
+
+replaceComment
+  :: forall m a
+   . MonadRec m
+  => MonadError AppError m
+  => MonadLog AppLog m
+  => DecodeJson a
+  => FilePath
+  -> String
+  -> (a -> String -> m String)
+  -> String
+  -> m String
+replaceComment path id f i = P.replaceT i do
+  Position pos <- position
+  genStartOpen <- P.string ("{-GEN:" <> id <> "\n")
+  json /\ genStartClose <- P.anyTill (P.string "\n-}\n")
+  content /\ genEnd <- P.anyTill (P.string "\n{-GEN:END-}")
+
+  let sourcePos = SourcePosition {line: pos.line, column: pos.column}
+  
+  data_ <-
+    (liftEither $ decode json) `catchError`
+      ( \appError -> do
+          log $ LogError $ AtFilePosition path sourcePos appError
+          throwError appError
+      )
+      # try
+      # lift
+      >>= either (const $ fail "Cannot parse Json") pure
+
+  newContent <-
+    f data_ content `catchError`
+      ( \appError -> do
+          log $ LogError $ AtFilePosition path sourcePos appError
+          throwError appError
+      )
+      # try
+      # lift
+      >>= either (const $ fail "Execution failure") pure
+
+  pure (genStartOpen <> json <> genStartClose <> "\n" <> newContent <> "\n" <> genEnd)
+  where
+  decode str = str
+    # parseToJson
+    # lmap ErrParseToJson
+    >>= decodeJson >>> lmap ErrParseToData
+
+indexToSourcePos :: Int -> String -> Maybe SourcePosition
+indexToSourcePos pos str = go 1 1 (Str.split (Pattern "\n") str)
+  where
+  go :: Int -> Int -> Array String -> _
+  go line idx xs = case uncons xs of
+    Just { head, tail } ->
+      let
+        len = Str.length head
+      in
+        if pos < idx + len then
+          Just $ SourcePosition { line, column: (pos - idx) + 1 }
+        else go (line + 1) (idx + len) tail
+    Nothing -> Nothing
+
+parseToJson :: String -> Either ErrorParseToJson Json
+parseToJson s = jsonParser s
+  # lmap f
+  where
+  f e = runParser e (parseJsonError s)
+    # either (const $ Other e) identity
+
+parseJsonError :: forall m. Monad m => String -> ParserT String m ErrorParseToJson
+parseJsonError json = p1 <|> p2
+  where
+  p1 = do
+    _ <- P.string "Unexpected end of JSON input"
+    _ <- P.eof
+    pure UnexpectedEndOfInput
+  p2 = do
+    _ <- P.string "Unexpected token "
+    tok /\ _ <- P.anyTill $ P.string " "
+    _ <- P.string "in JSON at position "
+    i <- P.intDecimal
+    _ <- P.eof
+    pure $ UnexpectedTokenAtPos tok
+      ( indexToSourcePos i json
+          # fromMaybe (SourcePosition { line: 0, column: 0 })
+      )
 
 parseUserImports :: String -> Maybe (Set String)
 parseUserImports s = s
@@ -131,17 +223,25 @@ type ReplaceInstancesOpts = {}
 
 type ReplaceImportsOpts = {}
 
-patchClassFile :: Array PursModule -> String -> String
-patchClassFile defs file = file
-  # replaceComment "instances"
+patchClassFile
+  :: forall m
+   . MonadRec m
+  => MonadLog AppLog m
+  => MonadError AppError m
+  => FilePath
+  -> Array PursModule
+  -> String
+  -> m String
+patchClassFile path defs file = file
+  # replaceComment path "instances"
       ( \(_ :: ReplaceInstancesOpts) _ -> do
           instances <- defs # genInstances
           pure $ printDecls instances
       )
-  # runImportWriterM
-  #
+  # runImportWriterT
+  >>=
     ( \(file' /\ { imports }) -> file'
-        # replaceComment "imports"
+        # replaceComment path "imports"
             ( \(_ :: ReplaceImportsOpts) oldImports -> do
 
                 oldImports
@@ -154,4 +254,4 @@ patchClassFile defs file = file
             )
 
     )
-  # un Identity
+
