@@ -9,6 +9,7 @@ module TsBridge.Core
   , defaultString
   , genRecord
   , tsModuleFile
+  , tsNewtype
   , tsOpaqueType
   , tsOpaqueType1
   , tsOpaqueType2
@@ -20,7 +21,8 @@ module TsBridge.Core
   , tsTypeAlias
   , tsTypeVar
   , tsValue
-  ) where
+  )
+  where
 
 import Prelude
 
@@ -250,6 +252,8 @@ tsOpaqueTypeImpl pursModuleName pursTypeName targs = opaqueType
   (TsModuleAlias $ dotsToLodashes pursModuleName)
   (TsName pursTypeName)
   (OSet.fromFoldable $ TsName <$> targs)
+
+tsNewtype = undefined
 
 tsOpaqueType
   :: forall a

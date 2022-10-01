@@ -13,5 +13,8 @@
     "bin/index.js",
     "output/**/*.js",
     "assets/**/*.*"
-  ]
+  ],
+  "dependencies": {
+    "prettier": "^2.7.1"
+  }
 }

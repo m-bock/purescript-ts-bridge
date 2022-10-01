@@ -3,12 +3,14 @@ module MyTsBridgeClass where
 {-GEN:imports
 { "autoPrefix": "auto" }
 -}
+
 import Data.Either (Either)
 import Heterogeneous.Mapping (class Mapping)
-import SampleApp.Types as SampleApp.Types
-import TsBridge (TsBridgeM, TsType)
-import TsBridge.Class (defaultProxy, tsOpaqueType, tsOpaqueType2)
+import TsBridge (TsBridgeM, TsType, defaultProxy, tsOpaqueType, tsOpaqueType2)
+import TsBridge.Core (tsNewtype)
 import Type.Proxy (Proxy)
+
+
 {-GEN:END-}
 
 class ToTsBridge a where
@@ -30,9 +32,6 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
 , "exclude": ""
 }
 -}
-
-instance ToTsBridge SampleApp.Types.AppState where
-  toTsBridge = tsOpaqueType "SampleApp.Types" "AppState"
 
 {-GEN:END-}
 

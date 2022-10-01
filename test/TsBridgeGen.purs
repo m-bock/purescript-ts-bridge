@@ -2,23 +2,22 @@ module Test.TsBridgeGen where
 
 import Prelude
 
-import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Rec.Class (class MonadRec)
-import Control.Monad.Writer (WriterT, runWriterT, tell)
+import Control.Monad.Writer (WriterT, tell)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
-import Data.Identity (Identity(..))
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, un)
+import Data.Newtype (class Newtype)
 import Data.String (Pattern(..))
 import Data.String as Str
-import Data.Tuple (Tuple(..), fst)
+import Data.Tuple (Tuple, fst)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
 import PureScript.CST (RecoveredParserResult(..), parseDecl)
 import Test.Spec (Spec, describe, it)
 import Test.Util (shouldEqual)
-import TsBridgeGen (class MonadLog, class MonadWarn, AppError, AppLog, AppWarning, ModuleName(..), Name(..), PursDef(..), PursModule(..), genInstances, getPursDef, printDecls, runImportWriterM, runImportWriterT)
+import TsBridgeGen (class MonadLog, class MonadWarn, AppError, AppLog, AppWarning, ModuleName(..), Name(..), PursDef(..), PursModule(..), genInstances, getPursDef, printPursSnippets, runImportWriterT)
 import TsBridgeGen.Core (patchClassFile)
 
 recResToMaybe :: forall f. RecoveredParserResult f -> Maybe (f Void)
@@ -140,7 +139,7 @@ spec = do
         # genInstances
         # runImportWriterT
         # fst
-        # printDecls
+        # printPursSnippets
         # Str.split (Pattern "\n")
         # shouldEqual $
         [ "instance ToTsBridge My.Foo where"
@@ -186,6 +185,7 @@ derive newtype instance Functor TestM
 derive newtype instance MonadRec TestM
 derive newtype instance MonadError AppError TestM
 derive newtype instance MonadThrow AppError TestM
+
 
 instance MonadLog AppLog TestM where
   log = TestM <<< tell <<< pure

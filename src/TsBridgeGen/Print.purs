@@ -14,9 +14,15 @@ import Data.Traversable (sequence, traverse)
 import Data.Tuple.Nested (type (/\))
 import Data.Typelevel.Undefined (undefined)
 import Dodo as Dodo
-import Language.PS.CST (Declaration(..), Expr(..), Guarded(..), Ident(..), InstanceBinding(..), PSType(..), ProperName(..), ProperNameType_TypeConstructor, QualifiedName, mkModuleName, nonQualifiedName, printDeclaration, printDeclarations, qualifiedName)
+import Effect.Class (class MonadEffect)
+import Language.PS.CST (Comments, Declaration(..), Expr(..), Guarded(..), Ident(..), InstanceBinding(..), PSType(..), ProperName(..), ProperNameType_TypeConstructor, QualifiedName, mkModuleName, nonQualifiedName, printComments, printDeclaration, printDeclarations, qualifiedName)
+import TsBridge (TsDeclaration)
 import TsBridgeGen.Monad (class MonadLog, class MonadWarn, log, warn, warnCount)
 import TsBridgeGen.Types (AppLog, AppWarning, Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..))
+
+data PursCodeSnippet
+  = CodeSnipDecl Declaration
+  | CodeSnipComments (Array String)
 
 newtype ImportWriterM a = ImportWriterM (Writer Accum a)
 newtype ImportWriterT m a = ImportWriterT (WriterT Accum m a)
@@ -33,6 +39,7 @@ derive newtype instance Monad m => MonadTell Accum (ImportWriterT m)
 derive newtype instance MonadTrans ImportWriterT
 derive newtype instance MonadThrow e m => MonadThrow e (ImportWriterT m)
 derive newtype instance MonadError e m => MonadError e (ImportWriterT m)
+derive newtype instance MonadEffect m => MonadEffect (ImportWriterT m)
 
 instance MonadWarn AppWarning m => MonadWarn AppWarning (ImportWriterT m) where
   warn = warn >>> lift
@@ -41,14 +48,13 @@ instance MonadWarn AppWarning m => MonadWarn AppWarning (ImportWriterT m) where
 instance MonadLog AppLog m => MonadLog AppLog (ImportWriterT m) where
   log = log >>> lift
 
-
 runImportWriterM :: forall a. ImportWriterM a -> a /\ { imports :: Set Import }
 runImportWriterM (ImportWriterM ma) = runWriter ma
 
 runImportWriterT :: forall m a. ImportWriterT m a -> m (a /\ { imports :: Set Import })
 runImportWriterT (ImportWriterT ma) = runWriterT ma
 
-genInstances :: forall m. Monad m => Array PursModule -> ImportWriterT m (Array Declaration)
+genInstances :: forall m. Monad m => Array PursModule -> ImportWriterT m (Array PursCodeSnippet)
 genInstances modules = sequence do
   (PursModule mn@(ModuleName mn') defs) <- modules
   pursDef <- defs
@@ -61,35 +67,43 @@ genInstances modules = sequence do
               , as: Name ("Auto." <> mn')
               }
           }
-        pure $
+        pure $ CodeSnipDecl $
           genTsBridgeInstance mn n
             ( (ExprIdent $ nonQualifiedName (Ident "tsOpaqueType"))
                 `ExprApp` (ExprString mn')
                 `ExprApp` (ExprString n')
             )
 
-    DefNewtype n@(Name n') ->
-      pure do
-        tell
-          { imports: Set.singleton $ ImportAuto
-              { from: mn
-              , as: Name ("Auto." <> mn')
-              }
-          }
-        pure $
-          genTsBridgeInstance mn n
-            ( (ExprIdent $ nonQualifiedName (Ident "tsNewtype"))
-                `ExprApp` (ExprString mn')
-                `ExprApp` (ExprString n')
-                `ExprApp` (ExprArray [])
-            )
+    DefType _ -> []
 
-    _ -> mempty
+    DefValue _ -> []
+
+    DefUnsupportedInstAndExport (Name n) reason -> [ pure $ CodeSnipComments [ "`" <> n <> "` is unsupported: " <> reason ] ]
+
+    DefUnsupportedExport _ _ -> []
+
+    DefNewtype n@(Name n') ->
+      []
+
+-- pure do
+--   tell
+--     { imports: Set.singleton $ ImportAuto
+--         { from: mn
+--         , as: Name ("Auto." <> mn')
+--         }
+--     }
+--   pure $ CodeSnipDecl $
+--     genTsBridgeInstance mn n
+--       ( (ExprIdent $ nonQualifiedName (Ident "tsNewtype"))
+--           `ExprApp` (ExprString mn')
+--           `ExprApp` (ExprString n')
+--           `ExprApp` (ExprArray [])
+--       )
 
 genTsProgram :: forall m. Monad m => Array PursModule -> ImportWriterT m String
-genTsProgram = genTsProgram' >>> map printDecls
+genTsProgram = genTsProgram' >>> map printPursSnippets
 
-genTsProgram' :: forall m. Monad m => Array PursModule -> ImportWriterT m (Array Declaration)
+genTsProgram' :: forall m. Monad m => Array PursModule -> ImportWriterT m (Array PursCodeSnippet)
 genTsProgram' modules = do
   ms <- modules
     # traverse genTsModuleFile
@@ -100,14 +114,14 @@ genTsProgram' modules = do
     valueName = Ident "generatedTsProgram"
 
   let
-    signature = DeclSignature
+    signature = CodeSnipDecl $ DeclSignature
       { comments: Nothing, ident: valueName, type_ }
 
   let
     body = ExprIdent (nonQualifiedName $ Ident "tsProgram") `ExprApp` ms
 
   let
-    valueDef = DeclValue
+    valueDef = CodeSnipDecl $ DeclValue
       { comments: Nothing
       , valueBindingFields:
           { name: valueName
@@ -172,20 +186,24 @@ genTsDef (ModuleName mn) = case _ of
               (qualifiedName (mkModuleName $ pure mn) (ProperName n))
         )
 
+  DefUnsupportedInstAndExport name reason -> unsupported name reason
+  DefUnsupportedExport name reason -> unsupported name reason
+
+unsupported (Name n) reason = ExprIdent (nonQualifiedName $ Ident "tsUnsupported")
+  `ExprApp` ExprString n
+  `ExprApp` ExprString reason
+
 genProxy :: QualifiedName (ProperName ProperNameType_TypeConstructor) -> Expr
 genProxy qn = ExprTyped
   (ExprConstructor $ nonQualifiedName $ ProperName "Proxy")
   (TypeWildcard `TypeApp` TypeConstructor qn)
 
-printDecls :: Array Declaration -> String
-printDecls = printDeclarations
-  >>> Dodo.print Dodo.plainText Dodo.twoSpaces
-  >>> instName.replace
-
-printDecl :: Declaration -> String
-printDecl = printDeclaration
-  >>> Dodo.print Dodo.plainText Dodo.twoSpaces
-  >>> instName.replace
+printPursSnippets :: Array PursCodeSnippet -> String
+printPursSnippets = Str.joinWith "\n\n" <<< map case _ of
+  CodeSnipDecl d -> printDeclaration d
+    # Dodo.print Dodo.plainText Dodo.twoSpaces
+    # instName.replace
+  CodeSnipComments cs -> cs <#> ("-- " <> _) # Str.joinWith "\n"
 
 printImports :: Set Import -> String
 printImports x = x
@@ -196,7 +214,7 @@ printImports x = x
 printImport :: Import -> String
 printImport = case _ of
   ImportAuto { from: ModuleName mn, as: Name n } ->
-    "import " <> mn <> " as " <> "Auto." <> n
+    "import " <> mn <> " as " <> n
   ImportUser s -> s
 
 instName :: { name :: String, replace :: String -> String }

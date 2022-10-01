@@ -7,9 +7,10 @@ dist: build
     cp -r output assets package.json bin -t dist
 
 run:
+    mkdir -p tmp
     export ASSETS_DIR=assets; \
-    spago run --main TsBridgeGen.Cli
-
+    spago --quiet --no-psa run --main TsBridgeGen.Main --node-args \
+    "--modules-file tmp/MyTsBridgeModules.purs --class-file tmp/MyTsBridgeClass.purs"
 test:
     spago test
 

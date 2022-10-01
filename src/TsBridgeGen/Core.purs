@@ -20,6 +20,9 @@ import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..), snd)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
+import Debug (spy, spyWith)
+import Effect (Effect)
+import Effect.Class (class MonadEffect, liftEffect)
 import Node.Path (FilePath)
 import Parsing (ParserT, Position(..), fail, position, runParser)
 import Parsing (fail) as P
@@ -27,9 +30,9 @@ import Parsing.String (anyTill, eof, string) as P
 import Parsing.String.Basic (intDecimal) as P
 import Parsing.String.Replace (replaceT) as P
 import PureScript.CST (RecoveredParserResult(..), parseImportDecl, parseModule) as CST
-import PureScript.CST.Types (Declaration(..), Export(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Proper(..), Separated(..), Type(..), Wrapped(..)) as CST
+import PureScript.CST.Types (Declaration(..), Export(..), Foreign(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Proper(..), Separated(..), Type(..), Wrapped(..)) as CST
 import TsBridgeGen.Monad (class MonadLog, log)
-import TsBridgeGen.Print (genInstances, printDecls, printImports, runImportWriterT)
+import TsBridgeGen.Print (genInstances, printImports, printPursSnippets, runImportWriterT)
 import TsBridgeGen.Types (AppError(..), AppLog(..), ErrorParseToJson(..), Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), SourcePosition(..))
 
 parseCstModule :: String -> Either AppError (CST.Module Void)
@@ -67,17 +70,33 @@ getPursDef = case _ of
     }
     _ -> Just $ DefData (Name name)
 
-  CST.DeclSignature (CST.Labeled { label, value }) ->
-    let
-      CST.Name { name: CST.Ident n } = label
+  CST.DeclData
+    { name: CST.Name { name: CST.Proper name } }
+    _ -> Just $ DefUnsupportedInstAndExport (Name name) "data type with arguments"
 
-    in
-      case value of
-        CST.TypeConstructor _ -> Just $ DefValue (Name n)
-        _ -> Nothing
+  -- CST.DeclSignature (CST.Labeled { label, value }) ->
+  --   let
+  --     CST.Name { name: CST.Ident n } = label
 
-  CST.DeclNewtype _ _ (CST.Name { name: CST.Proper n }) _ ->
-    Just $ DefNewtype (Name n)
+  --   in
+  --     case value of
+  --       CST.TypeConstructor _ -> Just $ DefValue (Name n)
+  --       _ -> Nothing
+
+  CST.DeclSignature
+    ( CST.Labeled
+        { label: CST.Name { name: CST.Ident n }
+        }
+    ) -> Just $ DefUnsupportedExport (Name n) "value"
+
+  CST.DeclNewtype
+    { name: CST.Name { name: CST.Proper n }
+    , vars: []
+    }
+    _
+    _
+    _ -> Just $ DefUnsupportedInstAndExport (Name n) "newtype"
+  --Just $ DefNewtype (Name n)
 
   CST.DeclType
     { name: CST.Name { name: CST.Proper name }
@@ -85,6 +104,31 @@ getPursDef = case _ of
     }
     _
     _ -> Just $ DefType (Name name)
+
+  CST.DeclType
+    { name: CST.Name { name: CST.Proper name }
+    }
+    _
+    _ -> Just $ DefUnsupportedExport (Name name) "type with arguments"
+
+  CST.DeclForeign _ _
+    ( CST.ForeignValue
+        ( CST.Labeled
+            { label: CST.Name { name: CST.Ident n }
+            }
+        )
+    ) ->
+    Just $ DefUnsupportedExport (Name n) "foreign import"
+
+  CST.DeclForeign _ _
+    ( CST.ForeignData _
+        ( CST.Labeled
+            { label: CST.Name { name: CST.Proper n }
+            }
+        )
+    ) ->
+    Just $ DefUnsupportedInstAndExport (Name n) "foreign import"
+
   _ -> Nothing
 
 getName :: PursDef -> String
@@ -92,35 +136,13 @@ getName = case _ of
   DefData (Name n) -> n
   _ -> ""
 
-replaceComment'
-  :: forall m a
-   . MonadRec m
-  => MonadError AppError m
-  => DecodeJson a
-  => String
-  -> (a -> String -> m String)
-  -> String
-  -> m String
-replaceComment' id f i = P.replaceT i do
-  genStartOpen <- P.string ("{-GEN:" <> id <> "\n")
-  json /\ genStartClose <- P.anyTill (P.string "\n-}\n")
-  _ <- lift $ throwError $ ErrLiteral "tada"
-  data_ <- decode json
-  content /\ genEnd <- P.anyTill (P.string "\n{-GEN:END-}")
-  newContent <- lift $ f data_ content
-  pure (genStartOpen <> json <> genStartClose <> "\n" <> newContent <> "\n" <> genEnd)
-  where
-  decode str = str
-    # jsonParser
-    >>= decodeJson >>> lmap printJsonDecodeError
-    # either P.fail pure
-
 replaceComment
   :: forall m a
    . MonadRec m
   => MonadError AppError m
   => MonadLog AppLog m
   => DecodeJson a
+  --  => MonadEffect m
   => FilePath
   -> String
   -> (a -> String -> m String)
@@ -132,8 +154,8 @@ replaceComment path id f i = P.replaceT i do
   json /\ genStartClose <- P.anyTill (P.string "\n-}\n")
   content /\ genEnd <- P.anyTill (P.string "\n{-GEN:END-}")
 
-  let sourcePos = SourcePosition {line: pos.line, column: pos.column}
-  
+  let sourcePos = SourcePosition { line: pos.line, column: pos.column }
+
   data_ <-
     (liftEither $ decode json) `catchError`
       ( \appError -> do
@@ -154,12 +176,16 @@ replaceComment path id f i = P.replaceT i do
       # lift
       >>= either (const $ fail "Execution failure") pure
 
+  --  newJson <- lift $ liftEffect $ runPrettier json
+
   pure (genStartOpen <> json <> genStartClose <> "\n" <> newContent <> "\n" <> genEnd)
   where
   decode str = str
     # parseToJson
     # lmap ErrParseToJson
     >>= decodeJson >>> lmap ErrParseToData
+
+foreign import runPrettier :: String -> Effect String
 
 indexToSourcePos :: Int -> String -> Maybe SourcePosition
 indexToSourcePos pos str = go 1 1 (Str.split (Pattern "\n") str)
@@ -228,6 +254,7 @@ patchClassFile
    . MonadRec m
   => MonadLog AppLog m
   => MonadError AppError m
+  --  => MonadEffect m
   => FilePath
   -> Array PursModule
   -> String
@@ -236,7 +263,7 @@ patchClassFile path defs file = file
   # replaceComment path "instances"
       ( \(_ :: ReplaceInstancesOpts) _ -> do
           instances <- defs # genInstances
-          pure $ printDecls instances
+          pure $ printPursSnippets instances
       )
   # runImportWriterT
   >>=

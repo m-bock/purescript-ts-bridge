@@ -12,6 +12,7 @@ data AppError
   = ErrSpawn String (Array String)
   | ErrParseModule
   | ErrReadFile String
+  | ErrWriteFile String
   | ErrExpandGlobs
   | ErrParseEnvVars TypedEnv.EnvError
   | ErrLiteral String
@@ -44,6 +45,8 @@ data PursDef
   | DefNewtype Name
   | DefType Name
   | DefValue Name
+  | DefUnsupportedInstAndExport Name String
+  | DefUnsupportedExport Name String
 
 data ErrorParseToJson
   = UnexpectedTokenAtPos String SourcePosition
@@ -58,7 +61,6 @@ derive instance Generic AppLog _
 derive instance Generic AppWarning _
 derive instance Generic ErrorParseToJson _
 derive instance Generic SourcePosition _
-
 
 derive instance Eq PursModule
 derive instance Eq ModuleName
@@ -94,7 +96,6 @@ derive instance Generic AppError _
 derive instance Eq SourcePosition
 
 derive instance Eq AppError
-
 
 derive instance Eq ErrorParseToJson
 
