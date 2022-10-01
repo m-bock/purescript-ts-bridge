@@ -12,6 +12,7 @@ import Test.TsBridgeGen as Test.TsBridgeGen
 
 main :: Effect Unit
 main = launchAff_ $ runSpec [ consoleReporter ] do
-  Test.TsBridge.spec
-  Test.TsBridgeGen.spec
+  --Test.TsBridge.spec
+  --Test.TsBridgeGen.spec
+  pure unit
   

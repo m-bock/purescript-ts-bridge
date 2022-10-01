@@ -16,3 +16,9 @@ jobs:
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         folder: generated-docs
+
+    - name: Deploy 🚀
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        branch: dist
+        folder: dist
