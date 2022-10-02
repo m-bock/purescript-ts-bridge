@@ -117,11 +117,11 @@ var tsTypeAlias = function (dictMapping) {
                 return map(function (v) {
                     return [ new TsBridge_DTS.TsDeclTypeDef(new TsBridge_DTS.TsName(n), TsBridge_DTS.Public.value, coerce(v.value1.floating), v.value0) ];
                 })(listens((function () {
-                    var $190 = un(TsBridge_Monad.TsBridgeAccum);
-                    return function ($191) {
+                    var $196 = un(TsBridge_Monad.TsBridgeAccum);
+                    return function ($197) {
                         return (function (v) {
                             return v.scope;
-                        })($190($191));
+                        })($196($197));
                     };
                 })())(t));
             };
@@ -211,7 +211,9 @@ var opaqueType = function (filePath) {
                 return function (args$prime) {
                     return bind(sequence(args$prime))(function (args) {
                         var typeDefs = [ new TsBridge_DTS.TsModuleFile(filePath, new TsBridge_DTS.TsModule(Data_Set.empty, [ mkOpaqueTypeDecl(name)(targs) ])) ];
-                        var imports = Data_Set.singleton(new TsBridge_DTS.TsImport(moduleAlias, filePathToModulePath(filePath)));
+                        var imports = Data_Set.singleton(new TsBridge_DTS.TsImport(moduleAlias, (function (v) {
+                            return new TsBridge_DTS.TsModulePath("~/" + v.value0);
+                        })(filePathToModulePath(filePath))));
                         return discard(tell(union1(mempty1)({
                             typeDefs: typeDefs,
                             imports: imports
@@ -422,6 +424,16 @@ var defaultProxy = function (dictMapping) {
         };
     };
 };
+var defaultPromise = function (dictMapping) {
+    var mapping = Heterogeneous_Mapping.mapping(dictMapping);
+    return function (f) {
+        return function (v) {
+            return bind(mapping(f)(Type_Proxy["Proxy"].value))(function (x) {
+                return pure(new TsBridge_DTS.TsTypeConstructor(new TsBridge_DTS.TsQualName(Data_Maybe.Nothing.value, new TsBridge_DTS.TsName("Promise")), [ x ]));
+            });
+        };
+    };
+};
 var defaultNumber = function (v) {
     return pure(TsBridge_DTS.TsTypeNumber.value);
 };
@@ -478,6 +490,7 @@ export {
     defaultEffect,
     defaultFunction,
     defaultNumber,
+    defaultPromise,
     defaultProxy,
     defaultRecord,
     defaultString,

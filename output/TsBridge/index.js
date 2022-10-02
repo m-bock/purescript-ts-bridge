@@ -43,6 +43,7 @@ export {
     defaultEffect,
     defaultFunction,
     defaultNumber,
+    defaultPromise,
     defaultProxy,
     defaultRecord,
     defaultString,
