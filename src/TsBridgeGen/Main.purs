@@ -9,6 +9,7 @@ import Data.Set (Set)
 import Effect (Effect)
 import Effect.Aff (Aff, Error, throwError, try)
 import Effect.Aff.Class (liftAff)
+import Effect.Class (liftEffect)
 import Node.ChildProcess (Exit(..), defaultSpawnOptions)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff as FS
@@ -32,6 +33,7 @@ main = do
           , writeTextFile
           , readTextFile
           , expandGlobsCwd
+          , runPrettier
           }
       }
   runAppM appEnv app
@@ -47,6 +49,13 @@ writeTextFile path content = FS.writeTextFile UTF8 path content
 readTextFile :: FilePath -> AppM String
 readTextFile path = FS.readTextFile UTF8 path
   # liftAffWithErr (const $ ErrReadFile path)
+
+foreign import runPrettierImpl :: String -> Effect String
+
+runPrettier :: String -> AppM String
+runPrettier str = runPrettierImpl str
+  # liftEffect
+  # liftAffWithErr (const $ ErrLiteral "Prettier error")
 
 spawn :: String -> Array String -> AppM { stderr :: String, stdout :: String }
 spawn cmd args = do

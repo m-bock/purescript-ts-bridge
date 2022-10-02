@@ -2,9 +2,7 @@ module TsBridgeGen.Print where
 
 import Prelude
 
-import Control.Monad.Error.Class (class MonadError, class MonadThrow)
-import Control.Monad.Rec.Class (class MonadRec)
-import Control.Monad.Writer (class MonadTell, class MonadTrans, Writer, WriterT, lift, runWriter, runWriterT, tell)
+import Control.Monad.Writer (Writer, WriterT, runWriter, runWriterT, tell)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
@@ -12,47 +10,24 @@ import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Traversable (sequence, traverse)
 import Data.Tuple.Nested (type (/\))
-import Data.Typelevel.Undefined (undefined)
 import Dodo as Dodo
-import Effect.Class (class MonadEffect)
-import Language.PS.CST (Comments, Declaration(..), Expr(..), Guarded(..), Ident(..), InstanceBinding(..), PSType(..), ProperName(..), ProperNameType_TypeConstructor, QualifiedName, mkModuleName, nonQualifiedName, printComments, printDeclaration, printDeclarations, qualifiedName)
-import TsBridge (TsDeclaration)
-import TsBridgeGen.Monad (class MonadLog, class MonadWarn, log, warn, warnCount)
-import TsBridgeGen.Types (AppLog, AppWarning, Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..))
+import Language.PS.CST (Declaration(..), Expr(..), Guarded(..), Ident(..), InstanceBinding(..), PSType(..), ProperName(..), ProperNameType_TypeConstructor, QualifiedName, mkModuleName, nonQualifiedName, printDeclaration, qualifiedName)
+import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..))
 
 data PursCodeSnippet
   = CodeSnipDecl Declaration
   | CodeSnipComments (Array String)
 
-newtype ImportWriterM a = ImportWriterM (Writer Accum a)
-newtype ImportWriterT m a = ImportWriterT (WriterT Accum m a)
+type ImportWriterM a = Writer Accum a
+type ImportWriterT m a = WriterT Accum m a
 
 type Accum = { imports :: Set Import }
 
-derive newtype instance Bind m => Bind (ImportWriterT m)
-derive newtype instance Monad m => Monad (ImportWriterT m)
-derive newtype instance Apply m => Apply (ImportWriterT m)
-derive newtype instance Applicative m => Applicative (ImportWriterT m)
-derive newtype instance Functor m => Functor (ImportWriterT m)
-derive newtype instance MonadRec m => MonadRec (ImportWriterT m)
-derive newtype instance Monad m => MonadTell Accum (ImportWriterT m)
-derive newtype instance MonadTrans ImportWriterT
-derive newtype instance MonadThrow e m => MonadThrow e (ImportWriterT m)
-derive newtype instance MonadError e m => MonadError e (ImportWriterT m)
-derive newtype instance MonadEffect m => MonadEffect (ImportWriterT m)
-
-instance MonadWarn AppWarning m => MonadWarn AppWarning (ImportWriterT m) where
-  warn = warn >>> lift
-  warnCount = warnCount # lift
-
-instance MonadLog AppLog m => MonadLog AppLog (ImportWriterT m) where
-  log = log >>> lift
-
 runImportWriterM :: forall a. ImportWriterM a -> a /\ { imports :: Set Import }
-runImportWriterM (ImportWriterM ma) = runWriter ma
+runImportWriterM ma = runWriter ma
 
 runImportWriterT :: forall m a. ImportWriterT m a -> m (a /\ { imports :: Set Import })
-runImportWriterT (ImportWriterT ma) = runWriterT ma
+runImportWriterT ma = runWriterT ma
 
 genInstances :: forall m. Monad m => Array PursModule -> ImportWriterT m (Array PursCodeSnippet)
 genInstances modules = sequence do
@@ -189,6 +164,7 @@ genTsDef (ModuleName mn) = case _ of
   DefUnsupportedInstAndExport name reason -> unsupported name reason
   DefUnsupportedExport name reason -> unsupported name reason
 
+unsupported :: Name -> String -> Expr
 unsupported (Name n) reason = ExprIdent (nonQualifiedName $ Ident "tsUnsupported")
   `ExprApp` ExprString n
   `ExprApp` ExprString reason

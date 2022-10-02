@@ -4,23 +4,22 @@ module TsBridgeGen.Monad
   , AppM
   , class MonadApp
   , class MonadLog
-  , class MonadWarn
   , log
   , runAppM
-  , warn
-  , warnCount
   )
   where
 
 import Prelude
 
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, try)
-import Control.Monad.Except (ExceptT, runExceptT)
+import Control.Monad.Except (ExceptT, lift, runExceptT)
 import Control.Monad.Reader (class MonadAsk, ReaderT, runReaderT)
 import Control.Monad.Rec.Class (class MonadRec)
+import Control.Monad.Writer (WriterT(..))
 import Data.Either (Either(..))
 import Data.Either.Nested (type (\/))
 import Data.Set (Set)
+import Data.Typelevel.Undefined (undefined)
 import Dodo as Dodo
 import Effect (Effect)
 import Effect.Aff (Aff, Error, launchAff_)
@@ -53,6 +52,8 @@ newtype AppM a = AppM
       a
   )
 
+  
+
 newtype AppEnv m = AppEnv
   { config :: AppConfig
   , capabilities :: AppCapabalities m
@@ -63,6 +64,7 @@ newtype AppCapabalities m = AppCapabalities
   , readTextFile :: FilePath -> m String
   , writeTextFile :: FilePath -> String -> m Unit
   , expandGlobsCwd :: Array String -> m (Set FilePath)
+  , runPrettier :: String -> m String
   }
 
 runAppM :: forall a. AppEnv AppM -> AppM a -> Effect Unit
@@ -89,16 +91,26 @@ derive newtype instance MonadRec AppM
 instance MonadLog AppLog AppM where
   log = showPretty >>> E.log
 
-instance MonadWarn AppWarning AppM where
-  warn = showPretty >>> E.warn
-  warnCount = pure 99
+-- instance MonadWarn AppWarning AppM where
+--   warn = showPretty >>> E.warn
+--   warnCount = pure 99
 
 class Monad m <= MonadLog l m where
   log :: l -> m Unit
 
-class Monad m <= MonadWarn w m | m -> w where
-  warn :: w -> m Unit
-  warnCount :: m Int
+class  Monad m <= MonadErrorCount m where
+  errorCount :: m Int
+
+
+instance (Monoid w, MonadErrorCount m) => MonadErrorCount (WriterT w m ) where
+  errorCount = errorCount # lift
+
+instance (Monoid w, MonadLog l m) => MonadLog l (WriterT w m ) where
+  log = log >>> lift
+
+-- class Monad m <= MonadWarn w m | m -> w where
+--   warn :: w -> m Unit
+--   warnCount :: m Int
 
 handleErrors :: forall a. Error \/ AppError \/ a -> Effect a
 handleErrors = case _ of

@@ -16,9 +16,10 @@ import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
 import PureScript.CST (RecoveredParserResult(..), parseDecl)
 import Test.Spec (Spec, describe, it)
+import Test.TsBridgeGen.Monad (TestMResult(..), runTestM, runTestM_)
 import Test.Util (shouldEqual)
-import TsBridgeGen (class MonadLog, class MonadWarn, AppError, AppLog, AppWarning, ModuleName(..), Name(..), PursDef(..), PursModule(..), genInstances, getPursDef, printPursSnippets, runImportWriterT)
-import TsBridgeGen.Core (patchClassFile)
+import TsBridgeGen (class MonadApp, class MonadLog, AppError, AppLog, AppWarning, ModuleName(..), Name(..), PursDef(..), PursModule(..), genInstances, getPursDef, printPursSnippets, runImportWriterT)
+import TsBridgeGen.Cli (patchClassFile)
 
 recResToMaybe :: forall f. RecoveredParserResult f -> Maybe (f Void)
 recResToMaybe = case _ of
@@ -66,37 +67,39 @@ spec = do
             , "{-GEN:END-}"
             ]
         )
-        # runTestM
-        # lmap (map $ Str.split $ Pattern "\n")
+        # runTestM_
+        <#> (Str.split $ Pattern "\n")
         # shouldEqual
         $
-          ( (Right
-              [ "module MyApp.TsBridgeClass where"
-              , ""
-              , "{-GEN:imports"
-              , "{ \"autoPrefix\": \"Auto\" }"
-              , "-}"
-              , ""
-              , "import Module1 as Auto.Module1"
-              , "import Module2 as Auto.Module2"
-              , "import Data.Either (Either)"
-              , ""
-              , "{-GEN:END-}"
-              , ""
-              , "{-GEN:instances"
-              , "{ \"include\": \"\""
-              , ", \"exclude\": \"\""
-              , "}"
-              , "-}"
-              , ""
-              , "instance ToTsBridge Auto.Module1.Foo1 where"
-              , "  toTsBridge = tsOpaqueType \"Module1\" \"Foo1\""
-              , ""
-              , "instance ToTsBridge Auto.Module2.Foo2 where"
-              , "  toTsBridge = tsOpaqueType \"Module2\" \"Foo2\""
-              , ""
-              , "{-GEN:END-}"
-              ]) /\ []
+          ( TestMResult {} []
+              ( Right
+                  [ "module MyApp.TsBridgeClass where"
+                  , ""
+                  , "{-GEN:imports"
+                  , "{ \"autoPrefix\": \"Auto\" }"
+                  , "-}"
+                  , ""
+                  , "import Module1 as Auto.Module1"
+                  , "import Module2 as Auto.Module2"
+                  , "import Data.Either (Either)"
+                  , ""
+                  , "{-GEN:END-}"
+                  , ""
+                  , "{-GEN:instances"
+                  , "{ \"include\": \"\""
+                  , ", \"exclude\": \"\""
+                  , "}"
+                  , "-}"
+                  , ""
+                  , "instance ToTsBridge Auto.Module1.Foo1 where"
+                  , "  toTsBridge = tsOpaqueType \"Module1\" \"Foo1\""
+                  , ""
+                  , "instance ToTsBridge Auto.Module2.Foo2 where"
+                  , "  toTsBridge = tsOpaqueType \"Module2\" \"Foo2\""
+                  , ""
+                  , "{-GEN:END-}"
+                  ]
+              )
           )
 
   describe "Data Type" do
@@ -170,28 +173,3 @@ spec = do
 
 --     it "" do
 --       2 `shouldEqual` 2
-
-newtype TestM a = TestM (WriterT (Array AppLog) (Either AppError) a)
-
-instance MonadWarn AppWarning TestM where
-  warn _ = pure unit
-  warnCount = pure 0
-
-derive newtype instance Bind TestM
-derive newtype instance Monad TestM
-derive newtype instance Apply TestM
-derive newtype instance Applicative TestM
-derive newtype instance Functor TestM
-derive newtype instance MonadRec TestM
-derive newtype instance MonadError AppError TestM
-derive newtype instance MonadThrow AppError TestM
-
-
-instance MonadLog AppLog TestM where
-  log = TestM <<< tell <<< pure
-
-
-derive instance Newtype (TestM a) _
-
-runTestM :: forall a. TestM a -> (Tuple (Either AppError a) (Array AppLog))
-runTestM = undefined -- un TestM >>> runWriterT
