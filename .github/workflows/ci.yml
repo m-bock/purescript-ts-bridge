@@ -10,17 +10,14 @@ jobs:
         extra_nix_config: |
           access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
     
-    - run: nix develop --command just install
-    - run: nix develop --command just test
-    - run: nix develop --command just docs
-    - run: nix develop --command just dist
+    - run: nix develop --command just ci
 
-    - name: Deploy 🚀
+    - name: Deploy Docs 🚀
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         folder: generated-docs
 
-    - name: Deploy 🚀
+    - name: Deploy Dist 🚀
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         branch: dist

@@ -2,7 +2,7 @@ build:
     spago build
 
 dist: build
-    rm -rd dist
+    rm -rf dist
     mkdir dist
     cp -r output assets package.json bin -t dist
 
@@ -22,3 +22,5 @@ docs:
 
 install:
     yarn install
+
+ci: install test docs dist
