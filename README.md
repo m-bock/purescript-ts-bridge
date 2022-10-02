@@ -43,3 +43,8 @@ user = {
 myFn :: Int -> String -> Boolean
 myFn n str = true
 ```
+
+
+# Sample Project
+
+[Link](https://github.com/thought2/purescript-typescript-bridge.sample-project)
