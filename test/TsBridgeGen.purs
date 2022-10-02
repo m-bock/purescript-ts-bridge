@@ -117,7 +117,7 @@ spec = do
         # parseDecl
         # recResToMaybe
         >>= getPursDef
-        # shouldEqual (Just $ DefData (Name "Foo"))
+        # shouldEqual (Just (DefUnsupportedExport (Name "Foo") "data type")) -- (Just $ DefData (Name "Foo"))
 
   describe "Value" do
     it "parses correctly" do
@@ -133,7 +133,7 @@ spec = do
         # parseDecl
         # recResToMaybe
         >>= getPursDef
-        # shouldEqual (Just $ DefType (Name "Foo"))
+        # shouldEqual (Just (DefUnsupportedExport (Name "Foo") "type alias")) -- (Just $ DefType (Name "Foo"))
 
   describe "Newtype" do
     it "parses correctly" do
