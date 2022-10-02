@@ -2,6 +2,7 @@ module TsBridge.Core
   ( class GenRecord
   , defaultArray
   , defaultBoolean
+  , defaultEffect
   , defaultFunction
   , defaultNumber
   , defaultProxy
@@ -22,8 +23,7 @@ module TsBridge.Core
   , tsTypeAlias
   , tsTypeVar
   , tsValue
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -37,6 +37,7 @@ import Data.Newtype (over, over2, unwrap, wrap, un)
 import Data.Set as Set
 import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
+import Data.Set.Ordered as Oset
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -168,6 +169,19 @@ defaultBoolean _ = pure TsTypeBoolean
 
 defaultUnit :: Unit -> TsBridgeM TsType
 defaultUnit _ = pure TsTypeVoid
+
+defaultEffect
+  :: forall a f
+   . Mapping f (Proxy a) (TsBridgeM TsType)
+  => f
+  -> Array a
+  -> TsBridgeM TsType
+defaultEffect f _ = do
+  x <- (mapping f (Proxy :: _ a))
+  pure $ TsTypeFunction
+    (TsTypeArgsQuant $ coerce $ Oset.singleton $ TsName "A")
+    []
+    x
 
 defaultArray
   :: forall a f
