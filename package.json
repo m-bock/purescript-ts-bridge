@@ -1,0 +1,21 @@
+{
+  "name": "purescript-typescript-bridge",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:thought2/purescript-typescript-bridge.git",
+  "author": "Michael Bock <no-day@posteo.net>",
+  "license": "MIT",
+  "bin": {
+    "ts-bridge": "bin/index.js"
+  },
+  "type": "module",
+  "files": [
+    "bin/index.js",
+    "output/**/*.js",
+    "assets/**/*.*"
+  ],
+  "dependencies": {
+    "minimatch": "^5.1.0",
+    "prettier": "^2.7.1"
+  }
+}
