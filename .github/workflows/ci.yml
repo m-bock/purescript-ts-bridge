@@ -9,6 +9,8 @@ jobs:
       with:
         extra_nix_config: |
           access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+    
+    - run: nix develop --command just install
     - run: nix develop --command just test
     - run: nix develop --command just docs
     - run: nix develop --command just dist

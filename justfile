@@ -19,3 +19,6 @@ format:
 
 docs:
     spago docs --no-search
+
+install:
+    yarn install

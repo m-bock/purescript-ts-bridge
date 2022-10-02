@@ -40,6 +40,7 @@
             pkgs.spago
             pkgs.nodePackages.prettier
             pkgs.just
+            pkgs.yarn
           ];
         };
       }

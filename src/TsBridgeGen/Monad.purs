@@ -12,13 +12,16 @@ import Prelude
 
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, try)
 import Control.Monad.Except (ExceptT, lift, runExceptT)
-import Control.Monad.Reader (class MonadAsk, ReaderT, runReaderT)
+import Control.Monad.Reader (class MonadAsk, ReaderT, ask, runReaderT)
 import Control.Monad.Rec.Class (class MonadRec)
 import Control.Monad.Writer (WriterT(..))
 import Data.Either (Either(..))
 import Data.Either.Nested (type (\/))
 import Data.Set (Set)
+import Data.String (Pattern(..))
+import Data.String as Str
 import Data.Typelevel.Undefined (undefined)
+import Dodo (Doc, indent, lines, plainText, print, text, twoSpaces)
 import Dodo as Dodo
 import Effect (Effect)
 import Effect.Aff (Aff, Error, launchAff_)
@@ -33,7 +36,7 @@ import PureScript.CST.Types (Expr)
 import Tidy (defaultFormatOptions, formatExpr)
 import Tidy.Doc (FormatDoc(..))
 import TsBridgeGen.Config (AppConfig(..))
-import TsBridgeGen.Types (AppError, AppLog, AppWarning)
+import TsBridgeGen.Types (AppError(..), AppLog(..), AppWarning, SourcePosition(..))
 
 class
   ( MonadAsk (AppEnv m) m
@@ -86,7 +89,64 @@ derive newtype instance MonadAsk (AppEnv AppM) AppM
 derive newtype instance MonadRec AppM
 
 instance MonadLog AppLog AppM where
-  log = showPretty >>> E.log
+  log x = do
+    printAppLog x
+      <#> Dodo.print Dodo.plainText Dodo.twoSpaces
+      >>= E.log
+
+printAppLog :: forall m a. MonadApp m => AppLog -> m (Doc a)
+printAppLog x = do
+  AppEnv { config: config@(AppConfig { debug }) } <- ask
+  c <- pure 0 -- errorCount
+
+  pure
+    if debug then showDoc x
+    else case x of
+      LogLiteral str -> str # Str.split (Pattern "\n") <#> text # lines
+      LogError e -> lines
+        [ text ("Error " <> show c <> ":")
+        , indent $ printError config e
+        ]
+
+printError :: forall a. AppConfig -> AppError -> Doc a
+printError config@(AppConfig { debug }) x =
+  if debug then showDoc x
+  else case x of
+    ErrSpawn cmd _ ->
+      text ("Failed to spawn Command" <> cmd)
+    ErrParseModule ->
+      text ("Failed to parse PureScript module")
+    ErrReadFile path ->
+      text ("Failed to read from file " <> path)
+    ErrWriteFile path ->
+      text ("Failed to write to file " <> path)
+    ErrExpandGlobs ->
+      text "Failed to expand globs"
+    ErrParseEnvVars _ ->
+      text "Failed to parse environment variables"
+    ErrLiteral str -> str
+      # Str.split (Pattern "\n")
+      <#> text
+      # lines
+    ErrParseToJson _ ->
+      text "Found invalid JSON"
+    ErrParseToData _ ->
+      text "JSON config does not have the right shape"
+    ErrUnknown ->
+      text "An unknown error occured. Try DEBUG=true" --
+    AtFilePosition fp p e -> lines
+      [ printError config e
+      , text ("at " <> printPos fp p)
+      ]
+
+-- FilePath SourcePosition AppError
+
+printPos :: FilePath -> SourcePosition -> String
+printPos fp (SourcePosition { line, column }) = fp
+  <> ":"
+  <> show line
+  <> ":"
+  <> show column
 
 -- instance MonadWarn AppWarning AppM where
 --   warn = showPretty >>> E.warn
@@ -109,13 +169,13 @@ instance (Monoid w, MonadLog l m) => MonadLog l (WriterT w m) where
 --   warnCount :: m Int
 
 handleErrors :: forall a. AppConfig -> Error \/ AppError \/ a -> Effect a
-handleErrors (AppConfig { debug }) = case _ of
+handleErrors config@(AppConfig { debug }) = case _ of
   Left err ->
     if debug then
       quitWithError ("Unexpected Error.\n" <> show err)
     else
       quitWithError "Unexpected Error. Try to set DEBUG=true"
-  Right (Left appError) -> quitWithError $ printError appError
+  Right (Left appError) -> quitWithError $ Dodo.print Dodo.plainText Dodo.twoSpaces $ printError config appError
   Right (Right x) -> pure x
 
 quitWithError :: forall a. String -> Effect a
@@ -123,16 +183,12 @@ quitWithError msg = do
   error msg
   exit 1
 
-printError :: AppError -> String
-printError = showPretty
-
 showPretty :: forall a. Show a => a -> String
-showPretty = show >>> parseExpr >>> case _ of
-  ParseSucceeded m -> printExpr m
-  _ -> "<invalid>"
+showPretty = showDoc >>> Dodo.print Dodo.plainText Dodo.twoSpaces
 
-printExpr :: Expr Void -> String
-printExpr expr =
-  formatExpr defaultFormatOptions expr
+showDoc :: forall a b. Show a => a -> Doc b
+showDoc = show >>> parseExpr >>> case _ of
+  ParseSucceeded expr -> formatExpr defaultFormatOptions expr
     # (\(FormatDoc { doc }) -> doc)
-    # Dodo.print Dodo.plainText Dodo.twoSpaces
+  _ -> text "<invalid>"
+
