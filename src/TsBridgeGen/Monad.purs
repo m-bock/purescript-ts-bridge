@@ -14,14 +14,13 @@ import Control.Monad.Error.Class (class MonadError, class MonadThrow, try)
 import Control.Monad.Except (ExceptT, lift, runExceptT)
 import Control.Monad.Reader (class MonadAsk, ReaderT, ask, runReaderT)
 import Control.Monad.Rec.Class (class MonadRec)
-import Control.Monad.Writer (WriterT(..))
+import Control.Monad.Writer (WriterT)
 import Data.Either (Either(..))
 import Data.Either.Nested (type (\/))
 import Data.Set (Set)
 import Data.String (Pattern(..))
 import Data.String as Str
-import Data.Typelevel.Undefined (undefined)
-import Dodo (Doc, indent, lines, plainText, print, text, twoSpaces)
+import Dodo (Doc, indent, lines, text)
 import Dodo as Dodo
 import Effect (Effect)
 import Effect.Aff (Aff, Error, launchAff_)
@@ -32,11 +31,10 @@ import Effect.Class.Console as E
 import Node.Path (FilePath)
 import Node.Process (exit)
 import PureScript.CST (RecoveredParserResult(..), parseExpr)
-import PureScript.CST.Types (Expr)
 import Tidy (defaultFormatOptions, formatExpr)
 import Tidy.Doc (FormatDoc(..))
 import TsBridgeGen.Config (AppConfig(..))
-import TsBridgeGen.Types (AppError(..), AppLog(..), AppWarning, SourcePosition(..))
+import TsBridgeGen.Types (AppError(..), AppLog(..), SourcePosition(..))
 
 class
   ( MonadAsk (AppEnv m) m
@@ -104,7 +102,7 @@ printAppLog x = do
     else case x of
       LogLiteral str -> str # Str.split (Pattern "\n") <#> text # lines
       LogError e -> lines
-        [ text ("Error " <> show c <> ":")
+        [ text ("Error " <> show (c + 1) <> ":")
         , indent $ printError config e
         ]
 
@@ -139,18 +137,12 @@ printError config@(AppConfig { debug }) x =
       , text ("at " <> printPos fp p)
       ]
 
--- FilePath SourcePosition AppError
-
 printPos :: FilePath -> SourcePosition -> String
 printPos fp (SourcePosition { line, column }) = fp
   <> ":"
   <> show line
   <> ":"
   <> show column
-
--- instance MonadWarn AppWarning AppM where
---   warn = showPretty >>> E.warn
---   warnCount = pure 99
 
 class Monad m <= MonadLog l m where
   log :: l -> m Unit
@@ -163,10 +155,6 @@ instance (Monoid w, MonadErrorCount m) => MonadErrorCount (WriterT w m) where
 
 instance (Monoid w, MonadLog l m) => MonadLog l (WriterT w m) where
   log = log >>> lift
-
--- class Monad m <= MonadWarn w m | m -> w where
---   warn :: w -> m Unit
---   warnCount :: m Int
 
 handleErrors :: forall a. AppConfig -> Error \/ AppError \/ a -> Effect a
 handleErrors config@(AppConfig { debug }) = case _ of
@@ -182,9 +170,6 @@ quitWithError :: forall a. String -> Effect a
 quitWithError msg = do
   error msg
   exit 1
-
-showPretty :: forall a. Show a => a -> String
-showPretty = showDoc >>> Dodo.print Dodo.plainText Dodo.twoSpaces
 
 showDoc :: forall a b. Show a => a -> Doc b
 showDoc = show >>> parseExpr >>> case _ of

@@ -18,20 +18,17 @@ import Data.Set as Set
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Traversable (and, for, or)
-import Data.Tuple.Nested (type (/\), (/\))
-import Data.Typelevel.Bool (class Bool)
-import Data.Typelevel.Undefined (undefined)
+import Data.Tuple.Nested ((/\))
 import Effect.Aff (throwError)
 import Node.Path (FilePath)
 import Node.Path as Path
 import Parsing (Position(..), fail, position)
-import Parsing (fail) as P
-import Parsing.String (anyTill, eof, string) as P
-import Parsing.String.Basic (intDecimal) as P
+import Parsing.String (anyTill, string) as P
 import Parsing.String.Replace (replaceT) as P
 import Safe.Coerce (coerce)
-import TsBridgeGen (class MonadLog, AppCapabalities(..), Import(..), ModuleGlob(..), ModuleName(..), Name(..), PursModule(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), genInstances, getName, getPursModule, parseCstModule, parseToJson, parseUserImports, printImports, printPursSnippets, runImportWriterT)
+import TsBridgeGen (class MonadLog, AppCapabalities(..), Import(..), ModuleName(..), Name(..), PursModule(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), genInstances, genTsProgram, getName, getPursModule, parseCstModule, parseToJson, parseUserImports, printImports, printPursSnippets, runImportWriterT)
 import TsBridgeGen.Config (AppConfig(..))
+import TsBridgeGen.Core (ReplaceTsProgramOpts)
 import TsBridgeGen.Monad (class MonadApp, AppEnv(..), log)
 import TsBridgeGen.Types (AppError(..), AppLog(..), Glob(..), ModuleGlob(..), PursModule)
 
@@ -59,25 +56,24 @@ getPaths globs = do
   expandGlobsCwd (coerce globs)
     <#> Set.toUnfoldable
 
-assets
-  :: { myTsBridgeClass :: String
-     }
-
 assets =
   { myTsBridgeClass: "MyTsBridgeClass.purs"
+  , myTsModules: "MyTsBridgeModules.purs"
   }
 
-updateFile :: forall m. MonadApp m => FilePath -> (String -> m String) -> m Unit
-updateFile filePath f = do
+updateFile :: forall m. MonadApp m => FilePath -> FilePath -> (String -> m String) -> m Unit
+updateFile fallback filePath f = do
   AppEnv
-    { config: AppConfig { assetsDir }
-    , capabilities: AppCapabalities { readTextFile, writeTextFile }
+    { capabilities: AppCapabalities
+        { readTextFile
+        , writeTextFile
+        }
     } <- ask
 
   content <- (readTextFile filePath <* (log $ LogLiteral ("Patching module at " <> filePath))) `catchError`
     case _ of
       ErrReadFile _ ->
-        readTextFile (Path.concat [ assetsDir, assets.myTsBridgeClass ])
+        readTextFile fallback
           <* (log $ LogLiteral ("Module at " <> filePath <> " does not exist yet. Using a starter template."))
       e -> throwError e
 
@@ -109,25 +105,55 @@ patchClassFile
   -> m String
 patchClassFile path defs file = do
   file' /\ { imports } <- file
-    # replaceComment path "instances"
-        ( \(opts :: ReplaceInstancesOpts) _ -> do
-            instances <- defs
-              <#> mapModule opts
-              # genInstances
-            pure $ printPursSnippets instances
-        )
+    # replaceComment path "instances" replaceInstances
     # runImportWriterT
 
   file'
-    # replaceComment path "imports"
-        ( \(_ :: ReplaceImportsOpts) oldImports -> oldImports
-            # parseUserImports
-            <#> Set.map ImportUser
-            # fromMaybe Set.empty
-            # Set.union imports
-            # printImports
-            # pure
-        )
+    # replaceComment path "imports" (replaceImports imports)
+  where
+  replaceInstances opts _ = do
+    instances <- defs
+      <#> mapModule opts
+      # genInstances
+    pure $ printPursSnippets instances
+
+  replaceImports imports (_ :: ReplaceImportsOpts) oldImports = oldImports
+    # parseUserImports
+    <#> Set.map ImportUser
+    # fromMaybe Set.empty
+    # Set.union imports
+    # printImports
+    # pure
+
+patchModulesFile
+  :: forall m
+   . MonadApp m
+  => FilePath
+  -> Array PursModule
+  -> String
+  -> m String
+patchModulesFile path defs file = do
+  file' /\ { imports } <- file
+    # replaceComment path "ts-program" replaceTsProgram
+    # runImportWriterT
+
+  file'
+    # replaceComment path "imports" (replaceImports imports)
+  where
+  replaceTsProgram (opts :: ReplaceTsProgramOpts) _ = do
+    tsProgram <- defs
+      <#> mapModule opts
+      # A.filter (\(PursModule _ defs') -> not $ A.null defs')
+      # genTsProgram
+    pure $ tsProgram
+
+  replaceImports imports (_ :: ReplaceImportsOpts) oldImports = oldImports
+    # parseUserImports
+    <#> Set.map ImportUser
+    # fromMaybe Set.empty
+    # Set.union imports
+    # printImports
+    # pure
 
 mapModule :: ReplaceInstancesOpts -> PursModule -> PursModule
 mapModule opts (PursModule mn defs) =
@@ -190,9 +216,19 @@ replaceComment path id f i = P.replaceT i do
 
 app :: forall m. MonadApp m => m Unit
 app = do
-  AppEnv { config: AppConfig { classFile } } <- ask
+  AppEnv
+    { config: AppConfig
+        { assetsDir
+        , classFile
+        , modulesFile
+        }
+    } <- ask
 
   globs <- getSpagoGlobs
   defs <- getPursModules globs
 
-  updateFile classFile $ patchClassFile classFile defs
+  updateFile (Path.concat [ assetsDir, assets.myTsBridgeClass ]) classFile $
+    patchClassFile classFile defs
+
+  updateFile (Path.concat [ assetsDir, assets.myTsModules ]) modulesFile $
+    patchModulesFile modulesFile defs

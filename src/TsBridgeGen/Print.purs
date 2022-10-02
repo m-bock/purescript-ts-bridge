@@ -145,7 +145,7 @@ genTsDef (ModuleName mn) = case _ of
         )
 
   DefData (Name n) ->
-    ExprIdent (nonQualifiedName $ Ident "tsType")
+    ExprIdent (nonQualifiedName $ Ident "tsOpaqueType")
       `ExprApp` ExprString n
       `ExprApp`
         ( ExprIdent (nonQualifiedName $ Ident "toTsBridge")
@@ -154,7 +154,7 @@ genTsDef (ModuleName mn) = case _ of
         )
 
   DefNewtype (Name n) ->
-    ExprIdent (nonQualifiedName $ Ident "tsType")
+    ExprIdent (nonQualifiedName $ Ident "tsNewtype")
       `ExprApp` ExprString n
       `ExprApp`
         ( ExprIdent (nonQualifiedName $ Ident "toTsBridge")

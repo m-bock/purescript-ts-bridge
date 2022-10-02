@@ -58,7 +58,8 @@ getPursDef = case _ of
     { name: CST.Name { name: CST.Proper name }
     , vars: []
     }
-    _ -> Just $ DefData (Name name)
+    _ -> Just $ DefUnsupportedExport (Name name) "data type" 
+    -- Just $ DefData (Name name)
 
   CST.DeclData
     { name: CST.Name { name: CST.Proper name } }
@@ -93,7 +94,7 @@ getPursDef = case _ of
     , vars: []
     }
     _
-    _ -> Just $ DefType (Name name)
+    _ -> Just $ DefUnsupportedExport (Name name) "type alias" -- Just $ DefType (Name name)
 
   CST.DeclType
     { name: CST.Name { name: CST.Proper name }
@@ -186,13 +187,16 @@ parseUserImports s = s
       _ -> [ pure s' ]
     _ -> [ Nothing ]
 
-patchModulesFile :: Array PursModule -> String -> String
-patchModulesFile = undefined
-
 type ReplaceInstancesOpts =
   { include :: Array ModuleGlob
   , exclude :: Array ModuleGlob
   }
 
-type ReplaceImportsOpts = {}
+type ReplaceTsProgramOpts =
+  { include :: Array ModuleGlob
+  , exclude :: Array ModuleGlob
+  }
+
+type ReplaceImportsOpts =
+  { }
 
