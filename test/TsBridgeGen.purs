@@ -15,11 +15,12 @@ import Data.String as Str
 import Data.Tuple (Tuple, fst)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
+import Debug (spy)
 import PureScript.CST (RecoveredParserResult(..), parseDecl)
 import Test.Spec (Spec, describe, it)
 import Test.TsBridgeGen.Monad (TestMResult(..), defaultTestCapabilities, defaultTestConfig, runTestM, runTestM_)
 import Test.Util (shouldEqual)
-import TsBridgeGen (class MonadApp, class MonadLog, AppCapabalities(..), AppEnv(..), AppError, AppLog, AppWarning, ModuleName(..), Name(..), PursDef(..), PursModule(..), genInstances, getPursDef, printPursSnippets, runImportWriterT)
+import TsBridgeGen (class MonadApp, class MonadLog, AppCapabalities(..), AppEnv(..), AppError, AppLog, AppWarning, ModuleName(..), Name(..), PursDef(..), PursModule(..), genInstances, getPursDef, printPursSnippets, runImportWriterM, runImportWriterT)
 import TsBridgeGen.Cli (patchClassFile)
 import TsBridgeGen.Config (AppConfig(..))
 
@@ -67,7 +68,7 @@ spec = do
             , "{-GEN:END-}"
             , ""
             , "{-GEN:instances"
-            , "{ \"include\": []"
+            , "{ \"include\": [ \"**\" ]"
             , ", \"exclude\": []"
             , "}"
             , "-}"
@@ -94,7 +95,7 @@ spec = do
                   , "{-GEN:END-}"
                   , ""
                   , "{-GEN:instances"
-                  , "{ \"include\": []"
+                  , "{ \"include\": [ \"**\" ]"
                   , ", \"exclude\": []"
                   , "}"
                   , "-}"
@@ -124,7 +125,7 @@ spec = do
         # parseDecl
         # recResToMaybe
         >>= getPursDef
-        # shouldEqual (Just $ DefValue (Name "x"))
+        # shouldEqual (Just (DefUnsupportedExport (Name "x") "value")) -- (Just $ DefValue (Name "x"))
 
   describe "Type Alias" do
     it "parses correctly" do
@@ -140,7 +141,7 @@ spec = do
         # parseDecl
         # recResToMaybe
         >>= getPursDef
-        # shouldEqual (Just $ DefNewtype (Name "Foo"))
+        # shouldEqual (Just (DefUnsupportedInstAndExport (Name "Foo") "newtype")) --  (Just $ DefNewtype (Name "Foo"))
 
   describe "Data type" do
     it "prints correctly" do
@@ -148,12 +149,12 @@ spec = do
           [ DefData (Name "Foo") ]
       ]
         # genInstances
-        # runImportWriterT
+        # runImportWriterM
         # fst
         # printPursSnippets
         # Str.split (Pattern "\n")
         # shouldEqual $
-        [ "instance ToTsBridge My.Foo where"
+        [ "instance ToTsBridge Auto.My.Foo where"
         , "  toTsBridge = tsOpaqueType \"My\" \"Foo\""
         ]
 

@@ -38,7 +38,7 @@ shouldEqual v1 v2 =
             , string2: showPretty v1
             }
         }
-    fail r.stdout
+    fail ("\n" <> showPretty { actual: v1, expected: v2 } <> "\n\n" <> r.stdout)
 
 printExpr :: Expr Void -> String
 printExpr expr =

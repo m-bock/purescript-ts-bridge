@@ -10,6 +10,7 @@ import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Traversable (sequence, traverse)
 import Data.Tuple.Nested (type (/\))
+import Debug (spy)
 import Dodo as Dodo
 import Language.PS.CST (Declaration(..), Expr(..), Guarded(..), Ident(..), InstanceBinding(..), PSType(..), ProperName(..), ProperNameType_TypeConstructor, QualifiedName, mkModuleName, nonQualifiedName, printDeclaration, qualifiedName)
 import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..))
