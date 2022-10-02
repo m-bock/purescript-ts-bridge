@@ -11,6 +11,7 @@ jobs:
           access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
     - run: nix develop --command just test
     - run: nix develop --command just docs
+    - run: nix develop --command just dist
 
     - name: Deploy 🚀
       uses: JamesIves/github-pages-deploy-action@v4
