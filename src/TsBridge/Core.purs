@@ -191,6 +191,15 @@ defaultArray
   -> TsBridgeM TsType
 defaultArray f _ = TsTypeArray <$> mapping f (Proxy :: _ a)
 
+defaultPromise
+  :: forall a f
+   . Mapping f (Proxy a) (TsBridgeM TsType)
+  => f
+  -> Array a
+  -> TsBridgeM TsType
+defaultPromise f _ = TsTypeArray <$> mapping f (Proxy :: _ a)
+
+
 defaultFunction
   :: forall f a b
    . Mapping f (Proxy a) (TsBridgeM TsType)
@@ -266,7 +275,7 @@ instance
 
 tsOpaqueTypeImpl :: String -> String -> Array String -> Array (TsBridgeM TsType) -> TsBridgeM TsType
 tsOpaqueTypeImpl pursModuleName pursTypeName targs = opaqueType
-  (TsFilePath (pursModuleName <> "/index") "d.ts")
+  (TsFilePath ("~/" <> pursModuleName <> "/index") "d.ts")
   (TsModuleAlias $ dotsToLodashes pursModuleName)
   (TsName pursTypeName)
   (OSet.fromFoldable $ TsName <$> targs)
