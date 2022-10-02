@@ -1,6 +1,7 @@
 { name = "typescript-bridge"
 , dependencies =
   [ "aff"
+  , "aff-promise"
   , "argonaut"
   , "arrays"
   , "bifunctors"

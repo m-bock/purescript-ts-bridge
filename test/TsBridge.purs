@@ -86,7 +86,7 @@ spec = do
           # shouldEqual
           $ Map.fromFoldable
               [ textFile "types.d.ts"
-                  [ "import * as Data_Either from 'Data.Either/index'"
+                  [ "import * as Data_Either from '~/Data.Either/index'"
                   , ""
                   , "export type Foo = Data_Either.Either<string, boolean>"
                   ]

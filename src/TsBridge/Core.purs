@@ -5,6 +5,7 @@ module TsBridge.Core
   , defaultEffect
   , defaultFunction
   , defaultNumber
+  , defaultPromise
   , defaultProxy
   , defaultRecord
   , defaultString
@@ -28,6 +29,7 @@ module TsBridge.Core
 import Prelude
 
 import Control.Monad.Writer (listens, censor, listen, tell)
+import Control.Promise (Promise)
 import Data.Array (mapWithIndex, (:))
 import Data.Array as A
 import Data.Array as Array
@@ -199,9 +201,13 @@ defaultPromise
   :: forall a f
    . Mapping f (Proxy a) (TsBridgeM TsType)
   => f
-  -> Array a
+  -> Promise a
   -> TsBridgeM TsType
-defaultPromise f _ = TsTypeArray <$> mapping f (Proxy :: _ a)
+defaultPromise f _ = do
+  x <- mapping f (Proxy :: _ a)
+  pure $ TsTypeConstructor
+    (TsQualName Nothing (TsName "Promise"))
+    (TsTypeArgs [ x ])
 
 defaultFunction
   :: forall f a b
