@@ -117,11 +117,11 @@ var tsTypeAlias = function (dictMapping) {
                 return map(function (v) {
                     return [ new TsBridge_DTS.TsDeclTypeDef(new TsBridge_DTS.TsName(n), TsBridge_DTS.Public.value, coerce(v.value1.floating), v.value0) ];
                 })(listens((function () {
-                    var $186 = un(TsBridge_Monad.TsBridgeAccum);
-                    return function ($187) {
+                    var $187 = un(TsBridge_Monad.TsBridgeAccum);
+                    return function ($188) {
                         return (function (v) {
                             return v.scope;
-                        })($186($187));
+                        })($187($188));
                     };
                 })())(t));
             };
@@ -398,6 +398,9 @@ var tsOpaqueType6 = function (dictMapping) {
         };
     };
 };
+var defaultUnit = function (v) {
+    return pure(TsBridge_DTS.TsTypeVoid.value);
+};
 var defaultString = function (v) {
     return pure(TsBridge_DTS.TsTypeString.value);
 };
@@ -467,6 +470,7 @@ export {
     defaultProxy,
     defaultRecord,
     defaultString,
+    defaultUnit,
     genRecord,
     tsModuleFile,
     tsNewtype,

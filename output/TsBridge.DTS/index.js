@@ -191,6 +191,13 @@ var TsTypeVar = /* #__PURE__ */ (function () {
     };
     return TsTypeVar;
 })();
+var TsTypeVoid = /* #__PURE__ */ (function () {
+    function TsTypeVoid() {
+
+    };
+    TsTypeVoid.value = new TsTypeVoid();
+    return TsTypeVoid;
+})();
 var TsFnArg = /* #__PURE__ */ (function () {
     function TsFnArg(value0, value1) {
         this.value0 = value0;
@@ -515,6 +522,9 @@ var eqTsType = {
             if (x instanceof TsTypeVar && y instanceof TsTypeVar) {
                 return eq2(x.value0)(y.value0);
             };
+            if (x instanceof TsTypeVoid && y instanceof TsTypeVoid) {
+                return true;
+            };
             return false;
         };
     }
@@ -682,6 +692,15 @@ var ordTsType = {
             if (x instanceof TsTypeVar && y instanceof TsTypeVar) {
                 return compare2(x.value0)(y.value0);
             };
+            if (x instanceof TsTypeVar) {
+                return Data_Ordering.LT.value;
+            };
+            if (y instanceof TsTypeVar) {
+                return Data_Ordering.GT.value;
+            };
+            if (x instanceof TsTypeVoid && y instanceof TsTypeVoid) {
+                return Data_Ordering.EQ.value;
+            };
             throw new Error("Failed pattern match at TsBridge.DTS (line 0, column 0 - line 0, column 0): " + [ x.constructor.name, y.constructor.name ]);
         };
     },
@@ -841,7 +860,10 @@ var mapQuantifier = function (f) {
         if (v instanceof TsTypeVar) {
             return new TsTypeVar(goTsName1(v.value0));
         };
-        throw new Error("Failed pattern match at TsBridge.DTS (line 95, column 19 - line 109, column 40): " + [ v.constructor.name ]);
+        if (v instanceof TsTypeVoid) {
+            return TsTypeVoid.value;
+        };
+        throw new Error("Failed pattern match at TsBridge.DTS (line 96, column 19 - line 111, column 27): " + [ v.constructor.name ]);
     };
 };
 var dtsFilePath = function (x) {
@@ -872,6 +894,7 @@ export {
     TsTypeConstructor,
     TsTypeUniqueSymbol,
     TsTypeVar,
+    TsTypeVoid,
     TsTypeArgs,
     TsTypeArgsQuant,
     TsBridge_DTS_Wrap,

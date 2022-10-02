@@ -308,7 +308,7 @@ var tokenizeTsDeclVisibility = {
         if (v instanceof TsBridge_DTS.Public) {
             return [ TsTokExport.value, TsTokWhitespace.value ];
         };
-        throw new Error("Failed pattern match at TsBridge.Print (line 189, column 1 - line 191, column 53): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridge.Print (line 191, column 1 - line 193, column 53): " + [ v.constructor.name ]);
     }
 };
 var wrap = function (p) {
@@ -480,7 +480,7 @@ var printToken = function (v) {
     if (v instanceof TsTokNumberLiteral) {
         return show(v.value0);
     };
-    throw new Error("Failed pattern match at TsBridge.Print (line 238, column 14 - line 314, column 11): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at TsBridge.Print (line 240, column 14 - line 316, column 11): " + [ v.constructor.name ]);
 };
 var printTsName = function (x) {
     return Data_String_Common.joinWith("")(mapFlipped(tokenize3(x))(printToken));
@@ -542,7 +542,10 @@ var tokenizeTsType = {
         if (v instanceof TsBridge_DTS.TsTypeVar) {
             return tokenize3(v.value0);
         };
-        throw new Error("Failed pattern match at TsBridge.Print (line 132, column 14 - line 162, column 17): " + [ v.constructor.name ]);
+        if (v instanceof TsBridge_DTS.TsTypeVoid) {
+            return [ TsTokVoid.value ];
+        };
+        throw new Error("Failed pattern match at TsBridge.Print (line 132, column 14 - line 164, column 32): " + [ v.constructor.name ]);
     }
 };
 var tokenizeTsRecordField = {
@@ -579,7 +582,7 @@ var tokenizeTsDeclaration = {
         if (v instanceof TsBridge_DTS.TsDeclValueDef) {
             return append(tokenize4(v.value1))(append([ TsTokConst.value, TsTokWhitespace.value ])(append(tokenize3(v.value0))(append([ TsTokWhitespace.value, TsTokColon.value, TsTokWhitespace.value ])(tokenize8(v.value2)))));
         };
-        throw new Error("Failed pattern match at TsBridge.Print (line 194, column 14 - line 211, column 22): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridge.Print (line 196, column 14 - line 213, column 22): " + [ v.constructor.name ]);
     }
 };
 var tokenize9 = /* #__PURE__ */ tokenize(tokenizeTsDeclaration);
