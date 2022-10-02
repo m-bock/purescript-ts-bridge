@@ -23,7 +23,8 @@ module TsBridge.Core
   , tsTypeAlias
   , tsTypeVar
   , tsValue
-  ) where
+  )
+  where
 
 import Prelude
 
@@ -44,6 +45,7 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (sequence)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
+import Effect (Effect)
 import Heterogeneous.Mapping (class Mapping, mapping)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
@@ -174,14 +176,12 @@ defaultEffect
   :: forall a f
    . Mapping f (Proxy a) (TsBridgeM TsType)
   => f
-  -> Array a
+  -> Effect a
   -> TsBridgeM TsType
 defaultEffect f _ = do
   x <- (mapping f (Proxy :: _ a))
   pure $ TsTypeFunction
-    (TsTypeArgsQuant $ coerce $ Oset.singleton $ TsName "A")
-    []
-    x
+    (TsTypeArgsQuant $ coerce $ Oset.singleton $ TsName "A") [] x
 
 defaultArray
   :: forall a f
