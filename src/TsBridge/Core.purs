@@ -23,8 +23,7 @@ module TsBridge.Core
   , tsTypeAlias
   , tsTypeVar
   , tsValue
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -102,7 +101,10 @@ opaqueType filePath moduleAlias name targs args' = do
     imports = Set.singleton $
       TsImport
         moduleAlias
-        (filePathToModulePath filePath)
+        ( filePath
+            # filePathToModulePath
+            # (\(TsModulePath x) -> TsModulePath ("~/" <> x))
+        )
 
     typeDefs =
       [ TsModuleFile
@@ -181,7 +183,9 @@ defaultEffect
 defaultEffect f _ = do
   x <- (mapping f (Proxy :: _ a))
   pure $ TsTypeFunction
-    (TsTypeArgsQuant $ coerce $ Oset.singleton $ TsName "A") [] x
+    (TsTypeArgsQuant $ coerce $ Oset.singleton $ TsName "A")
+    []
+    x
 
 defaultArray
   :: forall a f
@@ -198,7 +202,6 @@ defaultPromise
   -> Array a
   -> TsBridgeM TsType
 defaultPromise f _ = TsTypeArray <$> mapping f (Proxy :: _ a)
-
 
 defaultFunction
   :: forall f a b
@@ -275,7 +278,7 @@ instance
 
 tsOpaqueTypeImpl :: String -> String -> Array String -> Array (TsBridgeM TsType) -> TsBridgeM TsType
 tsOpaqueTypeImpl pursModuleName pursTypeName targs = opaqueType
-  (TsFilePath ("~/" <> pursModuleName <> "/index") "d.ts")
+  (TsFilePath (pursModuleName <> "/index") "d.ts")
   (TsModuleAlias $ dotsToLodashes pursModuleName)
   (TsName pursTypeName)
   (OSet.fromFoldable $ TsName <$> targs)
