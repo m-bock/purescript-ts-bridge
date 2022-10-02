@@ -40,6 +40,7 @@ export {
 export {
     defaultArray,
     defaultBoolean,
+    defaultEffect,
     defaultFunction,
     defaultNumber,
     defaultProxy,

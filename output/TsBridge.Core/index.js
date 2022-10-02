@@ -117,11 +117,11 @@ var tsTypeAlias = function (dictMapping) {
                 return map(function (v) {
                     return [ new TsBridge_DTS.TsDeclTypeDef(new TsBridge_DTS.TsName(n), TsBridge_DTS.Public.value, coerce(v.value1.floating), v.value0) ];
                 })(listens((function () {
-                    var $187 = un(TsBridge_Monad.TsBridgeAccum);
-                    return function ($188) {
+                    var $190 = un(TsBridge_Monad.TsBridgeAccum);
+                    return function ($191) {
                         return (function (v) {
                             return v.scope;
-                        })($187($188));
+                        })($190($191));
                     };
                 })())(t));
             };
@@ -451,6 +451,16 @@ var defaultFunction = function (dictMapping) {
         };
     };
 };
+var defaultEffect = function (dictMapping) {
+    var mapping = Heterogeneous_Mapping.mapping(dictMapping);
+    return function (f) {
+        return function (v) {
+            return bind(mapping(f)(Type_Proxy["Proxy"].value))(function (x) {
+                return pure(new TsBridge_DTS.TsTypeFunction(coerce(Data_Set_Ordered.singleton(new TsBridge_DTS.TsName("A"))), [  ], x));
+            });
+        };
+    };
+};
 var defaultBoolean = function (v) {
     return pure(TsBridge_DTS.TsTypeBoolean.value);
 };
@@ -465,6 +475,7 @@ var defaultArray = function (dictMapping) {
 export {
     defaultArray,
     defaultBoolean,
+    defaultEffect,
     defaultFunction,
     defaultNumber,
     defaultProxy,
