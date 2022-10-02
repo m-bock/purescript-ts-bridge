@@ -62,8 +62,8 @@ var bind1 = /* #__PURE__ */ Control_Bind.bind(bindAppM);
 var applyAppM = /* #__PURE__ */ Control_Monad_Reader_Trans.applyReaderT(/* #__PURE__ */ Control_Monad_Except_Trans.applyExceptT(Effect_Aff.monadAff));
 var applicativeAppM = /* #__PURE__ */ Control_Monad_Reader_Trans.applicativeReaderT(/* #__PURE__ */ Control_Monad_Except_Trans.applicativeExceptT(Effect_Aff.monadAff));
 var showDoc = function (dictShow) {
-    var $141 = Data_Show.show(dictShow);
-    return function ($142) {
+    var $140 = Data_Show.show(dictShow);
+    return function ($141) {
         return (function (v) {
             if (v instanceof PureScript_CST.ParseSucceeded) {
                 return (function (v1) {
@@ -71,18 +71,11 @@ var showDoc = function (dictShow) {
                 })(Tidy.formatExpr(defaultFormatOptions)(v.value0));
             };
             return Dodo.text("<invalid>");
-        })(PureScript_CST.parseExpr($141($142)));
+        })(PureScript_CST.parseExpr($140($141)));
     };
 };
 var showDoc1 = /* #__PURE__ */ showDoc(TsBridgeGen_Types.showAppError);
 var showDoc2 = /* #__PURE__ */ showDoc(TsBridgeGen_Types.showAppLog);
-var showPretty = function (dictShow) {
-    var $143 = Dodo.print(Dodo.plainText)(Dodo.twoSpaces);
-    var $144 = showDoc(dictShow);
-    return function ($145) {
-        return $143($144($145));
-    };
-};
 var quitWithError = function (msg) {
     return function __do() {
         error(msg)();
@@ -132,7 +125,7 @@ var printError = function (v) {
         if (x instanceof TsBridgeGen_Types.AtFilePosition) {
             return lines([ printError(v)(x.value2), Dodo.text("at " + printPos(x.value0)(x.value1)) ]);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Monad (line 114, column 8 - line 140, column 8): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Monad (line 112, column 8 - line 138, column 8): " + [ x.constructor.name ]);
     };
 };
 var printAppLog = function (dictMonadApp) {
@@ -151,9 +144,9 @@ var printAppLog = function (dictMonadApp) {
                         return lines(mapFlipped(Data_String_Common.split("\x0a")(x.value0))(Dodo.text));
                     };
                     if (x instanceof TsBridgeGen_Types.LogError) {
-                        return lines([ Dodo.text("Error " + (show(c) + ":")), Dodo.indent(printError(v.config)(x.value0)) ]);
+                        return lines([ Dodo.text("Error " + (show(c + 1 | 0) + ":")), Dodo.indent(printError(v.config)(x.value0)) ]);
                     };
-                    throw new Error("Failed pattern match at TsBridgeGen.Monad (line 104, column 10 - line 109, column 10): " + [ x.constructor.name ]);
+                    throw new Error("Failed pattern match at TsBridgeGen.Monad (line 102, column 10 - line 107, column 10): " + [ x.constructor.name ]);
                 })());
             });
         });
@@ -192,10 +185,10 @@ var monadLogWriterT = function (dictMonoid) {
         var monadWriterT1 = monadWriterT(Monad0);
         return {
             log: (function () {
-                var $146 = lift(Monad0);
-                var $147 = log(dictMonadLog);
-                return function ($148) {
-                    return $146($147($148));
+                var $142 = lift(Monad0);
+                var $143 = log(dictMonadLog);
+                return function ($144) {
+                    return $142($143($144));
                 };
             })(),
             Monad0: function () {
@@ -218,15 +211,15 @@ var handleErrors = function (v) {
         if (v1 instanceof Data_Either.Right && v1.value0 instanceof Data_Either.Right) {
             return pure(v1.value0.value0);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Monad (line 172, column 45 - line 179, column 28): " + [ v1.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Monad (line 160, column 45 - line 167, column 28): " + [ v1.constructor.name ]);
     };
 };
 var runAppM = function (v) {
     return function (v1) {
         return Effect_Aff.launchAff_(bind($$try(Control_Monad_Except_Trans.runExceptT(Data_Function.flip(Control_Monad_Reader_Trans.runReaderT)(v)(mapFlipped1(v1)(Data_Function["const"](Data_Unit.unit))))))((function () {
-            var $149 = handleErrors(v.config);
-            return function ($150) {
-                return liftEffect($149($150));
+            var $145 = handleErrors(v.config);
+            return function ($146) {
+                return liftEffect($145($146));
             };
         })()));
     };

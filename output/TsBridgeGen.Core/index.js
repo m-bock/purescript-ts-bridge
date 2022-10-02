@@ -21,7 +21,6 @@ import * as Data_String_CodeUnits from "../Data.String.CodeUnits/index.js";
 import * as Data_String_Common from "../Data.String.Common/index.js";
 import * as Data_Traversable from "../Data.Traversable/index.js";
 import * as Data_Tuple from "../Data.Tuple/index.js";
-import * as Data_Typelevel_Undefined from "../Data.Typelevel.Undefined/index.js";
 import * as Parsing from "../Parsing/index.js";
 import * as Parsing_String from "../Parsing.String/index.js";
 import * as Parsing_String_Basic from "../Parsing.String.Basic/index.js";
@@ -42,7 +41,6 @@ var identity = /* #__PURE__ */ Control_Category.identity(Control_Category.catego
 var lmap = /* #__PURE__ */ Data_Bifunctor.lmap(Data_Bifunctor.bifunctorEither);
 var map = /* #__PURE__ */ Data_Functor.map(Data_Functor.functorArray);
 var elem = /* #__PURE__ */ Data_Array.elem(Data_Eq.eqString);
-var patchModulesFile = Data_Typelevel_Undefined["undefined"];
 var parseUserImports = function (s) {
     var f = function (v) {
         if (v === "") {
@@ -58,7 +56,7 @@ var parseUserImports = function (s) {
                 if (v2 instanceof Data_Maybe.Nothing) {
                     return [ pure(v) ];
                 };
-                throw new Error("Failed pattern match at TsBridgeGen.Core (line 183, column 79 - line 185, column 31): " + [ v2.constructor.name ]);
+                throw new Error("Failed pattern match at TsBridgeGen.Core (line 184, column 79 - line 186, column 31): " + [ v2.constructor.name ]);
             };
             return [ pure(v) ];
         };
@@ -103,7 +101,7 @@ var indexToSourcePos = function (pos) {
                             $tco_done = true;
                             return Data_Maybe.Nothing.value;
                         };
-                        throw new Error("Failed pattern match at TsBridgeGen.Core (line 138, column 20 - line 146, column 23): " + [ v.constructor.name ]);
+                        throw new Error("Failed pattern match at TsBridgeGen.Core (line 139, column 20 - line 147, column 23): " + [ v.constructor.name ]);
                     };
                     while (!$tco_done) {
                         $tco_result = $tco_loop($tco_var_line, $tco_var_idx, $copy_xs);
@@ -149,7 +147,7 @@ var parseToJson = function (s) {
 };
 var getPursDef = function (v) {
     if (v instanceof PureScript_CST_Types.DeclData && v.value0.vars.length === 0) {
-        return new Data_Maybe.Just(new TsBridgeGen_Types.DefData(v.value0.name.name));
+        return new Data_Maybe.Just(new TsBridgeGen_Types.DefUnsupportedExport(v.value0.name.name, "data type"));
     };
     if (v instanceof PureScript_CST_Types.DeclData) {
         return new Data_Maybe.Just(new TsBridgeGen_Types.DefUnsupportedInstAndExport(v.value0.name.name, "data type with arguments"));
@@ -161,7 +159,7 @@ var getPursDef = function (v) {
         return new Data_Maybe.Just(new TsBridgeGen_Types.DefUnsupportedInstAndExport(v.value0.name.name, "newtype"));
     };
     if (v instanceof PureScript_CST_Types.DeclType && v.value0.vars.length === 0) {
-        return new Data_Maybe.Just(new TsBridgeGen_Types.DefType(v.value0.name.name));
+        return new Data_Maybe.Just(new TsBridgeGen_Types.DefUnsupportedExport(v.value0.name.name, "type alias"));
     };
     if (v instanceof PureScript_CST_Types.DeclType) {
         return new Data_Maybe.Just(new TsBridgeGen_Types.DefUnsupportedExport(v.value0.name.name, "type with arguments"));
@@ -196,7 +194,7 @@ var getName = function (v) {
     if (v instanceof TsBridgeGen_Types.DefUnsupportedExport) {
         return v.value0;
     };
-    throw new Error("Failed pattern match at TsBridgeGen.Core (line 125, column 11 - line 132, column 32): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at TsBridgeGen.Core (line 126, column 11 - line 133, column 32): " + [ v.constructor.name ]);
 };
 var exportToName = function (v) {
     if (v instanceof PureScript_CST_Types.ExportType) {
@@ -231,6 +229,5 @@ export {
     indexToSourcePos,
     parseToJson,
     parseJsonError,
-    parseUserImports,
-    patchModulesFile
+    parseUserImports
 };

@@ -21,7 +21,7 @@ additionalTsProgram =
     ]
 
 {-GEN:ts-program
-{ "include": []
+{ "include": [ "**" ]
 , "exclude": []
 }
 -}

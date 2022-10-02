@@ -14,8 +14,7 @@ export {
     parseCstModule,
     parseJsonError,
     parseToJson,
-    parseUserImports,
-    patchModulesFile
+    parseUserImports
 } from "../TsBridgeGen.Core/index.js";
 export {
     AppCapabalities,
