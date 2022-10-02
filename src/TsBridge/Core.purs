@@ -7,6 +7,7 @@ module TsBridge.Core
   , defaultProxy
   , defaultRecord
   , defaultString
+  , defaultUnit
   , genRecord
   , tsModuleFile
   , tsNewtype
@@ -21,7 +22,8 @@ module TsBridge.Core
   , tsTypeAlias
   , tsTypeVar
   , tsValue
-  ) where
+  )
+  where
 
 import Prelude
 
@@ -163,6 +165,9 @@ defaultString _ = pure TsTypeString
 
 defaultBoolean :: Boolean -> TsBridgeM TsType
 defaultBoolean _ = pure TsTypeBoolean
+
+defaultUnit :: Unit -> TsBridgeM TsType
+defaultUnit _ = pure TsTypeVoid
 
 defaultArray
   :: forall a f

@@ -161,6 +161,8 @@ instance Tokenize TsType where
     TsTypeVar n ->
       tokenize n
 
+    TsTypeVoid -> [ TsTokVoid ]
+
 instance Tokenize TsFnArg where
   tokenize (TsFnArg k v) = tokenize k
     <> [ TsTokColon, TsTokWhitespace ]
