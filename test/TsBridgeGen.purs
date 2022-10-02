@@ -7,6 +7,7 @@ import Control.Monad.Rec.Class (class MonadRec)
 import Control.Monad.Writer (WriterT, tell)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
+import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.String (Pattern(..))
@@ -16,10 +17,11 @@ import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
 import PureScript.CST (RecoveredParserResult(..), parseDecl)
 import Test.Spec (Spec, describe, it)
-import Test.TsBridgeGen.Monad (TestMResult(..), runTestM, runTestM_)
+import Test.TsBridgeGen.Monad (TestMResult(..), defaultTestCapabilities, defaultTestConfig, runTestM, runTestM_)
 import Test.Util (shouldEqual)
-import TsBridgeGen (class MonadApp, class MonadLog, AppError, AppLog, AppWarning, ModuleName(..), Name(..), PursDef(..), PursModule(..), genInstances, getPursDef, printPursSnippets, runImportWriterT)
+import TsBridgeGen (class MonadApp, class MonadLog, AppCapabalities(..), AppEnv(..), AppError, AppLog, AppWarning, ModuleName(..), Name(..), PursDef(..), PursModule(..), genInstances, getPursDef, printPursSnippets, runImportWriterT)
 import TsBridgeGen.Cli (patchClassFile)
+import TsBridgeGen.Config (AppConfig(..))
 
 recResToMaybe :: forall f. RecoveredParserResult f -> Maybe (f Void)
 recResToMaybe = case _ of
@@ -42,6 +44,12 @@ spec = do
 
   describe "patchClassFile" do
     it "patches a class file correctly" do
+      let
+        testEnv = AppEnv
+          { config: defaultTestConfig
+          , capabilities: defaultTestCapabilities
+          }
+
       patchClassFile
         "Module.purs"
         [ PursModule (ModuleName "Module1") [ DefData (Name "Foo1") ]
@@ -59,19 +67,19 @@ spec = do
             , "{-GEN:END-}"
             , ""
             , "{-GEN:instances"
-            , "{ \"include\": \"\""
-            , ", \"exclude\": \"\""
+            , "{ \"include\": []"
+            , ", \"exclude\": []"
             , "}"
             , "-}"
             , ""
             , "{-GEN:END-}"
             ]
         )
-        # runTestM_
+        # runTestM_ testEnv
         <#> (Str.split $ Pattern "\n")
         # shouldEqual
         $
-          ( TestMResult {} []
+          ( TestMResult Map.empty []
               ( Right
                   [ "module MyApp.TsBridgeClass where"
                   , ""
@@ -86,8 +94,8 @@ spec = do
                   , "{-GEN:END-}"
                   , ""
                   , "{-GEN:instances"
-                  , "{ \"include\": \"\""
-                  , ", \"exclude\": \"\""
+                  , "{ \"include\": []"
+                  , ", \"exclude\": []"
                   , "}"
                   , "-}"
                   , ""
@@ -134,8 +142,8 @@ spec = do
         >>= getPursDef
         # shouldEqual (Just $ DefNewtype (Name "Foo"))
 
-  describe "" do
-    it "" do
+  describe "Data type" do
+    it "prints correctly" do
       [ PursModule (ModuleName "My")
           [ DefData (Name "Foo") ]
       ]

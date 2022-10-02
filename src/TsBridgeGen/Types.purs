@@ -2,7 +2,7 @@ module TsBridgeGen.Types where
 
 import Prelude
 
-import Data.Argonaut (JsonDecodeError)
+import Data.Argonaut (class DecodeJson, JsonDecodeError)
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
 import Node.Path (FilePath)
@@ -18,6 +18,7 @@ data AppError
   | ErrLiteral String
   | ErrParseToJson ErrorParseToJson
   | ErrParseToData JsonDecodeError
+  | ErrUnknown
   | AtFilePosition FilePath SourcePosition AppError
 
 data AppLog
@@ -29,6 +30,8 @@ newtype SourcePosition = SourcePosition { line :: Int, column :: Int }
 data AppWarning = WarnLiteral String
 
 newtype Glob = Glob String
+
+newtype ModuleGlob = ModuleGlob String
 
 newtype ModuleName = ModuleName String
 
@@ -107,3 +110,7 @@ instance Show ErrorParseToJson where
 
 instance Show SourcePosition where
   show = genericShow
+
+derive newtype instance DecodeJson Glob
+
+derive newtype instance DecodeJson ModuleGlob

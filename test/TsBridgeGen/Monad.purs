@@ -3,28 +3,29 @@ module Test.TsBridgeGen.Monad
   , TestM
   , TestMResult(..)
   , TestState
+  , defaultTestCapabilities
+  , defaultTestConfig
   , runTestM
   , runTestM_
-  )
-  where
+  ) where
 
 import Prelude
 
-import Control.Monad.Error.Class (class MonadError, class MonadThrow)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow, throwError)
 import Control.Monad.Except (ExceptT, runExceptT)
-import Control.Monad.RWS (RWS, RWSResult(..), runRWS)
+import Control.Monad.RWS (RWS, RWSResult(..), runRWS, tell)
 import Control.Monad.Reader (class MonadAsk)
 import Control.Monad.Rec.Class (class MonadRec)
 import Data.Either (Either)
 import Data.Generic.Rep (class Generic)
+import Data.Map (Map)
+import Data.Map as Map
 import Data.Show.Generic (genericShow)
-import Data.Typelevel.Undefined (undefined)
-import TsBridgeGen (class MonadApp, class MonadLog, AppEnv, AppError, AppLog)
+import TsBridgeGen (class MonadApp, class MonadLog, AppCapabalities(..), AppEnv, AppLog)
+import TsBridgeGen.Config (AppConfig(..))
+import TsBridgeGen.Types (AppError(..))
 
-type TestState = {}
-
-initState :: TestState
-initState = {}
+type TestState = Map String String
 
 type AppLogs = Array AppLog
 
@@ -42,7 +43,7 @@ derive newtype instance MonadThrow AppError TestM
 derive newtype instance MonadAsk (AppEnv TestM) TestM
 
 instance MonadLog AppLog TestM where
-  log = undefined
+  log = TestM <<< tell <<< pure
 
 instance MonadApp TestM
 
@@ -63,8 +64,25 @@ runTestM r s (TestM ma) = ma
   # (\x -> runRWS x r s)
   # (\(RWSResult s' x w) -> TestMResult s' w x)
 
-testEnv :: AppEnv TestM
-testEnv = undefined
+defaultTestCapabilities :: AppCapabalities TestM
+defaultTestCapabilities = AppCapabalities
+  { spawn: \_ _ -> throwError ErrUnknown
+  , readTextFile: \_ -> throwError ErrUnknown
+  , writeTextFile: \_ _ -> throwError ErrUnknown
+  , expandGlobsCwd: \_ -> throwError ErrUnknown
+  , runPrettier: \_ -> throwError ErrUnknown
+  }
 
-runTestM_ :: forall a. TestM a -> TestMResult a
-runTestM_ = runTestM testEnv initState
+defaultTestConfig :: AppConfig
+defaultTestConfig = AppConfig
+  { assetsDir: ""
+  , modulesFile: ""
+  , classFile: ""
+  , debug: false
+  }
+
+initState :: TestState
+initState = Map.empty
+
+runTestM_ :: forall a. AppEnv TestM -> TestM a -> TestMResult a
+runTestM_ testEnv = runTestM testEnv initState

@@ -23,7 +23,7 @@ import Parsing.String (anyTill, eof, string) as P
 import Parsing.String.Basic (intDecimal) as P
 import PureScript.CST (RecoveredParserResult(..), parseImportDecl, parseModule) as CST
 import PureScript.CST.Types (Declaration(..), Export(..), Foreign(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Proper(..), Separated(..), Wrapped(..)) as CST
-import TsBridgeGen.Types (AppError(..), ErrorParseToJson(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), SourcePosition(..))
+import TsBridgeGen.Types (AppError(..), ErrorParseToJson(..), Glob(..), ModuleGlob(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), SourcePosition(..))
 
 parseCstModule :: String -> Either AppError (CST.Module Void)
 parseCstModule mod = case CST.parseModule mod of
@@ -42,7 +42,7 @@ getPursModule module_ = PursModule
 isExported :: CST.ModuleHeader Void -> PursDef -> Boolean
 isExported (CST.ModuleHeader { exports: Nothing }) _ = true
 isExported (CST.ModuleHeader { exports: Just exports }) pd =
-  getName pd `elem` exports'
+  (getName pd # \(Name n) -> n) `elem` exports'
   where
   (CST.Wrapped { value: CST.Separated { head, tail } }) = exports
   exports' = exportToName <$> (head : map snd tail)
@@ -121,13 +121,15 @@ getPursDef = case _ of
 
   _ -> Nothing
 
-getName :: PursDef -> String
+getName :: PursDef -> Name
 getName = case _ of
-  DefData (Name n) -> n
-  _ -> ""
-
-
-
+  DefData n -> n
+  DefData n -> n
+  DefNewtype n -> n
+  DefType n -> n
+  DefValue n -> n
+  DefUnsupportedInstAndExport n _ -> n
+  DefUnsupportedExport n _ -> n
 
 indexToSourcePos :: Int -> String -> Maybe SourcePosition
 indexToSourcePos pos str = go 1 1 (Str.split (Pattern "\n") str)
@@ -187,9 +189,10 @@ parseUserImports s = s
 patchModulesFile :: Array PursModule -> String -> String
 patchModulesFile = undefined
 
-type ReplaceInstancesOpts = {}
+type ReplaceInstancesOpts =
+  { include :: Array ModuleGlob
+  , exclude :: Array ModuleGlob
+  }
 
 type ReplaceImportsOpts = {}
-
-
 

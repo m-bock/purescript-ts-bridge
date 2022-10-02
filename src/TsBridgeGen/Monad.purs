@@ -6,8 +6,7 @@ module TsBridgeGen.Monad
   , class MonadLog
   , log
   , runAppM
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -33,7 +32,7 @@ import PureScript.CST (RecoveredParserResult(..), parseExpr)
 import PureScript.CST.Types (Expr)
 import Tidy (defaultFormatOptions, formatExpr)
 import Tidy.Doc (FormatDoc(..))
-import TsBridgeGen.Config (AppConfig)
+import TsBridgeGen.Config (AppConfig(..))
 import TsBridgeGen.Types (AppError, AppLog, AppWarning)
 
 class
@@ -52,8 +51,6 @@ newtype AppM a = AppM
       a
   )
 
-  
-
 newtype AppEnv m = AppEnv
   { config :: AppConfig
   , capabilities :: AppCapabalities m
@@ -68,12 +65,12 @@ newtype AppCapabalities m = AppCapabalities
   }
 
 runAppM :: forall a. AppEnv AppM -> AppM a -> Effect Unit
-runAppM env (AppM ma) = ma
+runAppM env@(AppEnv { config }) (AppM ma) = ma
   <#> const unit
   # flip runReaderT env
   # runExceptT
   # try
-  >>= handleErrors >>> liftEffect
+  >>= handleErrors config >>> liftEffect
   # launchAff_
 
 derive newtype instance MonadAff AppM
@@ -98,23 +95,26 @@ instance MonadLog AppLog AppM where
 class Monad m <= MonadLog l m where
   log :: l -> m Unit
 
-class  Monad m <= MonadErrorCount m where
+class Monad m <= MonadErrorCount m where
   errorCount :: m Int
 
-
-instance (Monoid w, MonadErrorCount m) => MonadErrorCount (WriterT w m ) where
+instance (Monoid w, MonadErrorCount m) => MonadErrorCount (WriterT w m) where
   errorCount = errorCount # lift
 
-instance (Monoid w, MonadLog l m) => MonadLog l (WriterT w m ) where
+instance (Monoid w, MonadLog l m) => MonadLog l (WriterT w m) where
   log = log >>> lift
 
 -- class Monad m <= MonadWarn w m | m -> w where
 --   warn :: w -> m Unit
 --   warnCount :: m Int
 
-handleErrors :: forall a. Error \/ AppError \/ a -> Effect a
-handleErrors = case _ of
-  Left _ -> quitWithError "Unexpected Error"
+handleErrors :: forall a. AppConfig -> Error \/ AppError \/ a -> Effect a
+handleErrors (AppConfig { debug }) = case _ of
+  Left err ->
+    if debug then
+      quitWithError ("Unexpected Error.\n" <> show err)
+    else
+      quitWithError "Unexpected Error. Try to set DEBUG=true"
   Right (Left appError) -> quitWithError $ printError appError
   Right (Right x) -> pure x
 

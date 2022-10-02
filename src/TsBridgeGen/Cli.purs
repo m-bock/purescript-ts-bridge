@@ -2,8 +2,7 @@ module TsBridgeGen.Cli
   ( app
   , patchClassFile
   , replaceComment
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -11,14 +10,17 @@ import Control.Monad.Error.Class (class MonadError, catchError, liftEither, try)
 import Control.Monad.Reader (ask, lift)
 import Control.Monad.Rec.Class (class MonadRec)
 import Data.Argonaut (class DecodeJson, decodeJson)
+import Data.Array as A
 import Data.Bifunctor (lmap)
 import Data.Either (either)
 import Data.Maybe (fromMaybe)
 import Data.Set as Set
-import Data.String (Pattern(..))
+import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
-import Data.Traversable (for)
+import Data.Traversable (and, for, or)
 import Data.Tuple.Nested (type (/\), (/\))
+import Data.Typelevel.Bool (class Bool)
+import Data.Typelevel.Undefined (undefined)
 import Effect.Aff (throwError)
 import Node.Path (FilePath)
 import Node.Path as Path
@@ -28,10 +30,10 @@ import Parsing.String (anyTill, eof, string) as P
 import Parsing.String.Basic (intDecimal) as P
 import Parsing.String.Replace (replaceT) as P
 import Safe.Coerce (coerce)
-import TsBridgeGen (class MonadLog, AppCapabalities(..), Import(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), genInstances, getPursModule, parseCstModule, parseToJson, parseUserImports, printImports, printPursSnippets, runImportWriterT)
+import TsBridgeGen (class MonadLog, AppCapabalities(..), Import(..), ModuleGlob(..), ModuleName(..), Name(..), PursModule(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), genInstances, getName, getPursModule, parseCstModule, parseToJson, parseUserImports, printImports, printPursSnippets, runImportWriterT)
 import TsBridgeGen.Config (AppConfig(..))
 import TsBridgeGen.Monad (class MonadApp, AppEnv(..), log)
-import TsBridgeGen.Types (AppError(..), AppLog(..), Glob(..), PursModule)
+import TsBridgeGen.Types (AppError(..), AppLog(..), Glob(..), ModuleGlob(..), PursModule)
 
 -------------------------------------------------------------------------------
 -- App
@@ -90,6 +92,14 @@ getSpagoGlobs = do
       >>> Str.split (Pattern "\n")
       >>> map Glob
 
+matchModuleGlob :: ModuleGlob -> ModuleName -> Name -> Boolean
+matchModuleGlob (ModuleGlob mg) (ModuleName mn) (Name n) =
+  match (Glob $ replace mg) (replace (mn <> "." <> n))
+  where
+  replace = Str.replaceAll (Pattern ".") (Replacement "/")
+
+foreign import match :: Glob -> String -> Boolean
+
 patchClassFile
   :: forall m
    . MonadApp m
@@ -97,28 +107,37 @@ patchClassFile
   -> Array PursModule
   -> String
   -> m String
-patchClassFile path defs file = file
-  # replaceComment path "instances"
-      ( \(_ :: ReplaceInstancesOpts) _ -> do
-          instances <- defs # genInstances
-          pure $ printPursSnippets instances
-      )
-  # runImportWriterT
-  >>=
-    ( \(file' /\ { imports }) -> file'
-        # replaceComment path "imports"
-            ( \(_ :: ReplaceImportsOpts) oldImports -> do
+patchClassFile path defs file = do
+  file' /\ { imports } <- file
+    # replaceComment path "instances"
+        ( \(opts :: ReplaceInstancesOpts) _ -> do
+            instances <- defs
+              <#> mapModule opts
+              # genInstances
+            pure $ printPursSnippets instances
+        )
+    # runImportWriterT
 
-                oldImports
-                  # parseUserImports
-                  <#> Set.map ImportUser
-                  # fromMaybe Set.empty
-                  # Set.union imports
-                  # printImports
-                  # pure
-            )
+  file'
+    # replaceComment path "imports"
+        ( \(_ :: ReplaceImportsOpts) oldImports -> oldImports
+            # parseUserImports
+            <#> Set.map ImportUser
+            # fromMaybe Set.empty
+            # Set.union imports
+            # printImports
+            # pure
+        )
 
-    )
+mapModule :: ReplaceInstancesOpts -> PursModule -> PursModule
+mapModule opts (PursModule mn defs) =
+  defs
+    # A.filter (getName >>> filterName)
+    # PursModule mn
+  where
+  matcher glob = matchModuleGlob glob mn
+  filterName = (or $ matcher <$> opts.include) &&
+    (and $ not matcher <$> opts.exclude)
 
 replaceComment
   :: forall m a
@@ -168,6 +187,7 @@ replaceComment path id f i = P.replaceT i do
     # parseToJson
     # lmap ErrParseToJson
     >>= decodeJson >>> lmap ErrParseToData
+
 app :: forall m. MonadApp m => m Unit
 app = do
   AppEnv { config: AppConfig { classFile } } <- ask
