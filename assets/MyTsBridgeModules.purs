@@ -1,15 +1,16 @@
 module MyTsBridgeModules where
 
-import SampleApp.Types (AppState)
-import TsBridge (TsProgram, tsModuleFile, tsProgram, tsTypeAlias)
-import Type.Proxy (Proxy(..))
-
 {-GEN:imports-}
+
+import Prelude
+import Effect (Effect)
+import TsBridge (TsProgram, mkTypeGenCli, mergeTsPrograms, tsUnsupported, tsModuleFile, tsProgram, tsTypeAlias)
+import Type.Proxy (Proxy(..))
 
 {-GEN:END-}
 
-tsProgram :: TsProgram
-tsProgram = generatedTsProgram `mergeTsPrograms` additionalTsProgram
+finalTsProgram :: TsProgram
+finalTsProgram = generatedTsProgram `mergeTsPrograms` additionalTsProgram
 
 additionalTsProgram :: TsProgram
 additionalTsProgram =
@@ -30,3 +31,6 @@ generatedTsProgram :: TsProgram
 generatedTsProgram = tsProgram []
 
 {-GEN:END-}
+
+main :: Effect Unit
+main = mkTypeGenCli finalTsProgram

@@ -20,10 +20,12 @@ module TsBridge.Core
   , tsOpaqueType4
   , tsOpaqueType5
   , tsOpaqueType6
+  , tsUnsupported
   , tsProgram
   , tsTypeAlias
   , tsTypeVar
   , tsValue
+  , mergeTsPrograms
   ) where
 
 import Prelude
@@ -56,6 +58,10 @@ import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, runTsBridgeM, Scope, TsBrid
 import TsBridge.Print (printTsName)
 import Type.Proxy (Proxy(..))
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 tsModuleFile :: String -> Array (TsBridgeM (Array TsDeclaration)) -> Array TsModuleFile
 tsModuleFile n xs =
   let
@@ -63,6 +69,10 @@ tsModuleFile n xs =
   in
     typeDefs <> [ TsModuleFile (dtsFilePath n) (TsModule imports xs') ]
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 mergeModules :: Array TsModuleFile -> TsProgram
 mergeModules xs =
   xs
@@ -76,9 +86,17 @@ mergeModule (TsModule is1 ds1) (TsModule is2 ds2) =
     (is1 `Set.union` is2)
     (Array.nub (ds1 <> ds2))
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 tsProgram :: Array (Array TsModuleFile) -> TsProgram
 tsProgram xs = mergeModules $ join xs
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 tsTypeAlias :: forall mp a. Mapping mp a (TsBridgeM TsType) => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
 tsTypeAlias mp n x = ado
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope) t
@@ -86,10 +104,24 @@ tsTypeAlias mp n x = ado
   where
   t = mapping mp x
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 tsValue :: forall mp a. Mapping mp a (TsBridgeM TsType) => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
 tsValue mp n x = do
   t <- mapping mp x
   pure [ TsDeclValueDef (TsName n) Public t ]
+
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
+tsUnsupported :: String -> String -> TsBridgeM (Array TsDeclaration)
+tsUnsupported _ _ = pure [] --TODO 
+
+mergeTsPrograms :: TsProgram -> TsProgram -> TsProgram
+mergeTsPrograms p1 p2 = p1 --TODO
 
 -------------------------------------------------------------------------------
 -- Util
@@ -161,21 +193,45 @@ tsTypeVar x = do
     $ over TsBridgeAccum _ { scope = scope } defaultTsBridgeAccum
   pure $ TsTypeVar tsName
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 defaultProxy :: forall f a. Mapping f a (TsBridgeM TsType) => f -> Proxy a -> TsBridgeM TsType
 defaultProxy mp _ = mapping mp (undefined :: a)
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 defaultNumber :: Number -> TsBridgeM TsType
 defaultNumber _ = pure TsTypeNumber
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 defaultString :: String -> TsBridgeM TsType
 defaultString _ = pure TsTypeString
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 defaultBoolean :: Boolean -> TsBridgeM TsType
 defaultBoolean _ = pure TsTypeBoolean
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 defaultUnit :: Unit -> TsBridgeM TsType
 defaultUnit _ = pure TsTypeVoid
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 defaultEffect
   :: forall a f
    . Mapping f (Proxy a) (TsBridgeM TsType)
@@ -189,6 +245,10 @@ defaultEffect f _ = do
     []
     x
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 defaultArray
   :: forall a f
    . Mapping f (Proxy a) (TsBridgeM TsType)
@@ -197,6 +257,10 @@ defaultArray
   -> TsBridgeM TsType
 defaultArray f _ = TsTypeArray <$> mapping f (Proxy :: _ a)
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 defaultPromise
   :: forall a f
    . Mapping f (Proxy a) (TsBridgeM TsType)
@@ -209,6 +273,10 @@ defaultPromise f _ = do
     (TsQualName Nothing (TsName "Promise"))
     (TsTypeArgs [ x ])
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 defaultFunction
   :: forall f a b
    . Mapping f (Proxy a) (TsBridgeM TsType)
@@ -235,6 +303,10 @@ defaultFunction f _ = censor mapAccum ado
   where
   mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
 
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
 defaultRecord
   :: forall mp r rl
    . GenRecord mp rl

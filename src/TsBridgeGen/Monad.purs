@@ -34,7 +34,7 @@ import PureScript.CST (RecoveredParserResult(..), parseExpr)
 import Tidy (defaultFormatOptions, formatExpr)
 import Tidy.Doc (FormatDoc(..))
 import TsBridgeGen.Config (AppConfig(..))
-import TsBridgeGen.Types (AppError(..), AppLog(..), SourcePosition(..))
+import TsBridgeGen.Types (AppError(..), AppLog(..), Glob(..), SourcePosition(..))
 
 class
   ( MonadAsk (AppEnv m) m
@@ -58,11 +58,13 @@ newtype AppEnv m = AppEnv
   }
 
 newtype AppCapabalities m = AppCapabalities
-  { spawn :: String -> Array String -> m { stderr :: String, stdout :: String }
+  { mkdirRec :: FilePath -> m Unit
   , readTextFile :: FilePath -> m String
   , writeTextFile :: FilePath -> String -> m Unit
   , expandGlobsCwd :: Array String -> m (Set FilePath)
   , runPrettier :: String -> m String
+  , spagoLsDepsTransitive :: m (Array { packageName :: String })
+  , spagoSources :: m (Array Glob)
   }
 
 runAppM :: forall a. AppEnv AppM -> AppM a -> Effect Unit
@@ -111,7 +113,7 @@ printError config@(AppConfig { debug }) x =
   if debug then showDoc x
   else case x of
     ErrSpawn cmd _ ->
-      text ("Failed to spawn Command" <> cmd)
+      text ("Failed to spawn Command " <> cmd)
     ErrParseModule ->
       text ("Failed to parse PureScript module")
     ErrReadFile path ->

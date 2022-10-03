@@ -66,11 +66,13 @@ runTestM r s (TestM ma) = ma
 
 defaultTestCapabilities :: AppCapabalities TestM
 defaultTestCapabilities = AppCapabalities
-  { spawn: \_ _ -> throwError ErrUnknown
-  , readTextFile: \_ -> throwError ErrUnknown
+  { readTextFile: \_ -> throwError ErrUnknown
   , writeTextFile: \_ _ -> throwError ErrUnknown
   , expandGlobsCwd: \_ -> throwError ErrUnknown
   , runPrettier: \_ -> throwError ErrUnknown
+  , mkdirRec: \_ -> throwError ErrUnknown
+  , spagoLsDepsTransitive: throwError ErrUnknown
+  , spagoSources: throwError ErrUnknown
   }
 
 defaultTestConfig :: AppConfig
@@ -78,6 +80,8 @@ defaultTestConfig = AppConfig
   { assetsDir: ""
   , modulesFile: ""
   , classFile: ""
+  , spagoFile: ""
+  , packagesFile : ""
   , debug: false
   }
 

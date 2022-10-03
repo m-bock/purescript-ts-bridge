@@ -6,6 +6,7 @@ import Data.Argonaut (class DecodeJson, JsonDecodeError)
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
 import Node.Path (FilePath)
+import Prim.TypeError (class Warn, Text)
 import TypedEnv as TypedEnv
 
 data AppError

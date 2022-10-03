@@ -120,7 +120,7 @@ genTsModuleFile (PursModule mn defs) = do
         }
     }
 
-  pure $ ExprIdent (nonQualifiedName $ Ident "toTsModuleFile")
+  pure $ ExprIdent (nonQualifiedName $ Ident "tsModuleFile")
     `ExprApp` ExprString (mn' <> "/index")
     `ExprApp` ExprArray xs
 

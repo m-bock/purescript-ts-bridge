@@ -55,8 +55,11 @@ myFn n str = true
 - [ ] Tidy the whole doc aftercode genration
 - [ ] Apply prettier to JSON
 - [ ] Use "unsupported reason" ADT
+- [ ] Implement `tsUnsupported` function
 - [ ] Add Text to CLI Options
 - [ ] Allow passing globs to CLI, make spago for this purpose optional
 - [ ] Publish CLI to NPM (Add Pipeline)
 - [ ] Fix SourcePosition calculation
 - [ ] Use error counter (read/write) and reflect in exit code
+- [ ] Manage exports
+- [ ] Write fully end to end test

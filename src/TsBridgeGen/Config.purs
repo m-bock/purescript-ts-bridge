@@ -28,6 +28,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (error)
 import Effect.Exception (Error)
 import Heterogeneous.Mapping (class HMapWithIndex, class MappingWithIndex, hmapWithIndex)
+import Node.Path (FilePath)
 import Node.Process (exit, getEnv, lookupEnv)
 import Options.Applicative ((<**>))
 import Options.Applicative as O
@@ -74,14 +75,20 @@ type AppConfig_Optional :: (Type -> Type) -> Row Type -> Row Type
 type AppConfig_Optional maybe r =
   ( modulesFile :: maybe String
   , classFile :: maybe String
+  , spagoFile :: maybe FilePath
+  , packagesFile :: maybe FilePath
   , debug :: maybe Boolean
+  , allDepsFile :: maybe FilePath
   | r
   )
 
 defaults :: { | AppConfig_Optional It () }
 defaults =
-  { modulesFile: "src/MyTsBridgeModules.purs"
-  , classFile: "src/MyTsBridgeClass.purs"
+  { modulesFile: "ts-bridge/src/MyTsBridgeModules.purs"
+  , classFile: "ts-bridge/src/MyTsBridgeClass.purs"
+  , spagoFile: "ts-bridge/spago.dhall"
+  , packagesFile: "ts-bridge/packages.dhall"
+  , allDepsFile: "ts-bridge/all-deps.dhall"
   , debug: false
   }
 
@@ -90,18 +97,30 @@ defaults =
 --------------------------------------------------------------------------------
 
 newtype AppCliArgs = AppCliArgs
-  { modulesFile :: Maybe String
-  , classFile :: Maybe String
+  { modulesFile :: Maybe FilePath
+  , classFile :: Maybe FilePath
+  , spagoFile :: Maybe FilePath
+  , packagesFile :: Maybe FilePath
+  , allDepsFile :: Maybe FilePath
   }
 
 optParser :: O.Parser AppCliArgs
 optParser = AppCliArgs <$> sequenceRecord
   { classFile: cliOption "class-file" Nothing
       UIText.cli.options.classFile
-      defaults.modulesFile
+      defaults.classFile
   , modulesFile: cliOption "modules-file" Nothing
       UIText.cli.options.modulesFile
-      defaults.classFile
+      defaults.modulesFile
+  , spagoFile: cliOption "spago-file" Nothing
+      UIText.cli.options.spagoFile
+      defaults.spagoFile
+  , packagesFile: cliOption "packages-file" Nothing
+      UIText.cli.options.packagesFile
+      defaults.packagesFile
+  , allDepsFile: cliOption "all-deps-file" Nothing
+      UIText.cli.options.allDepsFile
+      defaults.allDepsFile
   }
 
 wrapString :: String -> Int -> Array String
@@ -178,6 +197,9 @@ mergeCfg (AppCliArgs cli) (AppEnvVars env) =
   optional =
     { modulesFile: cli.modulesFile
     , classFile: cli.classFile
+    , spagoFile: cli.spagoFile
+    , packagesFile: cli.packagesFile
+    , allDepsFile: cli.allDepsFile
     , debug: env.debug
     }
 

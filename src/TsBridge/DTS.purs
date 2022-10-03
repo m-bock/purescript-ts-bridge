@@ -108,7 +108,7 @@ mapQuantifier f = case _ of
     (goTsTypeArgs y)
   TsTypeUniqueSymbol -> TsTypeUniqueSymbol
   TsTypeVar x -> TsTypeVar $ goTsName x
-  TsTypeVoid -> TsTypeVoid 
+  TsTypeVoid -> TsTypeVoid
 
   where
   goTsRecordField (TsRecordField x y z) = TsRecordField

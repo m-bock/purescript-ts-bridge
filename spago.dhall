@@ -47,7 +47,7 @@
   , "typedenv"
   , "typelevel"
   , "typelevel-prelude"
-  ]
+  ] {--}
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
 }
