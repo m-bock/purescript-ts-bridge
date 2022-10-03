@@ -47,4 +47,16 @@ myFn n str = true
 
 # Sample Project
 
-[Link](https://github.com/thought2/purescript-typescript-bridge.sample-project)
+[Link](https://github.com/
+
+
+# TODO
+
+- [ ] Tidy the whole doc aftercode genration
+- [ ] Apply prettier to JSON
+- [ ] Use "unsupported reason" ADT
+- [ ] Add Text to CLI Options
+- [ ] Allow passing globs to CLI, make spago for this purpose optional
+- [ ] Publish CLI to NPM (Add Pipeline)
+- [ ] Fix SourcePosition calculation
+- [ ] Use error counter (read/write) and reflect in exit code

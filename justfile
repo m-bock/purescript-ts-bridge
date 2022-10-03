@@ -1,16 +1,18 @@
 build:
     spago build
 
+
 dist: build
     rm -rf dist
     mkdir dist
     cp -r output assets package.json bin -t dist
 
-run:
+run args:
     mkdir -p tmp
     export ASSETS_DIR=assets; \
     spago --quiet --no-psa run --main TsBridgeGen.Main --node-args \
-    "--modules-file tmp/MyTsBridgeModules.purs --class-file tmp/MyTsBridgeClass.purs"
+    "{{args}} --modules-file tmp/MyTsBridgeModules.purs --class-file tmp/MyTsBridgeClass.purs"
+
 
 test:
     spago test

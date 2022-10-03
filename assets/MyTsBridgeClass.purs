@@ -28,7 +28,7 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
   toTsBridge = tsOpaqueType2 Mp "Data.Either" "Either" "A" "B"
 
 {-GEN:instances
-{ "include": []
+{ "include": [ "**" ]
 , "exclude": []
 }
 -}

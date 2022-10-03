@@ -11,22 +11,28 @@ import Prelude
 
 import Control.Monad.Error.Class (liftEither, try)
 import Control.Monad.Except (ExceptT, runExceptT)
+import Data.Array (uncons)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Either.Nested (type (\/))
 import Data.Foldable (fold)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Newtype (unwrap)
+import Data.String (Pattern(..))
+import Data.String as Str
 import Data.Symbol (class IsSymbol)
+import Data.Tuple.Nested ((/\))
 import Dodo as Dodo
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (error)
 import Effect.Exception (Error)
 import Heterogeneous.Mapping (class HMapWithIndex, class MappingWithIndex, hmapWithIndex)
-import Node.Process (exit, getEnv)
+import Node.Process (exit, getEnv, lookupEnv)
 import Options.Applicative ((<**>))
 import Options.Applicative as O
 import Options.Applicative as Opt
+import Options.Applicative.Help (extractChunk, stringChunk, tabulate, vcatChunks)
 import Options.Applicative.Types (optional)
 import Prim.Row as Row
 import PureScript.CST (RecoveredParserResult(..), parseExpr)
@@ -38,6 +44,7 @@ import Safe.Coerce (coerce)
 import Tidy (defaultFormatOptions, formatExpr)
 import Tidy.Doc (FormatDoc(..))
 import TsBridgeGen.Types (AppError(..))
+import TsBridgeGen.UIText as UIText
 import Type.Function (type ($))
 import Type.Proxy (Proxy(..))
 import Type.Row (type (+))
@@ -89,9 +96,29 @@ newtype AppCliArgs = AppCliArgs
 
 optParser :: O.Parser AppCliArgs
 optParser = AppCliArgs <$> sequenceRecord
-  { classFile: cliOption "class-file" Nothing ".."
-  , modulesFile: cliOption "modules-file" Nothing ".."
+  { classFile: cliOption "class-file" Nothing
+      UIText.cli.options.classFile
+      defaults.modulesFile
+  , modulesFile: cliOption "modules-file" Nothing
+      UIText.cli.options.modulesFile
+      defaults.classFile
   }
+
+wrapString :: String -> Int -> Array String
+wrapString str width = go (Str.split (Pattern " ") str) [] []
+  where
+  go :: Array String -> Array String -> Array String -> Array String
+  go words line lines | Just { head: word, tail: tailWords } <- uncons words =
+    let
+      newLineCandidate = line <> [ word ]
+    in
+      if Str.length (mkLine newLineCandidate) <= width then
+        go tailWords newLineCandidate lines
+      else
+        go tailWords [ word ] (lines <> [ mkLine line ])
+  go _ word lines = lines <> [ mkLine word ]
+
+  mkLine = Str.joinWith " "
 
 getCliArgs :: InitM AppCliArgs
 getCliArgs = liftEffect $ Opt.execParser opts
@@ -99,8 +126,14 @@ getCliArgs = liftEffect $ Opt.execParser opts
   opts = Opt.info (optParser <**> Opt.helper)
     ( fold
         [ Opt.fullDesc
-        , Opt.progDesc "Print a greeting for TARGET"
-        , Opt.header "hello - a test for purescript-optparse"
+        , Opt.header UIText.cli.header
+        , Opt.footerDoc $ unwrap $
+            vcatChunks
+              [ stringChunk "Environment variables:"
+              , tabulate
+                  [ (extractChunk $ stringChunk "DEBUG") /\ (extractChunk $ stringChunk "BOOLEAN")
+                  ]
+              ]
         ]
     )
 
@@ -177,23 +210,47 @@ instance
   MappingWithIndex (MappingFromMaybeRecord r) (Proxy sym) (Maybe a) a where
   mappingWithIndex (MappingFromMaybeRecord rec) prop = fromMaybe (Record.get prop rec)
 
-cliOption :: forall a. ReadM a => String -> Maybe Char -> String -> Opt.Parser (Maybe a)
-cliOption long short help = (Opt.option $ optional $ readM) $ fold
-  [ Opt.long long
-  , maybe mempty Opt.short short
-  , Opt.help help
-  , Opt.value Nothing
-  ]
+cliOption :: forall a. ReadM a => String -> Maybe Char -> String -> a -> Opt.Parser (Maybe a)
+cliOption long short help def =
+  (Opt.option $ optional $ readM) $ fold
+    [ Opt.long long
+    , maybe mempty Opt.short short
+    , Opt.helpDoc
+        ( Just $ extractChunk $ vcatChunks
+            ( (wrapString help 60 <#> stringChunk)
+                <>
+                  [ stringChunk $ "Defaults to " <> writeM def
+                  , stringChunk " "
+                  ]
+            )
+        )
+    , Opt.value Nothing
+    , Opt.metavar $ metavar (Proxy :: _ a)
+    ]
 
 class ReadM a where
   readM :: Opt.ReadM a
+  writeM :: a -> String
+  metavar :: Proxy a -> String
 
 instance ReadM String where
   readM = Opt.str
+  writeM x = x
+  metavar _ = "STRING"
 
 handleErrors :: forall a. Error \/ AppError \/ a -> Effect a
 handleErrors = case _ of
-  Left _ -> quitWithError "Unexpected Error"
+  Left err -> do
+    debug <- lookupEnv "DEBUG" <#> case _ of
+      Just "true" -> true
+      _ -> false
+
+    quitWithError
+      if debug then
+        show err
+      else
+        UIText.init.unexpectedError
+
   Right (Left appError) -> quitWithError $ printError appError
   Right (Right x) -> pure x
 
