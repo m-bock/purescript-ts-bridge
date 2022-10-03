@@ -82,6 +82,7 @@ defaultTestConfig = AppConfig
   , classFile: ""
   , spagoFile: ""
   , packagesFile : ""
+  , allDepsFile : ""
   , debug: false
   }
 
