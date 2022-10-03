@@ -5,8 +5,7 @@ module MyTsBridgeClass where
 -}
 
 import Data.Either (Either)
-import Heterogeneous.Mapping (class Mapping)
-import TsBridge (TsBridgeM, TsType, defaultProxy, tsOpaqueType, tsOpaqueType2)
+import TsBridge (TsBridgeM, TsType, class Mapping, defaultProxy, tsOpaqueType, tsOpaqueType2)
 import TsBridge.Core (tsNewtype)
 import Type.Proxy (Proxy)
 

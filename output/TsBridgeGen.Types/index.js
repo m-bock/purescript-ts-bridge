@@ -381,7 +381,7 @@ var genericPursDef_ = {
         if (x instanceof Data_Generic_Rep.Inr && (x.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0 instanceof Data_Generic_Rep.Inr && x.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr)))) {
             return new DefUnsupportedExport(x.value0.value0.value0.value0.value0.value0, x.value0.value0.value0.value0.value0.value1);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 59, column 1 - line 59, column 34): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 60, column 1 - line 60, column 34): " + [ x.constructor.name ]);
     },
     from: function (x) {
         if (x instanceof DefData) {
@@ -402,7 +402,7 @@ var genericPursDef_ = {
         if (x instanceof DefUnsupportedExport) {
             return new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Product(x.value0, x.value1))))));
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 59, column 1 - line 59, column 34): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 60, column 1 - line 60, column 34): " + [ x.constructor.name ]);
     }
 };
 var genericName_ = {
@@ -483,7 +483,7 @@ var genericErrorParseToJson_ = {
         if (x instanceof Data_Generic_Rep.Inr && x.value0 instanceof Data_Generic_Rep.Inr) {
             return new Other(x.value0.value0);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 65, column 1 - line 65, column 43): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 66, column 1 - line 66, column 43): " + [ x.constructor.name ]);
     },
     from: function (x) {
         if (x instanceof UnexpectedTokenAtPos) {
@@ -495,7 +495,7 @@ var genericErrorParseToJson_ = {
         if (x instanceof Other) {
             return new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(x.value0));
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 65, column 1 - line 65, column 43): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 66, column 1 - line 66, column 43): " + [ x.constructor.name ]);
     }
 };
 var showErrorParseToJson = {
@@ -541,7 +541,7 @@ var genericAppLog_ = {
         if (x instanceof Data_Generic_Rep.Inr) {
             return new LogError(x.value0);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 63, column 1 - line 63, column 33): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 64, column 1 - line 64, column 33): " + [ x.constructor.name ]);
     },
     from: function (x) {
         if (x instanceof LogLiteral) {
@@ -550,7 +550,7 @@ var genericAppLog_ = {
         if (x instanceof LogError) {
             return new Data_Generic_Rep.Inr(x.value0);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 63, column 1 - line 63, column 33): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 64, column 1 - line 64, column 33): " + [ x.constructor.name ]);
     }
 };
 var genericAppError_ = {
@@ -588,7 +588,7 @@ var genericAppError_ = {
         if (x instanceof Data_Generic_Rep.Inr && (x.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0.value0.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr && x.value0.value0.value0.value0.value0.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr))))))))) {
             return new AtFilePosition(x.value0.value0.value0.value0.value0.value0.value0.value0.value0.value0.value0, x.value0.value0.value0.value0.value0.value0.value0.value0.value0.value0.value1.value0, x.value0.value0.value0.value0.value0.value0.value0.value0.value0.value0.value1.value1);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 97, column 1 - line 97, column 35): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 98, column 1 - line 98, column 35): " + [ x.constructor.name ]);
     },
     from: function (x) {
         if (x instanceof ErrSpawn) {
@@ -624,7 +624,7 @@ var genericAppError_ = {
         if (x instanceof AtFilePosition) {
             return new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Product(x.value0, new Data_Generic_Rep.Product(x.value1, x.value2))))))))))));
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 97, column 1 - line 97, column 35): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 98, column 1 - line 98, column 35): " + [ x.constructor.name ]);
     }
 };
 var genericShow = /* #__PURE__ */ Data_Show_Generic.genericShow(genericAppError_);

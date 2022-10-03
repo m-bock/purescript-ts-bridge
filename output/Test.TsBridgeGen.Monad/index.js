@@ -53,10 +53,10 @@ var monadTestM = /* #__PURE__ */ Control_Monad_Except_Trans.monadExceptT(monadRW
 var monadRecTestM = /* #__PURE__ */ Control_Monad_Except_Trans.monadRecExceptT(/* #__PURE__ */ Control_Monad_RWS_Trans.monadRecRWST(Control_Monad_Rec_Class.monadRecIdentity)(Data_Monoid.monoidArray));
 var monadLogAppLogTestM = {
     log: /* #__PURE__ */ (function () {
-        var $121 = Control_Monad_Writer_Class.tell(Control_Monad_Except_Trans.monadTellExceptT(Control_Monad_RWS_Trans.monadTellRWST(Data_Identity.monadIdentity)(Data_Monoid.monoidArray)));
-        var $122 = Control_Applicative.pure(Control_Applicative.applicativeArray);
-        return function ($123) {
-            return TestM($121($122($123)));
+        var $120 = Control_Monad_Writer_Class.tell(Control_Monad_Except_Trans.monadTellExceptT(Control_Monad_RWS_Trans.monadTellRWST(Data_Identity.monadIdentity)(Data_Monoid.monoidArray)));
+        var $121 = Control_Applicative.pure(Control_Applicative.applicativeArray);
+        return function ($122) {
+            return TestM($120($121($122)));
         };
     })(),
     Monad0: function () {
@@ -133,29 +133,34 @@ var defaultTestConfig = {
     assetsDir: "",
     modulesFile: "",
     classFile: "",
+    spagoFile: "",
+    packagesFile: "",
+    allDepsFile: "",
     debug: false
 };
-var defaultTestCapabilities = {
-    spawn: function (v) {
-        return function (v1) {
+var defaultTestCapabilities = /* #__PURE__ */ (function () {
+    return {
+        readTextFile: function (v) {
             return throwError(TsBridgeGen_Types.ErrUnknown.value);
-        };
-    },
-    readTextFile: function (v) {
-        return throwError(TsBridgeGen_Types.ErrUnknown.value);
-    },
-    writeTextFile: function (v) {
-        return function (v1) {
+        },
+        writeTextFile: function (v) {
+            return function (v1) {
+                return throwError(TsBridgeGen_Types.ErrUnknown.value);
+            };
+        },
+        expandGlobsCwd: function (v) {
             return throwError(TsBridgeGen_Types.ErrUnknown.value);
-        };
-    },
-    expandGlobsCwd: function (v) {
-        return throwError(TsBridgeGen_Types.ErrUnknown.value);
-    },
-    runPrettier: function (v) {
-        return throwError(TsBridgeGen_Types.ErrUnknown.value);
-    }
-};
+        },
+        runPrettier: function (v) {
+            return throwError(TsBridgeGen_Types.ErrUnknown.value);
+        },
+        mkdirRec: function (v) {
+            return throwError(TsBridgeGen_Types.ErrUnknown.value);
+        },
+        spagoLsDepsTransitive: throwError(TsBridgeGen_Types.ErrUnknown.value),
+        spagoSources: throwError(TsBridgeGen_Types.ErrUnknown.value)
+    };
+})();
 export {
     TestMResult,
     defaultTestCapabilities,

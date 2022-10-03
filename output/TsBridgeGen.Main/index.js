@@ -3,16 +3,21 @@ import * as $foreign from "./foreign.js";
 import * as Control_Applicative from "../Control.Applicative/index.js";
 import * as Control_Bind from "../Control.Bind/index.js";
 import * as Control_Monad_Error_Class from "../Control.Monad.Error.Class/index.js";
+import * as Data_Argonaut_Decode_Class from "../Data.Argonaut.Decode.Class/index.js";
 import * as Data_Bifunctor from "../Data.Bifunctor/index.js";
+import * as Data_Either from "../Data.Either/index.js";
 import * as Data_Function from "../Data.Function/index.js";
 import * as Data_Functor from "../Data.Functor/index.js";
 import * as Data_Maybe from "../Data.Maybe/index.js";
+import * as Data_String_Common from "../Data.String.Common/index.js";
+import * as Data_Traversable from "../Data.Traversable/index.js";
 import * as Effect_Aff from "../Effect.Aff/index.js";
 import * as Effect_Aff_Class from "../Effect.Aff.Class/index.js";
 import * as Effect_Class from "../Effect.Class/index.js";
 import * as Node_ChildProcess from "../Node.ChildProcess/index.js";
 import * as Node_Encoding from "../Node.Encoding/index.js";
 import * as Node_FS_Aff from "../Node.FS.Aff/index.js";
+import * as Node_FS_Perms from "../Node.FS.Perms/index.js";
 import * as Node_Glob_Basic from "../Node.Glob.Basic/index.js";
 import * as Sunde from "../Sunde/index.js";
 import * as TsBridgeGen_Cli from "../TsBridgeGen.Cli/index.js";
@@ -23,10 +28,11 @@ var bind = /* #__PURE__ */ Control_Bind.bind(TsBridgeGen_Monad.bindAppM);
 var liftAff = /* #__PURE__ */ Effect_Aff_Class.liftAff(TsBridgeGen_Monad.monadAffAppM);
 var pure = /* #__PURE__ */ Control_Applicative.pure(TsBridgeGen_Monad.applicativeAppM);
 var throwError = /* #__PURE__ */ Control_Monad_Error_Class.throwError(TsBridgeGen_Monad.monadThrowAppErrorAppM);
+var traverse = /* #__PURE__ */ Data_Traversable.traverse(Data_Traversable.traversableArray)(Data_Either.applicativeEither);
+var liftEither = /* #__PURE__ */ Control_Monad_Error_Class.liftEither(TsBridgeGen_Monad.monadThrowAppErrorAppM);
 var mapFlipped = /* #__PURE__ */ Data_Functor.mapFlipped(Effect_Aff.functorAff);
 var $$try = /* #__PURE__ */ Control_Monad_Error_Class["try"](Effect_Aff.monadErrorAff);
 var lmap = /* #__PURE__ */ Data_Bifunctor.lmap(Data_Bifunctor.bifunctorEither);
-var liftEither = /* #__PURE__ */ Control_Monad_Error_Class.liftEither(TsBridgeGen_Monad.monadThrowAppErrorAppM);
 var liftEffect = /* #__PURE__ */ Effect_Class.liftEffect(Effect_Aff.monadEffectAff);
 var app = /* #__PURE__ */ TsBridgeGen_Cli.app(TsBridgeGen_Monad.monadAppAppM);
 var spawn = function (cmd) {
@@ -46,10 +52,43 @@ var spawn = function (cmd) {
         });
     };
 };
+var spagoSources = /* #__PURE__ */ Data_Functor.mapFlipped(TsBridgeGen_Monad.functorAppM)(/* #__PURE__ */ spawn("spago")([ "sources" ]))(/* #__PURE__ */ (function () {
+    var $37 = Data_Functor.map(Data_Functor.functorArray)(TsBridgeGen_Types.Glob);
+    var $38 = Data_String_Common.split("\x0a");
+    return function ($39) {
+        return $37($38((function (v) {
+            return v.stdout;
+        })($39)));
+    };
+})());
+var parseLinesStrToData = function (dictDecodeJson) {
+    var parseStrToData = TsBridgeGen_Cli.parseStrToData(dictDecodeJson);
+    return function (str) {
+        return traverse(parseStrToData)(Data_String_Common.split("\x0a")(Data_String_Common.trim(str)));
+    };
+};
+var spagoLsDepsTransitive = /* #__PURE__ */ bind(/* #__PURE__ */ spawn("spago")([ "ls", "deps", "--transitive", "--json" ]))(/* #__PURE__ */ (function () {
+    var $40 = parseLinesStrToData(Data_Argonaut_Decode_Class.decodeRecord(Data_Argonaut_Decode_Class.gDecodeJsonCons(Data_Argonaut_Decode_Class.decodeFieldId(Data_Argonaut_Decode_Class.decodeJsonString))(Data_Argonaut_Decode_Class.gDecodeJsonNil)({
+        reflectSymbol: function () {
+            return "packageName";
+        }
+    })()())());
+    return function ($41) {
+        return liftEither($40((function (v) {
+            return v.stdout;
+        })($41)));
+    };
+})());
 var liftAffWithErr = function (mkError) {
     return function (ma) {
         return bind(liftAff(mapFlipped($$try(ma))(lmap(mkError))))(liftEither);
     };
+};
+var mkdirRec = function (path) {
+    return liftAffWithErr(Data_Function["const"](new TsBridgeGen_Types.ErrLiteral("make dir")))(Node_FS_Aff["mkdir$prime"](path)({
+        recursive: true,
+        mode: Node_FS_Perms.mkPerms(Node_FS_Perms.all)(Node_FS_Perms.all)(Node_FS_Perms.all)
+    }));
 };
 var readTextFile = function (path) {
     return liftAffWithErr(Data_Function["const"](new TsBridgeGen_Types.ErrReadFile(path)))(Node_FS_Aff.readTextFile(Node_Encoding.UTF8.value)(path));
@@ -70,11 +109,13 @@ var main = function __do() {
     var appEnv = {
         config: config,
         capabilities: {
-            spawn: spawn,
             writeTextFile: writeTextFile,
             readTextFile: readTextFile,
             expandGlobsCwd: expandGlobsCwd,
-            runPrettier: runPrettier
+            runPrettier: runPrettier,
+            mkdirRec: mkdirRec,
+            spagoLsDepsTransitive: spagoLsDepsTransitive,
+            spagoSources: spagoSources
         }
     };
     return TsBridgeGen_Monad.runAppM(appEnv)(app)();
@@ -84,10 +125,14 @@ export {
 } from "./foreign.js";
 export {
     main,
+    spagoSources,
     expandGlobsCwd,
     writeTextFile,
     readTextFile,
+    mkdirRec,
+    spagoLsDepsTransitive,
     runPrettier,
     spawn,
-    liftAffWithErr
+    liftAffWithErr,
+    parseLinesStrToData
 };

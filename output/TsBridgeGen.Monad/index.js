@@ -93,7 +93,7 @@ var printError = function (v) {
             return showDoc1(x);
         };
         if (x instanceof TsBridgeGen_Types.ErrSpawn) {
-            return Dodo.text("Failed to spawn Command" + x.value0);
+            return Dodo.text("Failed to spawn Command " + x.value0);
         };
         if (x instanceof TsBridgeGen_Types.ErrParseModule) {
             return Dodo.text("Failed to parse PureScript module");
@@ -125,7 +125,7 @@ var printError = function (v) {
         if (x instanceof TsBridgeGen_Types.AtFilePosition) {
             return lines([ printError(v)(x.value2), Dodo.text("at " + printPos(x.value0)(x.value1)) ]);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Monad (line 112, column 8 - line 138, column 8): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Monad (line 114, column 8 - line 140, column 8): " + [ x.constructor.name ]);
     };
 };
 var printAppLog = function (dictMonadApp) {
@@ -146,7 +146,7 @@ var printAppLog = function (dictMonadApp) {
                     if (x instanceof TsBridgeGen_Types.LogError) {
                         return lines([ Dodo.text("Error " + (show(c + 1 | 0) + ":")), Dodo.indent(printError(v.config)(x.value0)) ]);
                     };
-                    throw new Error("Failed pattern match at TsBridgeGen.Monad (line 102, column 10 - line 107, column 10): " + [ x.constructor.name ]);
+                    throw new Error("Failed pattern match at TsBridgeGen.Monad (line 104, column 10 - line 109, column 10): " + [ x.constructor.name ]);
                 })());
             });
         });
@@ -211,7 +211,7 @@ var handleErrors = function (v) {
         if (v1 instanceof Data_Either.Right && v1.value0 instanceof Data_Either.Right) {
             return pure(v1.value0.value0);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Monad (line 160, column 45 - line 167, column 28): " + [ v1.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Monad (line 162, column 45 - line 169, column 28): " + [ v1.constructor.name ]);
     };
 };
 var runAppM = function (v) {

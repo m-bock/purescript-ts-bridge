@@ -172,7 +172,7 @@ var genTsModuleFile = function (dictMonad) {
                 as: "Auto." + v.value0
             }))
         }))(function () {
-            return pure2(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("toTsModuleFile")), new Language_PS_CST_Types_Declaration.ExprString(v.value0 + "/index")), new Language_PS_CST_Types_Declaration.ExprArray(xs)));
+            return pure2(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("tsModuleFile")), new Language_PS_CST_Types_Declaration.ExprString(v.value0 + "/index")), new Language_PS_CST_Types_Declaration.ExprArray(xs)));
         });
     };
 };

@@ -57,6 +57,11 @@ var debugIsSymbol = {
     }
 };
 var union = /* #__PURE__ */ Record.union();
+var allDepsFileIsSymbol = {
+    reflectSymbol: function () {
+        return "allDepsFile";
+    }
+};
 var classFileIsSymbol = {
     reflectSymbol: function () {
         return "classFile";
@@ -65,6 +70,16 @@ var classFileIsSymbol = {
 var modulesFileIsSymbol = {
     reflectSymbol: function () {
         return "modulesFile";
+    }
+};
+var packagesFileIsSymbol = {
+    reflectSymbol: function () {
+        return "packagesFile";
+    }
+};
+var spagoFileIsSymbol = {
+    reflectSymbol: function () {
+        return "spagoFile";
     }
 };
 var optional = /* #__PURE__ */ Options_Applicative_Types.optional(Options_Applicative_Types.readMAlt)(Options_Applicative_Types.readMApplicative);
@@ -131,18 +146,18 @@ var wrapString = function (str) {
                         var v2 = function (v3) {
                             return append(lines)([ mkLine(v1) ]);
                         };
-                        var $144 = Data_Array.uncons(v);
-                        if ($144 instanceof Data_Maybe.Just) {
-                            var newLineCandidate = append(v1)([ $144.value0.head ]);
-                            var $145 = Data_String_CodePoints.length(mkLine(newLineCandidate)) <= width;
-                            if ($145) {
-                                $tco_var_v = $144.value0.tail;
+                        var $186 = Data_Array.uncons(v);
+                        if ($186 instanceof Data_Maybe.Just) {
+                            var newLineCandidate = append(v1)([ $186.value0.head ]);
+                            var $187 = Data_String_CodePoints.length(mkLine(newLineCandidate)) <= width;
+                            if ($187) {
+                                $tco_var_v = $186.value0.tail;
                                 $tco_var_v1 = newLineCandidate;
                                 $copy_lines = lines;
                                 return;
                             };
-                            $tco_var_v = $144.value0.tail;
-                            $tco_var_v1 = [ $144.value0.head ];
+                            $tco_var_v = $186.value0.tail;
+                            $tco_var_v1 = [ $186.value0.head ];
                             $copy_lines = append(lines)([ mkLine(v1) ]);
                             return;
                         };
@@ -174,14 +189,14 @@ var printExpr = function (expr) {
     })(Tidy.formatExpr(defaultFormatOptions)(expr)));
 };
 var showPretty = function (dictShow) {
-    var $166 = Data_Show.show(dictShow);
-    return function ($167) {
+    var $208 = Data_Show.show(dictShow);
+    return function ($209) {
         return (function (v) {
             if (v instanceof PureScript_CST.ParseSucceeded) {
                 return printExpr(v.value0);
             };
             return "<invalid>";
-        })(PureScript_CST.parseExpr($166($167)));
+        })(PureScript_CST.parseExpr($208($209)));
     };
 };
 var printError = /* #__PURE__ */ showPretty(TsBridgeGen_Types.showAppError);
@@ -211,7 +226,7 @@ var handleErrors = function (v) {
     if (v instanceof Data_Either.Right && v.value0 instanceof Data_Either.Right) {
         return pure(v.value0.value0);
     };
-    throw new Error("Failed pattern match at TsBridgeGen.Config (line 242, column 16 - line 255, column 28): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at TsBridgeGen.Config (line 264, column 16 - line 277, column 28): " + [ v.constructor.name ]);
 };
 var runInitM = function (ma) {
     return bind($$try(Control_Monad_Except_Trans.runExceptT(ma)))(handleErrors);
@@ -230,22 +245,25 @@ var getEnvVars = /* #__PURE__ */ (function () {
             return "DEBUG";
         }
     })()(TypedEnv.readEnvFieldsNil(Type_Equality.refl))()()(TypedEnv.readValueOptional(TypedEnv.parseValueBoolean)))()()(TypedEnv.readValueRequired(TypedEnv.parseValueString)))()())(Type_Proxy["Proxy"].value))))(Data_Bifunctor.lmap(Data_Bifunctor.bifunctorEither)(TsBridgeGen_Types.ErrParseEnvVars.create)))(Control_Monad_Error_Class.liftEither(Control_Monad_Except_Trans.monadThrowExceptT(Effect.monadEffect))))((function () {
-        var $168 = Safe_Coerce.coerce();
-        return function ($169) {
-            return AppEnvVars($168($169));
+        var $210 = Safe_Coerce.coerce();
+        return function ($211) {
+            return AppEnvVars($210($211));
         };
     })());
 })();
 var fromMaybeRecord = function (dictHMapWithIndex) {
-    var $170 = Heterogeneous_Mapping.hmapWithIndex(dictHMapWithIndex);
-    return function ($171) {
-        return $170(MappingFromMaybeRecord($171));
+    var $212 = Heterogeneous_Mapping.hmapWithIndex(dictHMapWithIndex);
+    return function ($213) {
+        return $212(MappingFromMaybeRecord($213));
     };
 };
-var fromMaybeRecord1 = /* #__PURE__ */ fromMaybeRecord(/* #__PURE__ */ Heterogeneous_Mapping.hmapWithIndexRecord()(/* #__PURE__ */ Heterogeneous_Mapping.mapRecordWithIndexCons(classFileIsSymbol)(/* #__PURE__ */ mappingWithIndexMappingFr(classFileIsSymbol)())(/* #__PURE__ */ Heterogeneous_Mapping.mapRecordWithIndexCons(debugIsSymbol)(/* #__PURE__ */ mappingWithIndexMappingFr(debugIsSymbol)())(/* #__PURE__ */ Heterogeneous_Mapping.mapRecordWithIndexCons(modulesFileIsSymbol)(/* #__PURE__ */ mappingWithIndexMappingFr(modulesFileIsSymbol)())(Heterogeneous_Mapping.mapRecordWithIndexNil)()())()())()()));
+var fromMaybeRecord1 = /* #__PURE__ */ fromMaybeRecord(/* #__PURE__ */ Heterogeneous_Mapping.hmapWithIndexRecord()(/* #__PURE__ */ Heterogeneous_Mapping.mapRecordWithIndexCons(allDepsFileIsSymbol)(/* #__PURE__ */ mappingWithIndexMappingFr(allDepsFileIsSymbol)())(/* #__PURE__ */ Heterogeneous_Mapping.mapRecordWithIndexCons(classFileIsSymbol)(/* #__PURE__ */ mappingWithIndexMappingFr(classFileIsSymbol)())(/* #__PURE__ */ Heterogeneous_Mapping.mapRecordWithIndexCons(debugIsSymbol)(/* #__PURE__ */ mappingWithIndexMappingFr(debugIsSymbol)())(/* #__PURE__ */ Heterogeneous_Mapping.mapRecordWithIndexCons(modulesFileIsSymbol)(/* #__PURE__ */ mappingWithIndexMappingFr(modulesFileIsSymbol)())(/* #__PURE__ */ Heterogeneous_Mapping.mapRecordWithIndexCons(packagesFileIsSymbol)(/* #__PURE__ */ mappingWithIndexMappingFr(packagesFileIsSymbol)())(/* #__PURE__ */ Heterogeneous_Mapping.mapRecordWithIndexCons(spagoFileIsSymbol)(/* #__PURE__ */ mappingWithIndexMappingFr(spagoFileIsSymbol)())(Heterogeneous_Mapping.mapRecordWithIndexNil)()())()())()())()())()())()()));
 var defaults = {
-    modulesFile: "src/MyTsBridgeModules.purs",
-    classFile: "src/MyTsBridgeClass.purs",
+    modulesFile: "ts-bridge/src/MyTsBridgeModules.purs",
+    classFile: "ts-bridge/src/MyTsBridgeClass.purs",
+    spagoFile: "ts-bridge/spago.dhall",
+    packagesFile: "ts-bridge/packages.dhall",
+    allDepsFile: "ts-bridge/all-deps.dhall",
     debug: false
 };
 var mergeCfg = function (v) {
@@ -253,6 +271,9 @@ var mergeCfg = function (v) {
         var optional1 = {
             modulesFile: v.modulesFile,
             classFile: v.classFile,
+            spagoFile: v.spagoFile,
+            packagesFile: v.packagesFile,
+            allDepsFile: v.allDepsFile,
             debug: v1.debug
         };
         var mandatory = {
@@ -277,9 +298,12 @@ var cliOption = function (dictReadM) {
 };
 var cliOption1 = /* #__PURE__ */ cliOption(readMString);
 var optParser = /* #__PURE__ */ (function () {
-    return Data_Functor.map(Options_Applicative_Types.parserFunctor)(AppCliArgs)(Record_Extra.sequenceRecord()(Record_Extra.sequenceRecordCons(classFileIsSymbol)()(Options_Applicative_Types.parserApply)(Record_Extra.sequenceRecordSingle(modulesFileIsSymbol)()(Options_Applicative_Types.parserFunctor)()())()())({
-        classFile: cliOption1("class-file")(Data_Maybe.Nothing.value)(TsBridgeGen_UIText.cli.options.classFile)(defaults.modulesFile),
-        modulesFile: cliOption1("modules-file")(Data_Maybe.Nothing.value)(TsBridgeGen_UIText.cli.options.modulesFile)(defaults.classFile)
+    return Data_Functor.map(Options_Applicative_Types.parserFunctor)(AppCliArgs)(Record_Extra.sequenceRecord()(Record_Extra.sequenceRecordCons(allDepsFileIsSymbol)()(Options_Applicative_Types.parserApply)(Record_Extra.sequenceRecordCons(classFileIsSymbol)()(Options_Applicative_Types.parserApply)(Record_Extra.sequenceRecordCons(modulesFileIsSymbol)()(Options_Applicative_Types.parserApply)(Record_Extra.sequenceRecordCons(packagesFileIsSymbol)()(Options_Applicative_Types.parserApply)(Record_Extra.sequenceRecordSingle(spagoFileIsSymbol)()(Options_Applicative_Types.parserFunctor)()())()())()())()())()())({
+        classFile: cliOption1("class-file")(Data_Maybe.Nothing.value)(TsBridgeGen_UIText.cli.options.classFile)(defaults.classFile),
+        modulesFile: cliOption1("modules-file")(Data_Maybe.Nothing.value)(TsBridgeGen_UIText.cli.options.modulesFile)(defaults.modulesFile),
+        spagoFile: cliOption1("spago-file")(Data_Maybe.Nothing.value)(TsBridgeGen_UIText.cli.options.spagoFile)(defaults.spagoFile),
+        packagesFile: cliOption1("packages-file")(Data_Maybe.Nothing.value)(TsBridgeGen_UIText.cli.options.packagesFile)(defaults.packagesFile),
+        allDepsFile: cliOption1("all-deps-file")(Data_Maybe.Nothing.value)(TsBridgeGen_UIText.cli.options.allDepsFile)(defaults.allDepsFile)
     }));
 })();
 var getCliArgs = /* #__PURE__ */ (function () {

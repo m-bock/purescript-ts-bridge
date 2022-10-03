@@ -92,6 +92,11 @@ var tsValue = function (dictMapping) {
         };
     };
 };
+var tsUnsupported = function (v) {
+    return function (v1) {
+        return pure([  ]);
+    };
+};
 var tsTypeVar = function (x) {
     var tsName = new TsBridge_DTS.TsName(x);
     var scope = {
@@ -117,11 +122,11 @@ var tsTypeAlias = function (dictMapping) {
                 return map(function (v) {
                     return [ new TsBridge_DTS.TsDeclTypeDef(new TsBridge_DTS.TsName(n), TsBridge_DTS.Public.value, coerce(v.value1.floating), v.value0) ];
                 })(listens((function () {
-                    var $196 = un(TsBridge_Monad.TsBridgeAccum);
-                    return function ($197) {
+                    var $198 = un(TsBridge_Monad.TsBridgeAccum);
+                    return function ($199) {
                         return (function (v) {
                             return v.scope;
-                        })($196($197));
+                        })($198($199));
                     };
                 })())(t));
             };
@@ -150,6 +155,11 @@ var mkOpaqueTypeDecl = function (name) {
             };
         };
         return new TsBridge_DTS.TsDeclTypeDef(name, TsBridge_DTS.Public.value, coerce(args), new TsBridge_DTS.TsTypeRecord(Data_Array.cons(opaqueField)(Data_Array.mapWithIndex(mkArgFields)(toUnfoldable(args)))));
+    };
+};
+var mergeTsPrograms = function (p1) {
+    return function (p2) {
+        return p1;
     };
 };
 var mergeModule = function (v) {
@@ -505,10 +515,12 @@ export {
     tsOpaqueType4,
     tsOpaqueType5,
     tsOpaqueType6,
+    tsUnsupported,
     tsProgram,
     tsTypeAlias,
     tsTypeVar,
     tsValue,
+    mergeTsPrograms,
     genRecordNil,
     genRecordCons
 };
