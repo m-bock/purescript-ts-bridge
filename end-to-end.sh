@@ -29,6 +29,8 @@ function main () {
   # Init tsc
   tsc --init
 
+  cp $SOURCE_DIR/assets/SampleTypes.purs src
+
   # Generate ts-bridge project
   yarn run ts-bridge
 
@@ -57,6 +59,8 @@ function main () {
   # Verify generated ts code
   tsc --skipLibCheck false
 
+  cat ts-types/SampleTypes/index.d.ts
+  
   popd
 }
 

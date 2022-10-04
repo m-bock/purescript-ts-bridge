@@ -118,7 +118,9 @@ tsValue mp n x = do
 -- | This implementation runs in `O(n^2)` time, where `n` is the length of the
 -- | input array.
 tsUnsupported :: String -> String -> TsBridgeM (Array TsDeclaration)
-tsUnsupported _ _ = pure [] --TODO 
+tsUnsupported x reason = pure
+  [ TsDeclComments [ "`" <> x <> "` is unsupported: " <> reason ]
+  ]
 
 mergeTsPrograms :: TsProgram -> TsProgram -> TsProgram
 mergeTsPrograms p1 p2 = p1 --TODO

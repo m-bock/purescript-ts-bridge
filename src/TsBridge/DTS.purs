@@ -37,6 +37,7 @@ import Data.Set.Ordered as OSet
 data TsDeclaration
   = TsDeclTypeDef TsName TsDeclVisibility (TsBridge_DTS_Wrap (OSet TsName)) TsType
   | TsDeclValueDef TsName TsDeclVisibility TsType
+  | TsDeclComments (Array String)
 
 data TsDeclVisibility = Public | Private
 

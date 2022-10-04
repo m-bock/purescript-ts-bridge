@@ -68,6 +68,7 @@ data TsToken
   | TsTokIdentifier String
   | TsTokStringLiteral String
   | TsTokNumberLiteral Number
+  | TsTokLineComment String
 
 -------------------------------------------------------------------------------
 -- Tokenize
@@ -212,6 +213,9 @@ instance Tokenize TsDeclaration where
         <> [ TsTokWhitespace, TsTokColon, TsTokWhitespace ]
         <> tokenize t
 
+    TsDeclComments xs ->
+      xs >>= \x -> [ TsTokLineComment x ]
+
 instance Tokenize TsModule where
   tokenize (TsModule is ds) =
     ( is
@@ -314,6 +318,8 @@ printToken = case _ of
     "'" <> x <> "'"
   TsTokNumberLiteral x ->
     show x
+  TsTokLineComment x ->
+    "// " <> x <> "\n"
 
 printTsName :: TsName -> String
 printTsName x = tokenize x <#> printToken # S.joinWith ""
