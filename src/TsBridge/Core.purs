@@ -11,21 +11,15 @@ module TsBridge.Core
   , defaultString
   , defaultUnit
   , genRecord
+  , mergeTsPrograms
   , tsModuleFile
   , tsNewtype
   , tsOpaqueType
-  , tsOpaqueType1
-  , tsOpaqueType2
-  , tsOpaqueType3
-  , tsOpaqueType4
-  , tsOpaqueType5
-  , tsOpaqueType6
-  , tsUnsupported
   , tsProgram
   , tsTypeAlias
   , tsTypeVar
+  , tsUnsupported
   , tsValue
-  , mergeTsPrograms
   ) where
 
 import Prelude
@@ -356,150 +350,15 @@ instance
 -- Util
 -------------------------------------------------------------------------------
 
-tsOpaqueTypeImpl :: String -> String -> Array String -> Array (TsBridgeM TsType) -> TsBridgeM TsType
-tsOpaqueTypeImpl pursModuleName pursTypeName targs = opaqueType
+tsOpaqueType :: forall a. String -> String -> Array String -> Array (TsBridgeM TsType) -> a -> TsBridgeM TsType
+tsOpaqueType pursModuleName pursTypeName targNames targs _ = opaqueType
   (TsFilePath (pursModuleName <> "/index") "d.ts")
   (TsModuleAlias $ dotsToLodashes pursModuleName)
   (TsName pursTypeName)
-  (OSet.fromFoldable $ TsName <$> targs)
+  (OSet.fromFoldable $ TsName <$> targNames)
+  targs
 
 tsNewtype = undefined
-
-tsOpaqueType
-  :: forall a
-   . String
-  -> String
-  -> a
-  -> TsBridgeM TsType
-tsOpaqueType pursModuleName pursTypeName _ =
-  tsOpaqueTypeImpl pursModuleName pursTypeName [] []
-
-tsOpaqueType1
-  :: forall a mp f
-   . Mapping mp (Proxy a) (TsBridgeM TsType)
-  => mp
-  -> String
-  -> String
-  -> String
-  -> f a
-  -> TsBridgeM TsType
-tsOpaqueType1 mp pursModuleName pursTypeName a _ =
-  tsOpaqueTypeImpl pursModuleName pursTypeName [ a ] [ mapping mp (Proxy :: _ a) ]
-
-tsOpaqueType2
-  :: forall a1 a2 mp f
-   . Mapping mp (Proxy a1) (TsBridgeM TsType)
-  => Mapping mp (Proxy a2) (TsBridgeM TsType)
-  => mp
-  -> String
-  -> String
-  -> String
-  -> String
-  -> f a1 a2
-  -> TsBridgeM TsType
-tsOpaqueType2 mp pursModuleName pursTypeName a1 a2 _ =
-  tsOpaqueTypeImpl pursModuleName pursTypeName [ a1, a2 ]
-    [ mapping mp (Proxy :: _ a1)
-    , mapping mp (Proxy :: _ a2)
-    ]
-
-tsOpaqueType3
-  :: forall a1 a2 a3 mp f
-   . Mapping mp (Proxy a1) (TsBridgeM TsType)
-  => Mapping mp (Proxy a2) (TsBridgeM TsType)
-  => Mapping mp (Proxy a3) (TsBridgeM TsType)
-  => mp
-  -> String
-  -> String
-  -> String
-  -> String
-  -> String
-  -> f a1 a2 a3
-  -> TsBridgeM TsType
-tsOpaqueType3 mp pursModuleName pursTypeName a1 a2 a3 _ =
-  tsOpaqueTypeImpl pursModuleName pursTypeName [ a1, a2, a3 ]
-    [ mapping mp (Proxy :: _ a1)
-    , mapping mp (Proxy :: _ a2)
-    , mapping mp (Proxy :: _ a3)
-    ]
-
-tsOpaqueType4
-  :: forall a1 a2 a3 a4 mp f
-   . Mapping mp (Proxy a1) (TsBridgeM TsType)
-  => Mapping mp (Proxy a2) (TsBridgeM TsType)
-  => Mapping mp (Proxy a3) (TsBridgeM TsType)
-  => Mapping mp (Proxy a4) (TsBridgeM TsType)
-  => mp
-  -> String
-  -> String
-  -> String
-  -> String
-  -> String
-  -> String
-  -> f a1 a2 a3 a4
-  -> TsBridgeM TsType
-tsOpaqueType4 mp pursModuleName pursTypeName a1 a2 a3 a4 _ =
-  tsOpaqueTypeImpl pursModuleName pursTypeName [ a1, a2, a3, a4 ]
-    [ mapping mp (Proxy :: _ a1)
-    , mapping mp (Proxy :: _ a2)
-    , mapping mp (Proxy :: _ a3)
-    , mapping mp (Proxy :: _ a4)
-    ]
-
-tsOpaqueType5
-  :: forall a1 a2 a3 a4 a5 mp f
-   . Mapping mp (Proxy a1) (TsBridgeM TsType)
-  => Mapping mp (Proxy a2) (TsBridgeM TsType)
-  => Mapping mp (Proxy a3) (TsBridgeM TsType)
-  => Mapping mp (Proxy a4) (TsBridgeM TsType)
-  => Mapping mp (Proxy a5) (TsBridgeM TsType)
-  => mp
-  -> String
-  -> String
-  -> String
-  -> String
-  -> String
-  -> String
-  -> String
-  -> f a1 a2 a3 a4 a5
-  -> TsBridgeM TsType
-tsOpaqueType5 mp pursModuleName pursTypeName a1 a2 a3 a4 a5 _ =
-  tsOpaqueTypeImpl pursModuleName pursTypeName [ a1, a2, a3, a4, a5 ]
-    [ mapping mp (Proxy :: _ a1)
-    , mapping mp (Proxy :: _ a2)
-    , mapping mp (Proxy :: _ a3)
-    , mapping mp (Proxy :: _ a4)
-    , mapping mp (Proxy :: _ a5)
-    ]
-
-tsOpaqueType6
-  :: forall a1 a2 a3 a4 a5 a6 mp f
-   . Mapping mp (Proxy a1) (TsBridgeM TsType)
-  => Mapping mp (Proxy a2) (TsBridgeM TsType)
-  => Mapping mp (Proxy a3) (TsBridgeM TsType)
-  => Mapping mp (Proxy a4) (TsBridgeM TsType)
-  => Mapping mp (Proxy a5) (TsBridgeM TsType)
-  => Mapping mp (Proxy a6) (TsBridgeM TsType)
-  => mp
-  -> String
-  -> String
-  -> String
-  -> String
-  -> String
-  -> String
-  -> String
-  -> String
-  -> f a1 a2 a3 a4 a5
-  -> TsBridgeM TsType
-tsOpaqueType6 mp pursModuleName pursTypeName a1 a2 a3 a4 a5 a6 _ =
-  tsOpaqueTypeImpl pursModuleName pursTypeName [ a1, a2, a3, a4, a5, a6 ]
-    [ mapping mp (Proxy :: _ a1)
-    , mapping mp (Proxy :: _ a2)
-    , mapping mp (Proxy :: _ a3)
-    , mapping mp (Proxy :: _ a4)
-    , mapping mp (Proxy :: _ a5)
-    , mapping mp (Proxy :: _ a6)
-    ]
 
 dotsToLodashes :: String -> String
 dotsToLodashes = Str.replaceAll (Pattern ".") (Replacement "_")

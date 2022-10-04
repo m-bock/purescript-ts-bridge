@@ -1,7 +1,6 @@
 module Test.TsBridge
   ( spec
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -49,10 +48,12 @@ instance (GenRecord MappingToTsBridge rl, RowToList r rl) => ToTsBridge (Record 
   toTsBridge = TSB.defaultRecord Mp
 
 instance ToTsBridge a => ToTsBridge (Maybe a) where
-  toTsBridge = TSB.tsOpaqueType1 Mp "Data.Maybe" "Maybe" "A"
+  toTsBridge = TSB.tsOpaqueType "Data.Maybe" "Maybe" [ "A" ]
+    [ toTsBridge (Proxy :: _ a) ]
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
-  toTsBridge = TSB.tsOpaqueType2 Mp "Data.Either" "Either" "A" "B"
+  toTsBridge = TSB.tsOpaqueType "Data.Either" "Either" [ "A", "B" ]
+    [ toTsBridge (Proxy :: _ a), toTsBridge (Proxy :: _ b) ]
 
 instance ToTsBridge A where
   toTsBridge _ = TSB.tsTypeVar "A"
@@ -64,7 +65,6 @@ instance ToTsBridge C where
   toTsBridge _ = TSB.tsTypeVar "C"
 
 --
-
 
 data MappingToTsBridge = Mp
 
