@@ -24,6 +24,7 @@ var toUnfoldable = /* #__PURE__ */ Data_Set_Ordered.toUnfoldable(Data_Unfoldable
 var show = /* #__PURE__ */ Data_Show.show(Data_Show.showNumber);
 var mapFlipped = /* #__PURE__ */ Data_Functor.mapFlipped(Data_Functor.functorArray);
 var bindFlipped = /* #__PURE__ */ Control_Bind.bindFlipped(Control_Bind.bindArray);
+var bind = /* #__PURE__ */ Control_Bind.bind(Control_Bind.bindArray);
 var toUnfoldable1 = /* #__PURE__ */ Data_Set.toUnfoldable(Data_Unfoldable.unfoldableArray);
 var fromFoldable = /* #__PURE__ */ Data_Map_Internal.fromFoldable(Data_Ord.ordString)(Data_Foldable.foldableArray);
 var toUnfoldable2 = /* #__PURE__ */ Data_Map_Internal.toUnfoldable(Data_Unfoldable.unfoldableArray);
@@ -285,6 +286,15 @@ var TsTokNumberLiteral = /* #__PURE__ */ (function () {
     };
     return TsTokNumberLiteral;
 })();
+var TsTokLineComment = /* #__PURE__ */ (function () {
+    function TsTokLineComment(value0) {
+        this.value0 = value0;
+    };
+    TsTokLineComment.create = function (value0) {
+        return new TsTokLineComment(value0);
+    };
+    return TsTokLineComment;
+})();
 var tokenizeTsName = {
     tokenize: function (v) {
         return [ new TsTokIdentifier(v.value0) ];
@@ -308,7 +318,7 @@ var tokenizeTsDeclVisibility = {
         if (v instanceof TsBridge_DTS.Public) {
             return [ TsTokExport.value, TsTokWhitespace.value ];
         };
-        throw new Error("Failed pattern match at TsBridge.Print (line 191, column 1 - line 193, column 53): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridge.Print (line 192, column 1 - line 194, column 53): " + [ v.constructor.name ]);
     }
 };
 var wrap = function (p) {
@@ -480,7 +490,10 @@ var printToken = function (v) {
     if (v instanceof TsTokNumberLiteral) {
         return show(v.value0);
     };
-    throw new Error("Failed pattern match at TsBridge.Print (line 240, column 14 - line 316, column 11): " + [ v.constructor.name ]);
+    if (v instanceof TsTokLineComment) {
+        return "// " + (v.value0 + "\x0a");
+    };
+    throw new Error("Failed pattern match at TsBridge.Print (line 244, column 14 - line 322, column 23): " + [ v.constructor.name ]);
 };
 var printTsName = function (x) {
     return Data_String_Common.joinWith("")(mapFlipped(tokenize3(x))(printToken));
@@ -545,7 +558,7 @@ var tokenizeTsType = {
         if (v instanceof TsBridge_DTS.TsTypeVoid) {
             return [ TsTokVoid.value ];
         };
-        throw new Error("Failed pattern match at TsBridge.Print (line 132, column 14 - line 164, column 32): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridge.Print (line 133, column 14 - line 165, column 32): " + [ v.constructor.name ]);
     }
 };
 var tokenizeTsRecordField = {
@@ -575,32 +588,37 @@ var printTsType = function (x) {
 var tokenizeTsDeclaration = {
     tokenize: function (v) {
         if (v instanceof TsBridge_DTS.TsDeclTypeDef) {
-            return append(tokenize4(v.value1))(append([ TsTokType.value, TsTokWhitespace.value ])(append(tokenize3(v.value0))(append(applyWhenNotEmpty(function ($120) {
-                return wrapAngles(sepByComma($120));
+            return append(tokenize4(v.value1))(append([ TsTokType.value, TsTokWhitespace.value ])(append(tokenize3(v.value0))(append(applyWhenNotEmpty(function ($123) {
+                return wrapAngles(sepByComma($123));
             })(map(tokenize3)(toUnfoldable(unwrap(v.value2)))))(append([ TsTokWhitespace.value, TsTokEquals.value, TsTokWhitespace.value ])(tokenize8(v.value3))))));
         };
         if (v instanceof TsBridge_DTS.TsDeclValueDef) {
             return append(tokenize4(v.value1))(append([ TsTokConst.value, TsTokWhitespace.value ])(append(tokenize3(v.value0))(append([ TsTokWhitespace.value, TsTokColon.value, TsTokWhitespace.value ])(tokenize8(v.value2)))));
         };
-        throw new Error("Failed pattern match at TsBridge.Print (line 196, column 14 - line 213, column 22): " + [ v.constructor.name ]);
+        if (v instanceof TsBridge_DTS.TsDeclComments) {
+            return bind(v.value0)(function (x) {
+                return [ new TsTokLineComment(x) ];
+            });
+        };
+        throw new Error("Failed pattern match at TsBridge.Print (line 197, column 14 - line 217, column 42): " + [ v.constructor.name ]);
     }
 };
 var tokenize9 = /* #__PURE__ */ tokenize(tokenizeTsDeclaration);
 var printTsDeclarations = function (x) {
     return mapFlipped(mapFlipped(x)(tokenize9))((function () {
-        var $121 = Data_String_Common.joinWith("");
-        var $122 = map(printToken);
-        return function ($123) {
-            return $121($122($123));
+        var $124 = Data_String_Common.joinWith("");
+        var $125 = map(printToken);
+        return function ($126) {
+            return $124($125($126));
         };
     })());
 };
 var tokenizeTsModule = {
     tokenize: function (v) {
-        return append(applyWhenNotEmpty(function ($124) {
+        return append(applyWhenNotEmpty(function ($127) {
             return (function (v1) {
                 return append(v1)([ TsTokNewline.value ]);
-            })(postfixNewline($124));
+            })(postfixNewline($127));
         })(mapFlipped(toUnfoldable1(v.value0))(tokenize5)))(sepByDoubleNewline(mapFlipped(v.value1)(tokenize9)));
     }
 };

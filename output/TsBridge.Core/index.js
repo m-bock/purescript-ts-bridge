@@ -41,7 +41,7 @@ var listens = /* #__PURE__ */ Control_Monad_Writer_Class.listens(TsBridge_Monad.
 var un = /* #__PURE__ */ Data_Newtype.un();
 var join = /* #__PURE__ */ Control_Bind.join(Control_Bind.bindArray);
 var sequence = /* #__PURE__ */ Data_Traversable.sequence(Data_Traversable.traversableArray)(TsBridge_Monad.applicativeTsBridgeM);
-var append = /* #__PURE__ */ Data_Semigroup.append(Data_Semigroup.semigroupArray);
+var append1 = /* #__PURE__ */ Data_Semigroup.append(Data_Semigroup.semigroupArray);
 var show = /* #__PURE__ */ Data_Show.show(Data_Show.showInt);
 var toUnfoldable = /* #__PURE__ */ Data_Set_Ordered.toUnfoldable(Data_Unfoldable.unfoldableArray);
 var union = /* #__PURE__ */ Data_Set.union(TsBridge_DTS.ordTsImport);
@@ -92,9 +92,9 @@ var tsValue = function (dictMapping) {
         };
     };
 };
-var tsUnsupported = function (v) {
-    return function (v1) {
-        return pure([  ]);
+var tsUnsupported = function (x) {
+    return function (reason) {
+        return pure([ new TsBridge_DTS.TsDeclComments([ "`" + (x + ("` is unsupported: " + reason)) ]) ]);
     };
 };
 var tsTypeVar = function (x) {
@@ -122,11 +122,11 @@ var tsTypeAlias = function (dictMapping) {
                 return map(function (v) {
                     return [ new TsBridge_DTS.TsDeclTypeDef(new TsBridge_DTS.TsName(n), TsBridge_DTS.Public.value, coerce(v.value1.floating), v.value0) ];
                 })(listens((function () {
-                    var $198 = un(TsBridge_Monad.TsBridgeAccum);
-                    return function ($199) {
+                    var $196 = un(TsBridge_Monad.TsBridgeAccum);
+                    return function ($197) {
                         return (function (v) {
                             return v.scope;
-                        })($198($199));
+                        })($196($197));
                     };
                 })())(t));
             };
@@ -137,7 +137,7 @@ var tsNewtype = Data_Typelevel_Undefined["undefined"];
 var tsModuleFile = function (n) {
     return function (xs) {
         var v = TsBridge_Monad.runTsBridgeM(map(join)(sequence(xs)));
-        return append(v.value1.typeDefs)([ new TsBridge_DTS.TsModuleFile(TsBridge_DTS.dtsFilePath(n), new TsBridge_DTS.TsModule(v.value1.imports, v.value0)) ]);
+        return append1(v.value1.typeDefs)([ new TsBridge_DTS.TsModuleFile(TsBridge_DTS.dtsFilePath(n), new TsBridge_DTS.TsModule(v.value1.imports, v.value0)) ]);
     };
 };
 var mkOpaqueTypeDecl = function (name) {
@@ -164,7 +164,7 @@ var mergeTsPrograms = function (p1) {
 };
 var mergeModule = function (v) {
     return function (v1) {
-        return new TsBridge_DTS.TsModule(union(v.value0)(v1.value0), nub(append(v.value1)(v1.value1)));
+        return new TsBridge_DTS.TsModule(union(v.value0)(v1.value0), nub(append1(v.value1)(v1.value1)));
     };
 };
 var mergeModules = function (xs) {

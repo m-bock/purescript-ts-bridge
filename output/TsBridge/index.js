@@ -70,6 +70,7 @@ export {
     TsBridge_DTS_Wrap,
     Private,
     Public,
+    TsDeclComments,
     TsDeclTypeDef,
     TsDeclValueDef,
     TsFilePath,
