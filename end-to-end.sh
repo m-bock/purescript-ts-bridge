@@ -1,21 +1,63 @@
 set -e 
 set -o pipefail
+shopt -s extglob
 
-THERE=`pwd`
+SOURCE_DIR=`pwd`
+TARGET_DIR="${TARGET_DIR:-$`mktemp -d`}"
+RM_GLOB="${RM_GLOB:-$"*"}"
 
-mkdir -p e2e
-rm -rf e2e/*
-cd e2e
+echo SOURCE_DIR $SOURCE_DIR
+echo TARGET_DIR $TARGET_DIR
 
-#DIR=`mktemp -d`
-#cd $DIR
+# Create or cleanup target dir
+mkdir -p $TARGET_DIR
+rm -rf -- $TARGET_DIR/$RM_GLOB
 
-yarn init -y
-yarn add file:$THERE 
-spago init --tag psc-0.15.4-20220924
 
-yarn run ts-bridge
-cp $THERE/assets/packages-local.dhall ts-bridge/packages.dhall
+function main () {
+  pushd $TARGET_DIR
 
-spago build
-cd ts-bridge; spago build --purs-args "--output ../output"
+  # Init fresh yarn project
+  yarn init -y
+
+  # Add purescript-ts-bridge-cli dependency
+  yarn add file:$SOURCE_DIR
+
+  # Init fresh spago project
+  spago init --tag psc-0.15.4-20220924
+
+  # Init tsc
+  tsc --init
+
+  # Generate ts-bridge project
+  yarn run ts-bridge
+
+  # Use local typescript-bridge dependency
+  echo "with typescript-bridge = $SOURCE_DIR/spago.dhall as Location" \
+  >> ts-bridge/packages.dhall
+
+  # Build main project
+  spago build
+
+  {
+    pushd ts-bridge;
+
+    # Build ts-bridge project
+    spago build --purs-args "--output ../output"
+
+    popd
+  }
+
+  # Generate Typescript Types
+  echo "import('./output/MyTsBridgeModules/index.js').then(x => x.main())" \
+    > generate-ts-types.js
+
+  node generate-ts-types.js --output-dir ts-types
+
+  # Verify generated ts code
+  tsc --skipLibCheck false
+
+  popd
+}
+
+main

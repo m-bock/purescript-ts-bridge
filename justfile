@@ -13,7 +13,6 @@ run args:
     spago --quiet --no-psa run --main TsBridgeGen.Main --node-args \
     "{{args}} --modules-file tmp/MyTsBridgeModules.purs --class-file tmp/MyTsBridgeClass.purs"
 
-
 test:
     spago test
 
@@ -26,4 +25,13 @@ docs:
 install:
     yarn install
 
-ci: install test docs dist
+ci: install test end2end docs dist
+
+end2end:
+    bash end-to-end.sh
+
+end2end-local:
+    export TARGET_DIR="e2e"; \
+    export RM_GLOB="!(output|node_modules)"; \
+    bash end-to-end.sh
+

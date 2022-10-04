@@ -24,7 +24,8 @@ import Effect.Aff (throwError)
 import Node.FS.Aff (writeTextFile)
 import Node.Path (FilePath, dirname)
 import Node.Path as Path
-import Parsing (Position(..), fail, position)
+import Parsing (ParserT, Position(..), fail, position)
+import Parsing.Combinators (sepBy)
 import Parsing.String (anyTill, string) as P
 import Parsing.String.Replace (replaceT) as P
 import Safe.Coerce (coerce)
@@ -310,3 +311,13 @@ printDhallType :: DhallType -> String
 printDhallType = case _ of
   DhallTypeApp t1 t2 -> printDhallType t1 <> " " <> printDhallType t2
   DhallTypeId s -> s
+
+
+-- parserDhallExpr :: forall m. Monad m => ParserT String m DhallExpr
+-- parserDhallExpr =
+--   (do
+--       _ <- P.string "["
+--       xs <- parserDhallExpr `sepBy` P.string ","
+--       _ <- P.string "]"
+--       pure $ DhallExprList $ A.fromFoldable xs
+--   )
