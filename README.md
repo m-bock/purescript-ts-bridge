@@ -52,8 +52,8 @@ myFn n str = true
 
 # TODO
 
-- [ ] Tidy the whole doc aftercode genration
-- [ ] Apply prettier to JSON
+- [ ] Tidy the whole doc aftercode generation
+- [x] Apply prettier to JSON
 - [ ] Use "unsupported reason" ADT
 - [x] Implement `tsUnsupported` function
 - [x] Add Text to CLI Options

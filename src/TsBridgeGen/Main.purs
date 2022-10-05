@@ -22,7 +22,7 @@ import Node.FS.Perms as FS
 import Node.Glob.Basic as Glob
 import Node.Path (FilePath)
 import Sunde as Sun
-import TsBridgeGen (AppCapabalities(..), AppError(..), Glob(..))
+import TsBridgeGen (AppEffects(..), AppError(..), Glob(..))
 import TsBridgeGen.Cli (app, parseStrToData)
 import TsBridgeGen.Config (getConfig, runInitM)
 import TsBridgeGen.Monad (AppEnv(..), AppM, runAppM)
@@ -34,7 +34,7 @@ main = do
   let
     appEnv = AppEnv
       { config
-      , capabilities: AppCapabalities
+      , capabilities: AppEffects
           { writeTextFile
           , readTextFile
           , expandGlobsCwd

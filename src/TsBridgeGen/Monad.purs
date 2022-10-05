@@ -1,8 +1,12 @@
 module TsBridgeGen.Monad
-  ( AppCapabalities(..)
+  ( AppEffects(..)
   , AppEnv(..)
   , AppM
+  , askAppConfig
+  , askAppEffects
   , class MonadApp
+  , class MonadAppConfig
+  , class MonadAppEffects
   , class MonadLog
   , log
   , runAppM
@@ -11,7 +15,7 @@ module TsBridgeGen.Monad
 import Prelude
 
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, try)
-import Control.Monad.Except (ExceptT, lift, runExceptT)
+import Control.Monad.Except (class MonadTrans, ExceptT, lift, runExceptT)
 import Control.Monad.Reader (class MonadAsk, ReaderT, ask, runReaderT)
 import Control.Monad.Rec.Class (class MonadRec)
 import Control.Monad.Writer (WriterT)
@@ -20,6 +24,7 @@ import Data.Either.Nested (type (\/))
 import Data.Set (Set)
 import Data.String (Pattern(..))
 import Data.String as Str
+import Data.Typelevel.Undefined (undefined)
 import Dodo (Doc, indent, lines, text)
 import Dodo as Dodo
 import Effect (Effect)
@@ -28,6 +33,7 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (error)
 import Effect.Class.Console as E
+import Heterogeneous.Mapping (class Mapping, hmap, mapping)
 import Node.Path (FilePath)
 import Node.Process (exit)
 import PureScript.CST (RecoveredParserResult(..), parseExpr)
@@ -35,14 +41,40 @@ import Tidy (defaultFormatOptions, formatExpr)
 import Tidy.Doc (FormatDoc(..))
 import TsBridgeGen.Config (AppConfig(..))
 import TsBridgeGen.Types (AppError(..), AppLog(..), Glob(..), SourcePosition(..))
+import Type.Proxy (Proxy(..))
 
 class
-  ( MonadAsk (AppEnv m) m
-  , MonadError AppError m
+  ( MonadError AppError m
   , MonadLog AppLog m
   , MonadRec m
+  , MonadAppEffects m
+  , MonadAppConfig m
   ) <=
   MonadApp m
+
+instance MonadAppEffects AppM where
+  askAppEffects = do
+    (AppEnv { capabilities }) <- ask
+    pure capabilities
+
+instance MonadAppConfig AppM where
+  askAppConfig = do
+    (AppEnv { config }) <- ask
+    pure config
+
+class MonadAppEffects m where
+  askAppEffects :: m (AppEffects m)
+
+instance (Monoid w, Monad m, MonadAppEffects m) => MonadAppEffects (WriterT w m) where
+  askAppEffects = lift $ liftAppEffects <$> askAppEffects
+
+instance (Monoid w, Monad m, MonadAppConfig m) => MonadAppConfig (WriterT w m) where
+  askAppConfig = lift $ askAppConfig
+
+instance (Monoid w, Monad m, MonadApp m) => MonadApp (WriterT w m)
+
+class MonadAppConfig m where
+  askAppConfig :: m AppConfig
 
 instance MonadApp AppM
 
@@ -54,10 +86,21 @@ newtype AppM a = AppM
 
 newtype AppEnv m = AppEnv
   { config :: AppConfig
-  , capabilities :: AppCapabalities m
+  , capabilities :: AppEffects m
   }
 
-newtype AppCapabalities m = AppCapabalities
+liftAppEffects :: forall t m. Monad m => MonadTrans t => AppEffects m -> AppEffects (t m)
+liftAppEffects (AppEffects r) = AppEffects
+  { mkdirRec: \x1 -> r.mkdirRec x1 # lift
+  , readTextFile: \x1 -> r.readTextFile x1 # lift
+  , writeTextFile: \x1 x2 -> r.writeTextFile x1 x2 # lift
+  , expandGlobsCwd: \x1 -> r.expandGlobsCwd x1 # lift
+  , runPrettier: \x1 -> r.runPrettier x1 # lift
+  , spagoLsDepsTransitive: lift r.spagoLsDepsTransitive
+  , spagoSources: lift r.spagoSources
+  }
+
+newtype AppEffects m = AppEffects
   { mkdirRec :: FilePath -> m Unit
   , readTextFile :: FilePath -> m String
   , writeTextFile :: FilePath -> String -> m Unit
@@ -96,7 +139,7 @@ instance MonadLog AppLog AppM where
 
 printAppLog :: forall m a. MonadApp m => AppLog -> m (Doc a)
 printAppLog x = do
-  AppEnv { config: config@(AppConfig { debug }) } <- ask
+  config@(AppConfig { debug }) <- askAppConfig
   c <- pure 0 -- errorCount
 
   pure

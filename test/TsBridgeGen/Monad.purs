@@ -13,7 +13,7 @@ import Prelude
 
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, throwError)
 import Control.Monad.Except (ExceptT, runExceptT)
-import Control.Monad.RWS (RWS, RWSResult(..), runRWS, tell)
+import Control.Monad.RWS (RWS, RWSResult(..), ask, runRWS, tell)
 import Control.Monad.Reader (class MonadAsk)
 import Control.Monad.Rec.Class (class MonadRec)
 import Data.Either (Either)
@@ -21,9 +21,9 @@ import Data.Generic.Rep (class Generic)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Show.Generic (genericShow)
-import TsBridgeGen (class MonadApp, class MonadLog, AppCapabalities(..), AppEnv, AppLog)
+import TsBridgeGen.Monad (class MonadApp, class MonadAppConfig, class MonadAppEffects, class MonadLog, AppEffects(..), AppEnv(..))
 import TsBridgeGen.Config (AppConfig(..))
-import TsBridgeGen.Types (AppError(..))
+import TsBridgeGen.Types (AppError(..), AppLog)
 
 type TestState = Map String String
 
@@ -47,6 +47,16 @@ instance MonadLog AppLog TestM where
 
 instance MonadApp TestM
 
+instance MonadAppEffects TestM where
+  askAppEffects = do
+    (AppEnv { capabilities }) <- ask
+    pure capabilities
+
+instance MonadAppConfig TestM where
+  askAppConfig = do
+    (AppEnv { config }) <- ask
+    pure config
+
 data TestMResult a = TestMResult TestState AppLogs (Either AppError a)
 
 derive instance Functor TestMResult
@@ -64,12 +74,12 @@ runTestM r s (TestM ma) = ma
   # (\x -> runRWS x r s)
   # (\(RWSResult s' x w) -> TestMResult s' w x)
 
-defaultTestCapabilities :: AppCapabalities TestM
-defaultTestCapabilities = AppCapabalities
+defaultTestCapabilities :: AppEffects TestM
+defaultTestCapabilities = AppEffects
   { readTextFile: \_ -> throwError ErrUnknown
   , writeTextFile: \_ _ -> throwError ErrUnknown
   , expandGlobsCwd: \_ -> throwError ErrUnknown
-  , runPrettier: \_ -> throwError ErrUnknown
+  , runPrettier: \x -> pure x --throwError ErrUnknown
   , mkdirRec: \_ -> throwError ErrUnknown
   , spagoLsDepsTransitive: throwError ErrUnknown
   , spagoSources: throwError ErrUnknown

@@ -58,8 +58,9 @@ getPursDef = case _ of
     { name: CST.Name { name: CST.Proper name }
     , vars: []
     }
-    _ -> Just $ DefUnsupportedExport (Name name) "data type" 
-    -- Just $ DefData (Name name)
+    _ -> Just $ DefData (Name name)
+     --Just $ DefUnsupportedExport (Name name) "data type" 
+      
 
   CST.DeclData
     { name: CST.Name { name: CST.Proper name } }

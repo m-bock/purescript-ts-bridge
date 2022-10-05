@@ -20,8 +20,8 @@ import PureScript.CST (RecoveredParserResult(..), parseDecl)
 import Test.Spec (Spec, describe, it)
 import Test.TsBridgeGen.Monad (TestMResult(..), defaultTestCapabilities, defaultTestConfig, runTestM, runTestM_)
 import Test.Util (shouldEqual)
-import TsBridgeGen (class MonadApp, class MonadLog, AppCapabalities(..), AppEnv(..), AppError, AppLog, AppWarning, ModuleName(..), Name(..), PursDef(..), PursModule(..), genInstances, getPursDef, printPursSnippets, runImportWriterM, runImportWriterT)
-import TsBridgeGen.Cli (patchClassFile)
+import TsBridgeGen (class MonadApp, class MonadLog, AppEffects(..), AppEnv(..), AppError, AppLog, AppWarning, ModuleName(..), Name(..), PursDef(..), PursModule(..), genInstances, getPursDef, printPursSnippets, runImportWriterM, runImportWriterT)
+import TsBridgeGen.Cli (patchClassFile, patchModulesFile)
 import TsBridgeGen.Config (AppConfig(..))
 
 recResToMaybe :: forall f. RecoveredParserResult f -> Maybe (f Void)
@@ -60,7 +60,7 @@ spec = do
             [ "module MyApp.TsBridgeClass where"
             , ""
             , "{-GEN:imports"
-            , "{ \"autoPrefix\": \"Auto\" }"
+            , "{}"
             , "-}"
             , ""
             , "import Data.Either (Either)"
@@ -85,7 +85,7 @@ spec = do
                   [ "module MyApp.TsBridgeClass where"
                   , ""
                   , "{-GEN:imports"
-                  , "{ \"autoPrefix\": \"Auto\" }"
+                  , "{}"
                   , "-}"
                   , ""
                   , "import Module1 as Auto.Module1"
@@ -101,10 +101,80 @@ spec = do
                   , "-}"
                   , ""
                   , "instance ToTsBridge Auto.Module1.Foo1 where"
-                  , "  toTsBridge = tsOpaqueType \"Module1\" \"Foo1\""
+                  , "  toTsBridge = defaultOpaqueType \"Module1\" \"Foo1\" [] []"
                   , ""
                   , "instance ToTsBridge Auto.Module2.Foo2 where"
-                  , "  toTsBridge = tsOpaqueType \"Module2\" \"Foo2\""
+                  , "  toTsBridge = defaultOpaqueType \"Module2\" \"Foo2\" [] []"
+                  , ""
+                  , "{-GEN:END-}"
+                  ]
+              )
+          )
+
+  describe "patchModulesFile" do
+    it "patches a modules file correctly" do
+      let
+        testEnv = AppEnv
+          { config: defaultTestConfig
+          , capabilities: defaultTestCapabilities
+          }
+
+      patchModulesFile
+        "Module.purs"
+        [ PursModule (ModuleName "Module1") [ DefData (Name "Foo1") ]
+        , PursModule (ModuleName "Module2") [ DefData (Name "Foo2") ]
+        ]
+        ( Str.joinWith "\n"
+            [ "module MyApp.TsModules where"
+            , ""
+            , "{-GEN:imports"
+            , "{ \"autoPrefix\": \"Auto\" }"
+            , "-}"
+            , ""
+            , "import Data.Either (Either)"
+            , ""
+            , "{-GEN:END-}"
+            , ""
+            , "{-GEN:ts-program"
+            , "{ \"include\": [ \"**\" ]"
+            , ", \"exclude\": []"
+            , "}"
+            , "-}"
+            , ""
+            , "{-GEN:END-}"
+            ]
+        )
+        # runTestM_ testEnv
+        <#> (Str.split $ Pattern "\n")
+        # shouldEqual
+        $
+          ( TestMResult Map.empty []
+              ( Right
+                  [ "module MyApp.TsModules where"
+                  , ""
+                  , "{-GEN:imports"
+                  , "{ \"autoPrefix\": \"Auto\" }"
+                  , "-}"
+                  , ""
+                  , "import Module1 as Auto.Module1"
+                  , "import Module2 as Auto.Module2"
+                  , "import Data.Either (Either)"
+                  , ""
+                  , "{-GEN:END-}"
+                  , ""
+                  , "{-GEN:ts-program"
+                  , "{ \"include\": [ \"**\" ]"
+                  , ", \"exclude\": []"
+                  , "}"
+                  , "-}"
+                  , ""
+                  , "generatedTsProgram :: TsProgram"
+                  , "generatedTsProgram = tsProgram"
+                  , "  [ tsModuleFile \"Module1/index\""
+                  , "      [ tsOpaqueType Mp \"Foo1\" (Proxy :: _ Auto.Module1.Foo1) ]"
+                  , "  , tsModuleFile \"Module2/index\""
+                  , "      [ tsOpaqueType Mp \"Foo2\" (Proxy :: _ Auto.Module2.Foo2) ]"
+                  , "  ]"
                   , ""
                   , "{-GEN:END-}"
                   ]

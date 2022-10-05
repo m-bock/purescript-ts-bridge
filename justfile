@@ -7,7 +7,7 @@ dist: build
     mkdir dist
     cp -r output assets package.json bin -t dist
 
-run args:
+run args='':
     mkdir -p tmp
     export ASSETS_DIR=assets; \
     spago --quiet --no-psa run --main TsBridgeGen.Main --node-args \

@@ -3,6 +3,7 @@ module TsBridgeGen.Print where
 import Prelude
 
 import Control.Monad.Writer (Writer, WriterT, runWriter, runWriterT, tell)
+import Data.Array.NonEmpty ((:))
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
@@ -16,7 +17,7 @@ import Language.PS.CST (Declaration(..), Expr(..), Guarded(..), Ident(..), Insta
 import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..))
 
 data PursCodeSnippet
-  = CodeSnipDecl Declaration
+  = CodeSnipDecls (Array Declaration)
   | CodeSnipComments (Array String)
 
 type ImportWriterM a = Writer Accum a
@@ -43,11 +44,13 @@ genInstances modules = sequence do
               , as: Name ("Auto." <> mn')
               }
           }
-        pure $ CodeSnipDecl $
+        pure $ CodeSnipDecls $ pure $
           genTsBridgeInstance mn n
-            ( (ExprIdent $ nonQualifiedName (Ident "tsOpaqueType"))
+            ( (ExprIdent $ nonQualifiedName (Ident "defaultOpaqueType"))
                 `ExprApp` (ExprString mn')
                 `ExprApp` (ExprString n')
+                `ExprApp` (ExprArray [])
+                `ExprApp` (ExprArray [])
             )
 
     DefType _ -> []
@@ -68,7 +71,7 @@ genInstances modules = sequence do
 --         , as: Name ("Auto." <> mn')
 --         }
 --     }
---   pure $ CodeSnipDecl $
+--   pure $ CodeSnipDecls $
 --     genTsBridgeInstance mn n
 --       ( (ExprIdent $ nonQualifiedName (Ident "tsNewtype"))
 --           `ExprApp` (ExprString mn')
@@ -90,14 +93,14 @@ genTsProgram' modules = do
     valueName = Ident "generatedTsProgram"
 
   let
-    signature = CodeSnipDecl $ DeclSignature
+    signature = DeclSignature
       { comments: Nothing, ident: valueName, type_ }
 
   let
     body = ExprIdent (nonQualifiedName $ Ident "tsProgram") `ExprApp` ms
 
   let
-    valueDef = CodeSnipDecl $ DeclValue
+    valueDef = DeclValue
       { comments: Nothing
       , valueBindingFields:
           { name: valueName
@@ -106,7 +109,7 @@ genTsProgram' modules = do
           }
       }
 
-  pure [ signature, valueDef ]
+  pure [ CodeSnipDecls [ signature, valueDef ] ]
 
 genTsModuleFile :: forall m. Monad m => PursModule -> ImportWriterT m Expr
 genTsModuleFile (PursModule mn defs) = do
@@ -146,11 +149,10 @@ genTsDef (ModuleName mn) = case _ of
 
   DefData (Name n) ->
     ExprIdent (nonQualifiedName $ Ident "tsOpaqueType")
+      `ExprApp` (ExprIdent $ nonQualifiedName $ Ident "Mp") 
       `ExprApp` ExprString n
       `ExprApp`
-        ( ExprIdent (nonQualifiedName $ Ident "toTsBridge")
-            `ExprApp` genProxy
-              (qualifiedName (mkModuleName $ pure mn) (ProperName n))
+        ( genProxy (qualifiedName (mkModuleName $ "Auto" : pure mn) (ProperName n))
         )
 
   DefNewtype (Name n) ->
@@ -177,8 +179,11 @@ genProxy qn = ExprTyped
 
 printPursSnippets :: Array PursCodeSnippet -> String
 printPursSnippets = Str.joinWith "\n\n" <<< map case _ of
-  CodeSnipDecl d -> printDeclaration d
-    # Dodo.print Dodo.plainText Dodo.twoSpaces
+  CodeSnipDecls ds -> ds
+    <#> printDeclaration
+      >>> Dodo.print Dodo.plainText 
+         { pageWidth: 300, ribbonRatio: 1.0, indentUnit: "  ", indentWidth: 2 }
+    # Str.joinWith "\n"
     # instName.replace
   CodeSnipComments cs -> cs <#> ("-- " <> _) # Str.joinWith "\n"
 

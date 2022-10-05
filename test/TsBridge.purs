@@ -19,6 +19,7 @@ import Test.Util (shouldEqual)
 import TsBridge (tsValue, tsTypeAlias, class GenRecord, TsDeclaration, TsProgram, TsType, runTsBridgeM, tsModuleFile, tsProgram)
 import TsBridge as TSB
 import TsBridge.ABC (A, B, C)
+import TsBridge.Core (tsOpaqueType)
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
 import Type.Proxy (Proxy(..))
@@ -48,21 +49,21 @@ instance (GenRecord MappingToTsBridge rl, RowToList r rl) => ToTsBridge (Record 
   toTsBridge = TSB.defaultRecord Mp
 
 instance ToTsBridge a => ToTsBridge (Maybe a) where
-  toTsBridge = TSB.tsOpaqueType "Data.Maybe" "Maybe" [ "A" ]
+  toTsBridge = TSB.defaultOpaqueType "Data.Maybe" "Maybe" [ "A" ]
     [ toTsBridge (Proxy :: _ a) ]
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
-  toTsBridge = TSB.tsOpaqueType "Data.Either" "Either" [ "A", "B" ]
+  toTsBridge = TSB.defaultOpaqueType "Data.Either" "Either" [ "A", "B" ]
     [ toTsBridge (Proxy :: _ a), toTsBridge (Proxy :: _ b) ]
 
 instance ToTsBridge A where
-  toTsBridge _ = TSB.tsTypeVar "A"
+  toTsBridge _ = TSB.defaultTypeVar "A"
 
 instance ToTsBridge B where
-  toTsBridge _ = TSB.tsTypeVar "B"
+  toTsBridge _ = TSB.defaultTypeVar "B"
 
 instance ToTsBridge C where
-  toTsBridge _ = TSB.tsTypeVar "C"
+  toTsBridge _ = TSB.defaultTypeVar "C"
 
 --
 
@@ -81,6 +82,8 @@ spec = do
         tsProgram
           [ tsModuleFile "types"
               [ tsTypeAlias Mp "Foo" (Proxy :: _ (Either String Boolean)) ]
+          , tsModuleFile "Data.Either/index"
+              [ tsOpaqueType Mp "Either" (Proxy :: _ (Either String Boolean)) ]
           ]
           # printTsProgram
           # shouldEqual
@@ -91,7 +94,9 @@ spec = do
                   , "export type Foo = Data_Either.Either<string, boolean>"
                   ]
               , textFile "Data.Either/index.d.ts"
-                  [ "export type Either<A, B> = { readonly opaque_Either: unique symbol; readonly arg0: A; readonly arg1: B; }"
+                  [ "import * as Data_Either from '~/Data.Either/index'"
+                  , ""
+                  , "export type Either<A, B> = { readonly opaque_Either: unique symbol; readonly arg0: A; readonly arg1: B; }"
                   ]
               ]
 

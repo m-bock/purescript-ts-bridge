@@ -4,20 +4,21 @@ module TsBridge.Core
   , defaultBoolean
   , defaultEffect
   , defaultFunction
+  , defaultNewtype
   , defaultNumber
+  , defaultOpaqueType
   , defaultPromise
   , defaultProxy
   , defaultRecord
   , defaultString
+  , defaultTypeVar
   , defaultUnit
   , genRecord
   , mergeTsPrograms
   , tsModuleFile
-  , tsNewtype
   , tsOpaqueType
   , tsProgram
   , tsTypeAlias
-  , tsTypeVar
   , tsUnsupported
   , tsValue
   ) where
@@ -26,7 +27,7 @@ import Prelude
 
 import Control.Monad.Writer (listens, censor, listen, tell)
 import Control.Promise (Promise)
-import Data.Array (mapWithIndex, (:))
+import Data.Array (mapWithIndex, uncons, (:))
 import Data.Array as A
 import Data.Array as Array
 import Data.Map as Map
@@ -48,7 +49,7 @@ import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
 import TsBridge.DTS (TsBridge_DTS_Wrap(..), TsDeclVisibility(..), TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsImport(..), TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsProgram(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..), dtsFilePath, mapQuantifier)
-import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, runTsBridgeM, Scope, TsBridge_Monad_Wrap(..), defaultTsBridgeAccum)
+import TsBridge.Monad (Scope, TsBridgeAccum(..), TsBridgeM, TsBridge_Monad_Wrap(..), defaultTsBridgeAccum, runTsBridgeM)
 import TsBridge.Print (printTsName)
 import Type.Proxy (Proxy(..))
 
@@ -61,7 +62,7 @@ tsModuleFile n xs =
   let
     (xs' /\ TsBridgeAccum { typeDefs, imports }) = runTsBridgeM $ join <$> sequence xs
   in
-    typeDefs <> [ TsModuleFile (dtsFilePath n) (TsModule imports xs') ]
+    {-typeDefs <>-} [ TsModuleFile (dtsFilePath n) (TsModule imports xs') ]
 
 -- | Sort an array based on its `Ord` instance.
 -- |
@@ -97,6 +98,25 @@ tsTypeAlias mp n x = ado
   in [ TsDeclTypeDef (TsName n) Public (coerce scope.floating) x ]
   where
   t = mapping mp x
+
+-- | Sort an array based on its `Ord` instance.
+-- |
+-- | This implementation runs in `O(n^2)` time, where `n` is the length of the
+-- | input array.
+tsOpaqueType :: forall mp a. Mapping mp a (TsBridgeM TsType) => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
+tsOpaqueType mp n x = do
+  _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ mapping mp x
+  case uncons modules of
+    Just { head: (TsModuleFile _ (TsModule imports decls)), tail: [] } -> do
+      tell $ TsBridgeAccum
+        { typeDefs: mempty
+        , imports
+        , scope: mempty
+        }
+      pure decls
+    _ -> pure []
+
+--modules >>= (\(TsModuleFile _ (TsModule ips decls)) -> decls) # pure
 
 -- | Sort an array based on its `Ord` instance.
 -- |
@@ -175,8 +195,8 @@ filePathToModulePath (TsFilePath x _) = TsModulePath x
 -- Default Implementations
 -------------------------------------------------------------------------------
 
-tsTypeVar :: String -> TsBridgeM TsType
-tsTypeVar x = do
+defaultTypeVar :: String -> TsBridgeM TsType
+defaultTypeVar x = do
   let
     tsName = TsName x
 
@@ -350,15 +370,15 @@ instance
 -- Util
 -------------------------------------------------------------------------------
 
-tsOpaqueType :: forall a. String -> String -> Array String -> Array (TsBridgeM TsType) -> a -> TsBridgeM TsType
-tsOpaqueType pursModuleName pursTypeName targNames targs _ = opaqueType
+defaultOpaqueType :: forall a. String -> String -> Array String -> Array (TsBridgeM TsType) -> a -> TsBridgeM TsType
+defaultOpaqueType pursModuleName pursTypeName targNames targs _ = opaqueType
   (TsFilePath (pursModuleName <> "/index") "d.ts")
   (TsModuleAlias $ dotsToLodashes pursModuleName)
   (TsName pursTypeName)
   (OSet.fromFoldable $ TsName <$> targNames)
   targs
 
-tsNewtype = undefined
+defaultNewtype = undefined
 
 dotsToLodashes :: String -> String
 dotsToLodashes = Str.replaceAll (Pattern ".") (Replacement "_")

@@ -1,10 +1,14 @@
 module MyTsBridgeModules where
 
-{-GEN:imports-}
+{-GEN:imports
+{}
+-}
 
 import Prelude
+
 import Effect (Effect)
-import TsBridge (TsProgram, mkTypeGenCli, mergeTsPrograms, tsUnsupported, tsModuleFile, tsProgram, tsTypeAlias)
+import MyTsBridgeClass (MappingToTsBridge(..))
+import TsBridge (TsProgram, mergeTsPrograms, mkTypeGenCli, tsModuleFile, tsOpaqueType, tsProgram, tsTypeAlias, tsUnsupported)
 import Type.Proxy (Proxy(..))
 
 {-GEN:END-}

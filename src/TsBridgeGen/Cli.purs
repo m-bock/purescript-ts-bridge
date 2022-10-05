@@ -2,37 +2,41 @@ module TsBridgeGen.Cli
   ( app
   , parseStrToData
   , patchClassFile
+  , patchModulesFile
   , replaceComment
   ) where
 
 import Prelude
 
-import Control.Monad.Error.Class (class MonadError, catchError, liftEither, throwError, try)
+import Control.Monad.Error.Class (class MonadError, catchError, liftEither, try)
 import Control.Monad.Reader (ask, lift)
 import Control.Monad.Rec.Class (class MonadRec)
 import Data.Argonaut (class DecodeJson, decodeJson)
 import Data.Array as A
 import Data.Bifunctor (lmap)
 import Data.Either (Either, either)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Set as Set
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Traversable (and, for, or)
 import Data.Tuple.Nested ((/\))
+import Dodo (twoSpaces)
+import Dodo as Dodo
 import Effect.Aff (throwError)
-import Node.FS.Aff (writeTextFile)
 import Node.Path (FilePath, dirname)
 import Node.Path as Path
-import Parsing (ParserT, Position(..), fail, position)
-import Parsing.Combinators (sepBy)
+import Parsing (Position(..), fail, position)
 import Parsing.String (anyTill, string) as P
 import Parsing.String.Replace (replaceT) as P
+import PureScript.CST (RecoveredParserResult(..), parseModule)
 import Safe.Coerce (coerce)
-import TsBridgeGen (class MonadLog, AppCapabalities(..), AppError(..), Import(..), ModuleName(..), Name(..), PursModule(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), genInstances, genTsProgram, getName, getPursModule, parseCstModule, parseToJson, parseUserImports, printImports, printPursSnippets, runImportWriterT)
+import Tidy (defaultFormatOptions, formatModule)
+import Tidy.Doc (FormatDoc(..))
+import TsBridgeGen (class MonadAppEffects, class MonadLog, AppEffects(..), Import(..), ModuleName(..), Name(..), PursModule(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), askAppEffects, genInstances, genTsProgram, getName, getPursModule, parseCstModule, parseToJson, parseUserImports, printImports, printPursSnippets, runImportWriterT)
 import TsBridgeGen.Config (AppConfig(..))
 import TsBridgeGen.Core (ReplaceTsProgramOpts)
-import TsBridgeGen.Monad (class MonadApp, AppEnv(..), log)
+import TsBridgeGen.Monad (class MonadApp, AppEnv(..), askAppConfig, askAppEffects, log)
 import TsBridgeGen.Types (AppError(..), AppLog(..), Glob(..), ModuleGlob(..), PursModule)
 
 -------------------------------------------------------------------------------
@@ -41,9 +45,7 @@ import TsBridgeGen.Types (AppError(..), AppLog(..), Glob(..), ModuleGlob(..), Pu
 
 getPursModules :: forall m. MonadApp m => Array Glob -> m (Array PursModule)
 getPursModules globs = do
-  AppEnv
-    { capabilities: AppCapabalities { readTextFile }
-    } <- ask
+  AppEffects { readTextFile } <- askAppEffects
 
   paths <- getPaths globs
   sources <- for paths readTextFile
@@ -52,9 +54,7 @@ getPursModules globs = do
 
 getPaths :: forall m. MonadApp m => Array Glob -> m (Array String)
 getPaths globs = do
-  AppEnv
-    { capabilities: AppCapabalities { expandGlobsCwd }
-    } <- ask
+  AppEffects { expandGlobsCwd } <- askAppEffects
 
   expandGlobsCwd (coerce globs)
     <#> Set.toUnfoldable
@@ -70,13 +70,7 @@ assets =
 
 updateFile :: forall m. MonadApp m => m String -> FilePath -> (String -> m String) -> m Unit
 updateFile fallback filePath f = do
-  AppEnv
-    { capabilities: AppCapabalities
-        { readTextFile
-        , writeTextFile
-        , mkdirRec
-        }
-    } <- ask
+  AppEffects { readTextFile, writeTextFile, mkdirRec } <- askAppEffects
 
   content <- (readTextFile filePath <* (log $ LogLiteral ("Patching module at " <> filePath))) `catchError`
     case _ of
@@ -91,13 +85,7 @@ updateFile fallback filePath f = do
 
 writeFileIfNotExists :: forall m. MonadApp m => m String -> FilePath -> m Unit
 writeFileIfNotExists fallback filePath = do
-  AppEnv
-    { capabilities: AppCapabalities
-        { readTextFile
-        , writeTextFile
-        , mkdirRec
-        }
-    } <- ask
+  AppEffects { readTextFile, writeTextFile, mkdirRec } <- askAppEffects
 
   (void $ readTextFile filePath) `catchError` case _ of
     ErrReadFile _ -> do
@@ -128,6 +116,7 @@ patchClassFile path defs file = do
 
   file'
     # replaceComment path "imports" (replaceImports imports)
+    <#> (\str -> tidyPurs str # fromMaybe str)
   where
   replaceInstances opts _ = do
     instances <- defs
@@ -143,6 +132,17 @@ patchClassFile path defs file = do
     # printImports
     # pure
 
+tidyPurs :: String -> Maybe String
+tidyPurs str = str # parseModule >>> case _ of
+  ParseSucceeded m -> 
+    formatModule defaultFormatOptions m
+      # (\(FormatDoc { doc }) -> doc)
+      # Dodo.print Dodo.plainText
+         twoSpaces
+      # Just
+  _ -> Nothing
+
+
 patchModulesFile
   :: forall m
    . MonadApp m
@@ -157,6 +157,7 @@ patchModulesFile path defs file = do
 
   file'
     # replaceComment path "imports" (replaceImports imports)
+    <#> (\str -> tidyPurs str # fromMaybe str)
   where
   replaceTsProgram (opts :: ReplaceTsProgramOpts) _ = do
     tsProgram <- defs
@@ -186,10 +187,8 @@ mapModule opts (PursModule mn defs) =
 replaceComment
   :: forall m a
    . MonadRec m
-  => MonadError AppError m
-  => MonadLog AppLog m
+  => MonadApp m
   => DecodeJson a
-  --  => MonadEffect m
   => FilePath
   -> String
   -> (a -> String -> m String)
@@ -223,9 +222,11 @@ replaceComment path id f i = P.replaceT i do
       # lift
       >>= either (const $ fail "Execution failure") pure
 
-  --  newJson <- lift $ liftEffect $ runPrettier json
+  AppEffects { runPrettier } <- lift $ askAppEffects
 
-  pure (genStartOpen <> json <> genStartClose <> "\n" <> newContent <> "\n" <> genEnd)
+  newJson <- lift $ runPrettier json
+
+  pure (genStartOpen <> Str.trim newJson <> genStartClose <> "\n" <> newContent <> "\n" <> genEnd)
 
 parseStrToData :: forall a. DecodeJson a => String -> Either AppError a
 parseStrToData str = str
@@ -235,18 +236,15 @@ parseStrToData str = str
 
 app :: forall m. MonadApp m => m Unit
 app = do
-  AppEnv
-    { config: AppConfig
-        { classFile
-        , modulesFile
-        , allDepsFile
-        , packagesFile
-        , spagoFile
-        }
-    , capabilities: AppCapabalities
-        { spagoSources
-        }
-    } <- ask
+  AppConfig
+    { classFile
+    , modulesFile
+    , allDepsFile
+    , packagesFile
+    , spagoFile
+    } <- askAppConfig
+
+  AppEffects { spagoSources } <- askAppEffects
 
   globs <- spagoSources
   defs <- getPursModules globs
@@ -272,17 +270,14 @@ app = do
 
 readAsset :: forall m. MonadApp m => String -> m String
 readAsset path = do
-  AppEnv
-    { config: AppConfig { assetsDir }
-    , capabilities: AppCapabalities { readTextFile }
-    } <- ask
+  AppConfig { assetsDir } <- askAppConfig
+  AppEffects { readTextFile } <- askAppEffects
 
   readTextFile $ Path.concat [ assetsDir, path ]
 
 updateAllDepsFile :: forall m. MonadApp m => FilePath -> String -> m String
 updateAllDepsFile _ _ = do
-  AppEnv
-    { capabilities: AppCapabalities { spagoLsDepsTransitive } } <- ask
+  AppEffects { spagoLsDepsTransitive } <- askAppEffects
 
   deps <- spagoLsDepsTransitive
 
@@ -312,12 +307,3 @@ printDhallType = case _ of
   DhallTypeApp t1 t2 -> printDhallType t1 <> " " <> printDhallType t2
   DhallTypeId s -> s
 
-
--- parserDhallExpr :: forall m. Monad m => ParserT String m DhallExpr
--- parserDhallExpr =
---   (do
---       _ <- P.string "["
---       xs <- parserDhallExpr `sepBy` P.string ","
---       _ <- P.string "]"
---       pure $ DhallExprList $ A.fromFoldable xs
---   )

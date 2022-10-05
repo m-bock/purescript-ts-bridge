@@ -82,3 +82,4 @@ in  upstream
     , repo = "https://github.com/thought2/purescript-typedenv.git"
     , version = "purs15"
     }
+  with ps-cst = ../purescript-ps-cst/spago.dhall as Location

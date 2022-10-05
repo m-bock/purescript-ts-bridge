@@ -1,14 +1,12 @@
 module MyTsBridgeClass where
 
 {-GEN:imports
-{ "autoPrefix": "auto" }
+{}
 -}
 
 import Data.Either (Either)
-import TsBridge (TsBridgeM, TsType, class Mapping, defaultProxy, tsOpaqueType, tsOpaqueType2)
-import TsBridge.Core (tsNewtype)
-import Type.Proxy (Proxy)
-
+import TsBridge (class Mapping, TsBridgeM, TsType, defaultOpaqueType, defaultProxy, tsOpaqueType)
+import Type.Proxy (Proxy(..))
 
 {-GEN:END-}
 
@@ -24,7 +22,8 @@ instance ToTsBridge a => ToTsBridge (Proxy a) where
   toTsBridge = defaultProxy Mp
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
-  toTsBridge = tsOpaqueType2 Mp "Data.Either" "Either" "A" "B"
+  toTsBridge = defaultOpaqueType "Data.Either" "Either" [ "A", "B" ]
+    [ toTsBridge (Proxy :: _ a), toTsBridge (Proxy :: _ b) ]
 
 {-GEN:instances
 { "include": [ "**" ]
