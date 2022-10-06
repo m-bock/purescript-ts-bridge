@@ -5,8 +5,11 @@ import Prelude
 import Data.Argonaut (class DecodeJson, JsonDecodeError)
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
+import Data.Typelevel.Undefined (undefined)
 import Node.Path (FilePath)
 import Prim.TypeError (class Warn, Text)
+import Test.QuickCheck (class Arbitrary, arbitrary)
+import Test.QuickCheck.Arbitrary (genericArbitrary)
 import TypedEnv as TypedEnv
 
 data AppError
@@ -20,13 +23,31 @@ data AppError
   | ErrParseToJson ErrorParseToJson
   | ErrParseToData JsonDecodeError
   | ErrUnknown
-  | AtFilePosition FilePath SourcePosition AppError
+  | AtFileSection FilePath String AppError
 
 data AppLog
   = LogLiteral String
   | LogError AppError
 
 newtype SourcePosition = SourcePosition { line :: Int, column :: Int }
+
+instance Monoid SourcePosition where
+  mempty = SourcePosition { line: 0, column: 0 }
+
+instance Semigroup SourcePosition where
+  append (SourcePosition sp1) (SourcePosition sp2) | sp2.line == 0 =
+    SourcePosition
+      { line: sp1.line
+      , column: sp1.column + sp2.column
+      }
+  append (SourcePosition sp1) (SourcePosition sp2) =
+    SourcePosition
+      { line: sp1.line + sp2.line
+      , column: sp2.column
+      }
+
+instance Arbitrary SourcePosition where
+  arbitrary = genericArbitrary
 
 data AppWarning = WarnLiteral String
 
@@ -53,7 +74,7 @@ data PursDef
   | DefUnsupportedExport Name String
 
 data ErrorParseToJson
-  = UnexpectedTokenAtPos String SourcePosition
+  = UnexpectedTokenAtPos String Int
   | UnexpectedEndOfInput
   | Other String
 

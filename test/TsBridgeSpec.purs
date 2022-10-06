@@ -1,4 +1,4 @@
-module Test.TsBridge
+module TsBridgeSpec
   ( spec
   ) where
 

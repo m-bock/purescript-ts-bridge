@@ -34,10 +34,14 @@
   , "partial"
   , "prelude"
   , "ps-cst"
+  , "quickcheck"
+  , "quickcheck-laws"
   , "record"
   , "record-extra"
   , "safe-coerce"
   , "spec"
+  , "spec-discovery"
+  , "spec-quickcheck"
   , "strings"
   , "sunde"
   , "tailrec"
@@ -47,7 +51,7 @@
   , "typedenv"
   , "typelevel"
   , "typelevel-prelude"
-  ] {--}
+  ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
 }

@@ -18,11 +18,13 @@ import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..), snd)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
-import Parsing (ParserT, runParser)
+import Parsing (ParserT, Position(..), runParser)
 import Parsing.String (anyTill, eof, string) as P
 import Parsing.String.Basic (intDecimal) as P
 import PureScript.CST (RecoveredParserResult(..), parseImportDecl, parseModule) as CST
 import PureScript.CST.Types (Declaration(..), Export(..), Foreign(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Proper(..), Separated(..), Wrapped(..)) as CST
+import Test.Spec (Spec, describe, it)
+import Test.Spec.Assertions (shouldEqual)
 import TsBridgeGen.Types (AppError(..), ErrorParseToJson(..), Glob(..), ModuleGlob(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), SourcePosition(..))
 
 parseCstModule :: String -> Either AppError (CST.Module Void)
@@ -59,8 +61,7 @@ getPursDef = case _ of
     , vars: []
     }
     _ -> Just $ DefData (Name name)
-     --Just $ DefUnsupportedExport (Name name) "data type" 
-      
+  --Just $ DefUnsupportedExport (Name name) "data type" 
 
   CST.DeclData
     { name: CST.Name { name: CST.Proper name } }
@@ -134,7 +135,8 @@ getName = case _ of
   DefUnsupportedExport n _ -> n
 
 indexToSourcePos :: Int -> String -> Maybe SourcePosition
-indexToSourcePos pos str = go 1 1 (Str.split (Pattern "\n") str)
+indexToSourcePos i _ | i < 0 = Nothing
+indexToSourcePos pos str = go 0 0 (Str.split (Pattern "\n") str)
   where
   go :: Int -> Int -> Array String -> _
   go line idx xs = case uncons xs of
@@ -143,19 +145,23 @@ indexToSourcePos pos str = go 1 1 (Str.split (Pattern "\n") str)
         len = Str.length head
       in
         if pos < idx + len then
-          Just $ SourcePosition { line, column: (pos - idx) + 1 }
+          Just $ SourcePosition { line, column: pos - idx }
         else go (line + 1) (idx + len) tail
     Nothing -> Nothing
+
+positionToSourcePosition :: Position -> SourcePosition
+positionToSourcePosition (Position { line, column }) =
+  SourcePosition { line: line - 1, column: column - 1 }
 
 parseToJson :: String -> Either ErrorParseToJson Json
 parseToJson s = jsonParser s
   # lmap f
   where
-  f e = runParser e (parseJsonError s)
+  f e = runParser e parseJsonError
     # either (const $ Other e) identity
 
-parseJsonError :: forall m. Monad m => String -> ParserT String m ErrorParseToJson
-parseJsonError json = p1 <|> p2
+parseJsonError :: forall m. Monad m => ParserT String m ErrorParseToJson
+parseJsonError = p1 <|> p2
   where
   p1 = do
     _ <- P.string "Unexpected end of JSON input"
@@ -167,10 +173,7 @@ parseJsonError json = p1 <|> p2
     _ <- P.string "in JSON at position "
     i <- P.intDecimal
     _ <- P.eof
-    pure $ UnexpectedTokenAtPos tok
-      ( indexToSourcePos i json
-          # fromMaybe (SourcePosition { line: 0, column: 0 })
-      )
+    pure $ UnexpectedTokenAtPos tok i
 
 parseUserImports :: String -> Maybe (Set String)
 parseUserImports s = s
@@ -199,5 +202,5 @@ type ReplaceTsProgramOpts =
   }
 
 type ReplaceImportsOpts =
-  { }
+  {}
 

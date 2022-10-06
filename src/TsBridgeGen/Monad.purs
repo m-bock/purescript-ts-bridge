@@ -19,6 +19,7 @@ import Control.Monad.Except (class MonadTrans, ExceptT, lift, runExceptT)
 import Control.Monad.Reader (class MonadAsk, ReaderT, ask, runReaderT)
 import Control.Monad.Rec.Class (class MonadRec)
 import Control.Monad.Writer (WriterT)
+import Data.Argonaut (printJsonDecodeError)
 import Data.Either (Either(..))
 import Data.Either.Nested (type (\/))
 import Data.Set (Set)
@@ -71,7 +72,9 @@ instance (Monoid w, Monad m, MonadAppEffects m) => MonadAppEffects (WriterT w m)
 instance (Monoid w, Monad m, MonadAppConfig m) => MonadAppConfig (WriterT w m) where
   askAppConfig = lift $ askAppConfig
 
+
 instance (Monoid w, Monad m, MonadApp m) => MonadApp (WriterT w m)
+
 
 class MonadAppConfig m where
   askAppConfig :: m AppConfig
@@ -173,21 +176,21 @@ printError config@(AppConfig { debug }) x =
       # lines
     ErrParseToJson _ ->
       text "Found invalid JSON"
-    ErrParseToData _ ->
-      text "JSON config does not have the right shape"
+    ErrParseToData je ->
+      lines $ map text $ Str.split (Pattern "\n") $ printJsonDecodeError je
     ErrUnknown ->
       text "An unknown error occured. Try DEBUG=true" --
-    AtFilePosition fp p e -> lines
+    AtFileSection fp s e -> lines
       [ printError config e
-      , text ("at " <> printPos fp p)
+      , text ("in file " <> fp <> " at section: " <> s)
       ]
 
 printPos :: FilePath -> SourcePosition -> String
 printPos fp (SourcePosition { line, column }) = fp
   <> ":"
-  <> show line
+  <> show (line + 1)
   <> ":"
-  <> show column
+  <> show (column + 1)
 
 class Monad m <= MonadLog l m where
   log :: l -> m Unit

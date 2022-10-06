@@ -11,19 +11,22 @@ import Prelude
 import Control.Monad.Error.Class (class MonadError, catchError, liftEither, try)
 import Control.Monad.Reader (ask, lift)
 import Control.Monad.Rec.Class (class MonadRec)
-import Data.Argonaut (class DecodeJson, decodeJson)
+import Data.Argonaut (class DecodeJson, JsonDecodeError(..), decodeJson)
 import Data.Array as A
 import Data.Bifunctor (lmap)
-import Data.Either (Either, either)
+import Data.Either (Either, either, hush)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Set as Set
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Traversable (and, for, or)
 import Data.Tuple.Nested ((/\))
+import Data.Typelevel.Undefined (undefined)
 import Dodo (twoSpaces)
 import Dodo as Dodo
+import Effect (Effect)
 import Effect.Aff (throwError)
+import Effect.Unsafe (unsafePerformEffect)
 import Node.Path (FilePath, dirname)
 import Node.Path as Path
 import Parsing (Position(..), fail, position)
@@ -33,7 +36,7 @@ import PureScript.CST (RecoveredParserResult(..), parseModule)
 import Safe.Coerce (coerce)
 import Tidy (defaultFormatOptions, formatModule)
 import Tidy.Doc (FormatDoc(..))
-import TsBridgeGen (class MonadAppEffects, class MonadLog, AppEffects(..), Import(..), ModuleName(..), Name(..), PursModule(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), askAppEffects, genInstances, genTsProgram, getName, getPursModule, parseCstModule, parseToJson, parseUserImports, printImports, printPursSnippets, runImportWriterT)
+import TsBridgeGen (class MonadAppEffects, class MonadLog, AppEffects(..), AppError(..), AppM, ErrorParseToJson(..), Import(..), ModuleName(..), Name(..), PursModule(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), askAppEffects, genInstances, genTsProgram, getName, getPursModule, indexToSourcePos, parseCstModule, parseToJson, parseUserImports, positionToSourcePosition, printImports, printPursSnippets, runImportWriterT)
 import TsBridgeGen.Config (AppConfig(..))
 import TsBridgeGen.Core (ReplaceTsProgramOpts)
 import TsBridgeGen.Monad (class MonadApp, AppEnv(..), askAppConfig, askAppEffects, log)
@@ -42,6 +45,15 @@ import TsBridgeGen.Types (AppError(..), AppLog(..), Glob(..), ModuleGlob(..), Pu
 -------------------------------------------------------------------------------
 -- App
 -------------------------------------------------------------------------------
+
+foreign import runPrettierImpl :: String -> Effect String
+
+runPrettier :: String -> Maybe String
+runPrettier str = str
+  # runPrettierImpl
+  # try
+  # unsafePerformEffect
+  # hush
 
 getPursModules :: forall m. MonadApp m => Array Glob -> m (Array PursModule)
 getPursModules globs = do
@@ -134,14 +146,13 @@ patchClassFile path defs file = do
 
 tidyPurs :: String -> Maybe String
 tidyPurs str = str # parseModule >>> case _ of
-  ParseSucceeded m -> 
+  ParseSucceeded m ->
     formatModule defaultFormatOptions m
       # (\(FormatDoc { doc }) -> doc)
       # Dodo.print Dodo.plainText
-         twoSpaces
+          twoSpaces
       # Just
   _ -> Nothing
-
 
 patchModulesFile
   :: forall m
@@ -184,6 +195,12 @@ mapModule opts (PursModule mn defs) =
   filterName = (or $ matcher <$> opts.include) &&
     (and $ not matcher <$> opts.exclude)
 
+type GenComment =
+  { id :: String
+  , options :: String
+  , content :: String
+  }
+
 replaceComment
   :: forall m a
    . MonadRec m
@@ -195,38 +212,64 @@ replaceComment
   -> String
   -> m String
 replaceComment path id f i = P.replaceT i do
-  Position pos <- position
   genStartOpen <- P.string ("{-GEN:" <> id <> "\n")
-  json /\ genStartClose <- P.anyTill (P.string "\n-}\n")
+
+  posJson <- position <#> positionToSourcePosition
+  jsonStr /\ genStartClose <- P.anyTill (P.string "\n-}\n")
+    <#> lmap (\j -> runPrettier j # fromMaybe j)
+
+  posContent <- position <#> positionToSourcePosition
   content /\ genEnd <- P.anyTill (P.string "\n{-GEN:END-}")
 
-  let sourcePos = SourcePosition { line: pos.line, column: pos.column }
+  let
+    getJson = (parseToJson jsonStr # lmap ErrParseToJson # liftEither) `catchError`
+      \e -> do
+        let
+          p = fromMaybe mempty case e of
+            ErrParseToJson (UnexpectedTokenAtPos _ idx) -> indexToSourcePos idx jsonStr
+            ErrParseToJson (UnexpectedEndOfInput) -> indexToSourcePos (Str.length jsonStr) jsonStr
+            _ -> Nothing
 
-  data_ <-
-    (liftEither $ parseStrToData json) `catchError`
-      ( \appError -> do
-          log $ LogError $ AtFilePosition path sourcePos appError
-          throwError appError
-      )
-      # try
-      # lift
-      >>= either (const $ fail "Cannot parse Json") pure
+        log $ LogError $ AtFileSection path id e
+        throwError e
 
-  newContent <-
-    f data_ content `catchError`
-      ( \appError -> do
-          log $ LogError $ AtFilePosition path sourcePos appError
-          throwError appError
-      )
-      # try
-      # lift
-      >>= either (const $ fail "Execution failure") pure
+  let
+    getData json = (json # decodeJson # lmap ErrParseToData # liftEither) `catchError`
+      \e -> do
+        log $ LogError $ AtFileSection path id e
+        throwError e
 
-  AppEffects { runPrettier } <- lift $ askAppEffects
+  let
+    getContent data_ = f data_ content `catchError`
+      \appError -> do
+        log $ LogError $ AtFileSection path id appError
+        throwError appError
 
-  newJson <- lift $ runPrettier json
+  let
+    finalize json newContent =
+      genStartOpen
+        <> Str.trim json
+        <> genStartClose
+        <> "\n"
+        <> newContent
+        <> "\n"
+        <> genEnd
 
-  pure (genStartOpen <> Str.trim newJson <> genStartClose <> "\n" <> newContent <> "\n" <> genEnd)
+  let
+    getReplacement =
+      do
+        json <- getJson
+        do
+          data_ <- getData json
+          newContent <- getContent data_
+          pure $ finalize jsonStr newContent
+        `catchError`
+          \e -> pure $ finalize jsonStr content
+
+  getReplacement
+    # try
+    # lift
+    >>= either (const $ fail "Cannot parse Json") pure
 
 parseStrToData :: forall a. DecodeJson a => String -> Either AppError a
 parseStrToData str = str

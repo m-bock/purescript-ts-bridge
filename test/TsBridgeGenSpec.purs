@@ -1,4 +1,4 @@
-module Test.TsBridgeGen where
+module TsBridgeGenSpec where
 
 import Prelude
 

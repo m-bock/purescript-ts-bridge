@@ -2,16 +2,17 @@ module Test.Main where
 
 import Prelude
 
+import Data.String as Str
 import Effect (Effect)
 import Effect.Aff (launchAff_)
+import Test.Spec.Discovery (discover)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (runSpec)
-import Test.TsBridge as Test.TsBridge
-import Test.TsBridgeGen as Test.TsBridgeGen
 
 
 main :: Effect Unit
-main = launchAff_ $ runSpec [ consoleReporter ] do
-  Test.TsBridge.spec
-  Test.TsBridgeGen.spec
-  
+main = launchAff_ do
+  specs <- discover $ Str.joinWith "|"
+    [ """(TsBridge(Gen)?.*Spec)"""
+    ]
+  runSpec [ consoleReporter ] specs
