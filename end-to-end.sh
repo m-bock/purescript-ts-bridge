@@ -3,7 +3,7 @@ set -o pipefail
 shopt -s extglob
 
 SOURCE_DIR=`pwd`
-TARGET_DIR="${TARGET_DIR:-$`mktemp -d`}"
+TARGET_DIR="${TARGET_DIR:-`mktemp -d`}"
 RM_GLOB="${RM_GLOB:-$"*"}"
 
 echo SOURCE_DIR $SOURCE_DIR
