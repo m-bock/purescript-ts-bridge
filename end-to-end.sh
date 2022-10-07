@@ -30,6 +30,7 @@ function main () {
   tsc --init
 
   cp $SOURCE_DIR/assets/SampleTypes.purs src
+  cp $SOURCE_DIR/assets/tsconfig.json .
 
   # Generate ts-bridge project
   yarn run ts-bridge
@@ -54,12 +55,12 @@ function main () {
   echo "import('./output/MyTsBridgeModules/index.js').then(x => x.main())" \
     > generate-ts-types.js
 
-  node generate-ts-types.js --output-dir ts-types
+  node generate-ts-types.js --output-dir generated-ts-types
 
   # Verify generated ts code
-  tsc --skipLibCheck false
+  tsc --noEmit
 
-  cat ts-types/SampleTypes/index.d.ts
+  cat generated-ts-types/SampleTypes/index.d.ts
   
   popd
 }
