@@ -95,9 +95,7 @@ spec = do
                   , "{-GEN:END-}"
                   , ""
                   , "{-GEN:instances"
-                  , "{ \"include\": [ \"**\" ]"
-                  , ", \"exclude\": []"
-                  , "}"
+                  , "{ \"include\": [\"**\"], \"exclude\": [] }"
                   , "-}"
                   , ""
                   , "instance ToTsBridge Auto.Module1.Foo1 where"
@@ -136,9 +134,7 @@ spec = do
             , "{-GEN:END-}"
             , ""
             , "{-GEN:ts-program"
-            , "{ \"include\": [ \"**\" ]"
-            , ", \"exclude\": []"
-            , "}"
+            , "{ \"include\": [\"**\"], \"exclude\": [] }"
             , "-}"
             , ""
             , "{-GEN:END-}"
@@ -163,9 +159,7 @@ spec = do
                   , "{-GEN:END-}"
                   , ""
                   , "{-GEN:ts-program"
-                  , "{ \"include\": [ \"**\" ]"
-                  , ", \"exclude\": []"
-                  , "}"
+                  , "{ \"include\": [\"**\"], \"exclude\": [] }"
                   , "-}"
                   , ""
                   , "generatedTsProgram :: TsProgram"
@@ -187,7 +181,7 @@ spec = do
         # parseDecl
         # recResToMaybe
         >>= getPursDef
-        # shouldEqual (Just (DefUnsupportedExport (Name "Foo") "data type")) -- (Just $ DefData (Name "Foo"))
+        # shouldEqual (Just $ DefData (Name "Foo"))
 
   describe "Value" do
     it "parses correctly" do
@@ -225,7 +219,7 @@ spec = do
         # Str.split (Pattern "\n")
         # shouldEqual $
         [ "instance ToTsBridge Auto.My.Foo where"
-        , "  toTsBridge = tsOpaqueType \"My\" \"Foo\""
+        , "  toTsBridge = defaultOpaqueType \"My\" \"Foo\" [] []"
         ]
 
 --   describe "Program Printing" do
