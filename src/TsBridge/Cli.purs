@@ -65,7 +65,7 @@ mkTypeGenCliAff tsProg = do
           }
         writeTextFile UTF8 filePath source
     )
-  void $ spawn "prettier" [ "--write", cliOpts.outputDir <> "/**/*.d.ts" ]
+  void $ spawn "prettier" [ "--write", cliOpts.outputDir <> "/**/*.d.ts" ] -- can fail, if there are no files!
 
 mkTypeGenCli :: TsProgram -> Effect Unit
 mkTypeGenCli tsProg = launchAff_ $ mkTypeGenCliAff tsProg

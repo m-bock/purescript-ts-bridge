@@ -78,7 +78,7 @@ You can either follow the instructions below or check out the [sample project](h
    - Run the launcher
 
      ```sh
-     node generate-ts-types --output-dir generated-types
+     node generate-ts-types --output-dir generated-ts-types
      ```
 
      Inside the directory `generated-types` you should now find two `.d.ts` files containing the generated types. In many cases you'd generate those files directly to you output to have them side by side to the actual `.js` files.
@@ -119,7 +119,11 @@ You can either follow the instructions below or check out the [sample project](h
 - [x] Fix SourcePosition calculation
 - [x] Use error counter (read/write) and reflect in exit code
 - [ ] Manage exports
-- [ ] Write full end to end test
+- [x] Write full end to end test
+
+# Bugs
+- [ ] Check globbing e.g. [ "Sample" ]
+- [ ] Add .gitignore to ts-bridge
 
 Instance printing
 

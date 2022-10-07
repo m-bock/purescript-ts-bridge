@@ -6,6 +6,7 @@ in  upstream
   with typescript-bridge =
     { dependencies =
       [ "aff"
+      , "aff-promise"
       , "argonaut"
       , "arrays"
       , "bifunctors"
@@ -38,10 +39,14 @@ in  upstream
       , "partial"
       , "prelude"
       , "ps-cst"
+      , "quickcheck"
+      , "quickcheck-laws"
       , "record"
       , "record-extra"
       , "safe-coerce"
       , "spec"
+      , "spec-discovery"
+      , "spec-quickcheck"
       , "strings"
       , "sunde"
       , "tailrec"
