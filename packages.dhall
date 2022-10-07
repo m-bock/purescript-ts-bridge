@@ -82,4 +82,31 @@ in  upstream
     , repo = "https://github.com/thought2/purescript-typedenv.git"
     , version = "purs15"
     }
-  with ps-cst = ../purescript-ps-cst/spago.dhall as Location
+  with ps-cst =
+    { dependencies =
+      [ "effect"
+      , "psci-support"
+      , "strings"
+      , "spec"
+      , "node-path"
+      , "node-fs-aff"
+      , "ansi"
+      , "dodo-printer"
+      , "aff"
+      , "arrays"
+      , "either"
+      , "foldable-traversable"
+      , "functions"
+      , "lists"
+      , "maybe"
+      , "newtype"
+      , "node-buffer"
+      , "ordered-collections"
+      , "parallel"
+      , "prelude"
+      , "transformers"
+      , "tuples"
+      ]
+    , repo = "https://github.com/thought2/purescript-ps-cst"
+    , version = "always-parens-for-ExprTyped"
+    }
