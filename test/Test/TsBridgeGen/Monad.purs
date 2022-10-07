@@ -1,13 +1,14 @@
 module Test.TsBridgeGen.Monad
-  ( AppLogs
-  , TestM
+  ( TestM
+  , TestMAccum
   , TestMResult(..)
   , TestState
   , defaultTestCapabilities
   , defaultTestConfig
   , runTestM
   , runTestM_
-  ) where
+  )
+  where
 
 import Prelude
 
@@ -21,16 +22,20 @@ import Data.Generic.Rep (class Generic)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Show.Generic (genericShow)
-import TsBridgeGen.Monad (class MonadApp, class MonadAppConfig, class MonadAppEffects, class MonadLog, AppEffects(..), AppEnv(..))
+import Data.Typelevel.Undefined (undefined)
 import TsBridgeGen.Config (AppConfig(..))
+import TsBridgeGen.Monad (class MonadApp, class MonadAppConfig, class MonadAppEffects, class MonadLog, class MonadMultipleErrors, AppEffects(..), AppEnv(..), pushError)
 import TsBridgeGen.Types (AppError(..), AppLog)
 
 type TestState = Map String String
 
-type AppLogs = Array AppLog
+type TestMAccum = { logs :: Array AppLog, errors :: Array AppError }
+
+emptyTestMAccum :: TestMAccum
+emptyTestMAccum = mempty
 
 newtype TestM a = TestM
-  (ExceptT AppError (RWS (AppEnv TestM) AppLogs TestState) a)
+  (ExceptT AppError (RWS (AppEnv TestM) TestMAccum TestState) a)
 
 derive newtype instance Bind TestM
 derive newtype instance Monad TestM
@@ -43,7 +48,15 @@ derive newtype instance MonadThrow AppError TestM
 derive newtype instance MonadAsk (AppEnv TestM) TestM
 
 instance MonadLog AppLog TestM where
-  log = TestM <<< tell <<< pure
+  log l = TestM do
+    tell emptyTestMAccum { logs = pure l }
+  getLogs = undefined
+
+instance MonadMultipleErrors AppError TestM where
+  pushError l = TestM do
+    tell emptyTestMAccum { errors = pure l }
+    
+-- getLogs = undefined
 
 instance MonadApp TestM
 
@@ -57,7 +70,7 @@ instance MonadAppConfig TestM where
     (AppEnv { config }) <- ask
     pure config
 
-data TestMResult a = TestMResult TestState AppLogs (Either AppError a)
+data TestMResult a = TestMResult TestState TestMAccum (Either AppError a)
 
 derive instance Functor TestMResult
 
@@ -91,8 +104,8 @@ defaultTestConfig = AppConfig
   , modulesFile: ""
   , classFile: ""
   , spagoFile: ""
-  , packagesFile : ""
-  , allDepsFile : ""
+  , packagesFile: ""
+  , allDepsFile: ""
   , debug: false
   }
 

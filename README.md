@@ -52,14 +52,14 @@ myFn n str = true
 
 # TODO
 
-- [ ] Tidy the whole doc aftercode generation
+- [x] Tidy the whole doc aftercode generation
 - [x] Apply prettier to JSON
 - [ ] Use "unsupported reason" ADT
 - [x] Implement `tsUnsupported` function
 - [x] Add Text to CLI Options
 - [ ] Allow passing globs to CLI, make spago for this purpose optional
 - [ ] Publish CLI to NPM (Add Pipeline)
-- [ ] Fix SourcePosition calculation
+- [x] Fix SourcePosition calculation
 - [ ] Use error counter (read/write) and reflect in exit code
 - [ ] Manage exports
 - [x] Write full end to end test

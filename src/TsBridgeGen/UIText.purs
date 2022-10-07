@@ -10,7 +10,7 @@ cli =
       , modulesFile: "Path to the PureScript module file that will contain the exported TypeScript definitions."
       , spagoFile: "Path to the spago project file."
       , packagesFile: "Path to the pckage set file."
-      , allDepsFile : "Path containing all dependencies of the project."
+      , allDepsFile: "Path containing all dependencies of the project."
       }
   }
 

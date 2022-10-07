@@ -149,7 +149,7 @@ genTsDef (ModuleName mn) = case _ of
 
   DefData (Name n) ->
     ExprIdent (nonQualifiedName $ Ident "tsOpaqueType")
-      `ExprApp` (ExprIdent $ nonQualifiedName $ Ident "Mp") 
+      `ExprApp` (ExprIdent $ nonQualifiedName $ Ident "Mp")
       `ExprApp` ExprString n
       `ExprApp`
         ( genProxy (qualifiedName (mkModuleName $ "Auto" : pure mn) (ProperName n))
@@ -181,8 +181,8 @@ printPursSnippets :: Array PursCodeSnippet -> String
 printPursSnippets = Str.joinWith "\n\n" <<< map case _ of
   CodeSnipDecls ds -> ds
     <#> printDeclaration
-      >>> Dodo.print Dodo.plainText 
-         { pageWidth: 300, ribbonRatio: 1.0, indentUnit: "  ", indentWidth: 2 }
+      >>> Dodo.print Dodo.plainText
+        { pageWidth: 300, ribbonRatio: 1.0, indentUnit: "  ", indentWidth: 2 }
     # Str.joinWith "\n"
     # instName.replace
   CodeSnipComments cs -> cs <#> ("-- " <> _) # Str.joinWith "\n"

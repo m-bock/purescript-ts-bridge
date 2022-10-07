@@ -11,32 +11,37 @@ import Prelude
 import Control.Monad.Error.Class (class MonadError, catchError, liftEither, try)
 import Control.Monad.Reader (ask, lift)
 import Control.Monad.Rec.Class (class MonadRec)
-import Data.Argonaut (class DecodeJson, JsonDecodeError(..), decodeJson)
+import Data.Argonaut (class DecodeJson, JsonDecodeError(..), decodeJson, printJsonDecodeError)
 import Data.Array as A
 import Data.Bifunctor (lmap)
-import Data.Either (Either, either, hush)
+import Data.Either (Either(..), either, hush)
+import Data.Either.Nested (type (\/), (\/))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Set as Set
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
-import Data.Traversable (and, for, or)
+import Data.Traversable (and, for, for_, or)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
-import Dodo (twoSpaces)
+import Debug (spy)
+import Dodo (Doc, indent, lines, text, twoSpaces)
 import Dodo as Dodo
 import Effect (Effect)
-import Effect.Aff (throwError)
+import Effect.Aff (Error, throwError)
+import Effect.Class.Console as E
+import Effect.Console (error)
 import Effect.Unsafe (unsafePerformEffect)
 import Node.Path (FilePath, dirname)
 import Node.Path as Path
+import Node.Process (exit)
 import Parsing (Position(..), fail, position)
 import Parsing.String (anyTill, string) as P
 import Parsing.String.Replace (replaceT) as P
-import PureScript.CST (RecoveredParserResult(..), parseModule)
+import PureScript.CST (RecoveredParserResult(..), parseExpr, parseModule)
 import Safe.Coerce (coerce)
-import Tidy (defaultFormatOptions, formatModule)
+import Tidy (defaultFormatOptions, formatExpr, formatModule)
 import Tidy.Doc (FormatDoc(..))
-import TsBridgeGen (class MonadAppEffects, class MonadLog, AppEffects(..), AppError(..), AppM, ErrorParseToJson(..), Import(..), ModuleName(..), Name(..), PursModule(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), askAppEffects, genInstances, genTsProgram, getName, getPursModule, indexToSourcePos, parseCstModule, parseToJson, parseUserImports, positionToSourcePosition, printImports, printPursSnippets, runImportWriterT)
+import TsBridgeGen (class MonadAppEffects, AppEffects(..), AppError(..), AppLog(..), AppM, ErrorParseToJson(..), Import(..), ModuleName(..), Name(..), PursModule(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), askAppEffects, genInstances, genTsProgram, getLogs, getName, getPursModule, indexToSourcePos, parseCstModule, parseToJson, parseUserImports, positionToSourcePosition, printImports, printPursSnippets, pushError, runImportWriterT)
 import TsBridgeGen.Config (AppConfig(..))
 import TsBridgeGen.Core (ReplaceTsProgramOpts)
 import TsBridgeGen.Monad (class MonadApp, AppEnv(..), askAppConfig, askAppEffects, log)
@@ -230,19 +235,19 @@ replaceComment path id f i = P.replaceT i do
             ErrParseToJson (UnexpectedEndOfInput) -> indexToSourcePos (Str.length jsonStr) jsonStr
             _ -> Nothing
 
-        log $ LogError $ AtFileSection path id e
+        pushError $ AtFileSection path id e
         throwError e
 
   let
     getData json = (json # decodeJson # lmap ErrParseToData # liftEither) `catchError`
       \e -> do
-        log $ LogError $ AtFileSection path id e
+        pushError $ AtFileSection path id e
         throwError e
 
   let
     getContent data_ = f data_ content `catchError`
       \appError -> do
-        log $ LogError $ AtFileSection path id appError
+        pushError $ AtFileSection path id appError
         throwError appError
 
   let
@@ -310,6 +315,13 @@ app = do
 
   writeFileIfNotExists (readAsset assets.spagoFile)
     spagoFile
+
+  pure unit
+
+app' :: forall m. MonadApp m => m { logs :: Array AppLog }
+app' = do
+  logs :: Array AppLog <- getLogs app
+  pure { logs }
 
 readAsset :: forall m. MonadApp m => String -> m String
 readAsset path = do

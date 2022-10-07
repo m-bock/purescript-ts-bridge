@@ -25,9 +25,7 @@ data AppError
   | ErrUnknown
   | AtFileSection FilePath String AppError
 
-data AppLog
-  = LogLiteral String
-  | LogError AppError
+data AppLog = LogLiteral String
 
 newtype SourcePosition = SourcePosition { line :: Int, column :: Int }
 

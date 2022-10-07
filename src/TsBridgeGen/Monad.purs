@@ -2,13 +2,17 @@ module TsBridgeGen.Monad
   ( AppEffects(..)
   , AppEnv(..)
   , AppM
+  , MonadAppAccum
   , askAppConfig
   , askAppEffects
   , class MonadApp
   , class MonadAppConfig
   , class MonadAppEffects
   , class MonadLog
+  , class MonadMultipleErrors
+  , getLogs
   , log
+  , pushError
   , runAppM
   ) where
 
@@ -18,13 +22,14 @@ import Control.Monad.Error.Class (class MonadError, class MonadThrow, try)
 import Control.Monad.Except (class MonadTrans, ExceptT, lift, runExceptT)
 import Control.Monad.Reader (class MonadAsk, ReaderT, ask, runReaderT)
 import Control.Monad.Rec.Class (class MonadRec)
-import Control.Monad.Writer (WriterT)
+import Control.Monad.Writer (class MonadWriter, WriterT(..), Writer, listen, listens, runWriterT, tell)
 import Data.Argonaut (printJsonDecodeError)
 import Data.Either (Either(..))
 import Data.Either.Nested (type (\/))
 import Data.Set (Set)
 import Data.String (Pattern(..))
 import Data.String as Str
+import Data.Tuple (Tuple(..), fst, snd)
 import Data.Typelevel.Undefined (undefined)
 import Dodo (Doc, indent, lines, text)
 import Dodo as Dodo
@@ -33,20 +38,18 @@ import Effect.Aff (Aff, Error, launchAff_)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (error)
-import Effect.Class.Console as E
-import Heterogeneous.Mapping (class Mapping, hmap, mapping)
 import Node.Path (FilePath)
 import Node.Process (exit)
 import PureScript.CST (RecoveredParserResult(..), parseExpr)
 import Tidy (defaultFormatOptions, formatExpr)
 import Tidy.Doc (FormatDoc(..))
 import TsBridgeGen.Config (AppConfig(..))
-import TsBridgeGen.Types (AppError(..), AppLog(..), Glob(..), SourcePosition(..))
-import Type.Proxy (Proxy(..))
+import TsBridgeGen.Types (AppError(..), AppLog(..), Glob, SourcePosition(..))
 
 class
   ( MonadError AppError m
   , MonadLog AppLog m
+  , MonadMultipleErrors AppError m
   , MonadRec m
   , MonadAppEffects m
   , MonadAppConfig m
@@ -72,9 +75,23 @@ instance (Monoid w, Monad m, MonadAppEffects m) => MonadAppEffects (WriterT w m)
 instance (Monoid w, Monad m, MonadAppConfig m) => MonadAppConfig (WriterT w m) where
   askAppConfig = lift $ askAppConfig
 
+-- instance (Monoid w, Monad m, MonadApp m) => MonadApp (WriterT w m)
 
-instance (Monoid w, Monad m, MonadApp m) => MonadApp (WriterT w m)
+derive newtype instance MonadWriter AppMAccum AppM
 
+instance (Monoid w, MonadApp m) => MonadApp (WriterT w m)
+
+instance (Monoid w, MonadLog l m) => MonadLog l (WriterT w m)
+  where
+  log = log >>> lift
+  getLogs (WriterT ma) = WriterT do
+    logs <- getLogs ma
+    Tuple _ w <- ma
+    pure (Tuple logs w)
+
+instance (Monoid w, MonadMultipleErrors e m) => MonadMultipleErrors e (WriterT w m)
+  where
+  pushError = pushError >>> lift
 
 class MonadAppConfig m where
   askAppConfig :: m AppConfig
@@ -82,10 +99,19 @@ class MonadAppConfig m where
 instance MonadApp AppM
 
 newtype AppM a = AppM
-  ( ReaderT (AppEnv AppM)
-      (ExceptT AppError Aff)
+  ( ExceptT AppError
+      ( ReaderT (AppEnv AppM)
+          ( WriterT AppMAccum
+              Aff
+          )
+      )
       a
   )
+
+type AppMAccum =
+  { errors :: Array AppError
+  , logs :: Array AppLog
+  }
 
 newtype AppEnv m = AppEnv
   { config :: AppConfig
@@ -113,14 +139,17 @@ newtype AppEffects m = AppEffects
   , spagoSources :: m (Array Glob)
   }
 
-runAppM :: forall a. AppEnv AppM -> AppM a -> Effect Unit
-runAppM env@(AppEnv { config }) (AppM ma) = ma
-  <#> const unit
-  # flip runReaderT env
+type MonadAppAccum =
+  { logs :: Array AppLog
+  , errors :: Array AppError
+  }
+
+runAppM :: forall a. AppEnv AppM -> AppM a -> Aff (Tuple (Either Error (Either AppError a)) MonadAppAccum)
+runAppM env (AppM ma) = ma
   # runExceptT
   # try
-  >>= handleErrors config >>> liftEffect
-  # launchAff_
+  # flip runReaderT env
+  # runWriterT
 
 derive newtype instance MonadAff AppM
 derive newtype instance MonadEffect AppM
@@ -135,55 +164,16 @@ derive newtype instance MonadAsk (AppEnv AppM) AppM
 derive newtype instance MonadRec AppM
 
 instance MonadLog AppLog AppM where
-  log x = do
-    printAppLog x
-      <#> Dodo.print Dodo.plainText Dodo.twoSpaces
-      >>= E.log
+  log l = AppM $ tell $ emptyAppMAccum { logs = pure l }
+  getLogs (AppM ma) = ma # listens _.logs <#> snd # AppM
 
-printAppLog :: forall m a. MonadApp m => AppLog -> m (Doc a)
-printAppLog x = do
-  config@(AppConfig { debug }) <- askAppConfig
-  c <- pure 0 -- errorCount
+emptyAppMAccum :: AppMAccum
+emptyAppMAccum = mempty
 
-  pure
-    if debug then showDoc x
-    else case x of
-      LogLiteral str -> str # Str.split (Pattern "\n") <#> text # lines
-      LogError e -> lines
-        [ text ("Error " <> show (c + 1) <> ":")
-        , indent $ printError config e
-        ]
+instance MonadMultipleErrors AppError AppM where
+  pushError error = AppM $ tell $ emptyAppMAccum { errors = pure error }
 
-printError :: forall a. AppConfig -> AppError -> Doc a
-printError config@(AppConfig { debug }) x =
-  if debug then showDoc x
-  else case x of
-    ErrSpawn cmd _ ->
-      text ("Failed to spawn Command " <> cmd)
-    ErrParseModule ->
-      text ("Failed to parse PureScript module")
-    ErrReadFile path ->
-      text ("Failed to read from file " <> path)
-    ErrWriteFile path ->
-      text ("Failed to write to file " <> path)
-    ErrExpandGlobs ->
-      text "Failed to expand globs"
-    ErrParseEnvVars _ ->
-      text "Failed to parse environment variables"
-    ErrLiteral str -> str
-      # Str.split (Pattern "\n")
-      <#> text
-      # lines
-    ErrParseToJson _ ->
-      text "Found invalid JSON"
-    ErrParseToData je ->
-      lines $ map text $ Str.split (Pattern "\n") $ printJsonDecodeError je
-    ErrUnknown ->
-      text "An unknown error occured. Try DEBUG=true" --
-    AtFileSection fp s e -> lines
-      [ printError config e
-      , text ("in file " <> fp <> " at section: " <> s)
-      ]
+--  getErrors (AppM ma) = ma # listens _.errors # AppM
 
 printPos :: FilePath -> SourcePosition -> String
 printPos fp (SourcePosition { line, column }) = fp
@@ -194,34 +184,24 @@ printPos fp (SourcePosition { line, column }) = fp
 
 class Monad m <= MonadLog l m where
   log :: l -> m Unit
+  getLogs :: forall a. m a -> m (Array l)
 
-class Monad m <= MonadErrorCount m where
-  errorCount :: m Int
+class Monad m <= MonadMultipleErrors e m where
+  pushError :: e -> m Unit
 
-instance (Monoid w, MonadErrorCount m) => MonadErrorCount (WriterT w m) where
-  errorCount = errorCount # lift
+--getErrors :: forall a. m a -> m (Tuple a (Array e))
 
-instance (Monoid w, MonadLog l m) => MonadLog l (WriterT w m) where
-  log = log >>> lift
+-- instance
+--   ( Monoid w
+--   , MonadMultipleErrors e m
+--   ) =>
+--   MonadMultipleErrors e (WriterT w m) where
+--   pushError = pushError >>> lift
+--   getErrors (WriterT ma) = WriterT do
+--     Tuple a w <- getErrors ma
+--     pure undefined -- $ Tuple (Tuple a w) w
 
-handleErrors :: forall a. AppConfig -> Error \/ AppError \/ a -> Effect a
-handleErrors config@(AppConfig { debug }) = case _ of
-  Left err ->
-    if debug then
-      quitWithError ("Unexpected Error.\n" <> show err)
-    else
-      quitWithError "Unexpected Error. Try to set DEBUG=true"
-  Right (Left appError) -> quitWithError $ Dodo.print Dodo.plainText Dodo.twoSpaces $ printError config appError
-  Right (Right x) -> pure x
-
-quitWithError :: forall a. String -> Effect a
-quitWithError msg = do
-  error msg
-  exit 1
-
-showDoc :: forall a b. Show a => a -> Doc b
-showDoc = show >>> parseExpr >>> case _ of
-  ParseSucceeded expr -> formatExpr defaultFormatOptions expr
-    # (\(FormatDoc { doc }) -> doc)
-  _ -> text "<invalid>"
+-- instance (Monoid w, MonadLog l m) => MonadLog l (WriterT w m) where
+--   log = log >>> lift
+--   getLogs (WriterT ma) = undefined -- getLogs ma # WriterT
 

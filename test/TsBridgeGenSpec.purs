@@ -80,7 +80,7 @@ spec = do
         <#> (Str.split $ Pattern "\n")
         # shouldEqual
         $
-          ( TestMResult Map.empty []
+          ( TestMResult Map.empty {logs: [], errors: []}
               ( Right
                   [ "module MyApp.TsBridgeClass where"
                   , ""
@@ -148,7 +148,7 @@ spec = do
         <#> (Str.split $ Pattern "\n")
         # shouldEqual
         $
-          ( TestMResult Map.empty []
+          ( TestMResult Map.empty  {logs: [], errors: []}
               ( Right
                   [ "module MyApp.TsModules where"
                   , ""
