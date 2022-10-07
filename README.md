@@ -47,7 +47,7 @@ myFn n str = true
 
 # Sample Project
 
-[Link](https://github.com/
+[Link](https://github.com/thought2/purescript-typescript-bridge.sample-project)
 
 
 # TODO
@@ -60,6 +60,21 @@ myFn n str = true
 - [ ] Allow passing globs to CLI, make spago for this purpose optional
 - [ ] Publish CLI to NPM (Add Pipeline)
 - [x] Fix SourcePosition calculation
-- [ ] Use error counter (read/write) and reflect in exit code
+- [x] Use error counter (read/write) and reflect in exit code
 - [ ] Manage exports
 - [x] Write full end to end test
+
+Instance printing
+- [x] Data types (Opaque)
+- [ ] Newtypes
+- [ ] Multiple Arguments
+- [ ] Foreign imports
+
+Module prinitng
+- [x] Data types (Opaque)
+- [ ] Values
+- [ ] Type Alias
+- [ ] Newtypes
+- [ ] Data Types
+- [ ] Multiple Arguments
+- [ ] Foreign imports

@@ -74,7 +74,7 @@ handleAccum config { logs, errors } = do
       # Dodo.lines
 
   let
-    e = (errors <> errors <> errors)
+    e = errors
       # mapWithIndex
           ( \idx error -> error
               # printOneOfManyErrors config idx (Array.length errors)
@@ -108,7 +108,7 @@ handleErrors config@(AppConfig { debug }) errorCount = case _ of
   Right (Left appError) ->
     quitWithError $ printDoc $ printAppError config appError
   Right (Right _) | errorCount /= 0 ->
-    quitWithError ""
+    quitWithError "\nNot all of the replacements succeeded."
   Right (Right x) -> pure x
 
 printDoc = Dodo.print Dodo.plainText Dodo.twoSpaces

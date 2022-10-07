@@ -102,7 +102,7 @@ getPursDef = case _ of
     { name: CST.Name { name: CST.Proper name }
     }
     _
-    _ -> Just $ DefUnsupportedExport (Name name) "type with arguments"
+    _ -> Just $ DefUnsupportedExport (Name name) "type alias with arguments"
 
   CST.DeclForeign _ _
     ( CST.ForeignValue
