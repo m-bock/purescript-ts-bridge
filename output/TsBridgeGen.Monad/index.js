@@ -6,39 +6,35 @@ import * as Control_Monad_Except_Trans from "../Control.Monad.Except.Trans/index
 import * as Control_Monad_Reader_Class from "../Control.Monad.Reader.Class/index.js";
 import * as Control_Monad_Reader_Trans from "../Control.Monad.Reader.Trans/index.js";
 import * as Control_Monad_Trans_Class from "../Control.Monad.Trans.Class/index.js";
+import * as Control_Monad_Writer_Class from "../Control.Monad.Writer.Class/index.js";
 import * as Control_Monad_Writer_Trans from "../Control.Monad.Writer.Trans/index.js";
-import * as Data_Either from "../Data.Either/index.js";
-import * as Data_Foldable from "../Data.Foldable/index.js";
 import * as Data_Function from "../Data.Function/index.js";
 import * as Data_Functor from "../Data.Functor/index.js";
+import * as Data_Monoid from "../Data.Monoid/index.js";
 import * as Data_Show from "../Data.Show/index.js";
-import * as Data_String_Common from "../Data.String.Common/index.js";
-import * as Data_Unit from "../Data.Unit/index.js";
-import * as Dodo from "../Dodo/index.js";
-import * as Effect from "../Effect/index.js";
+import * as Data_Tuple from "../Data.Tuple/index.js";
 import * as Effect_Aff from "../Effect.Aff/index.js";
 import * as Effect_Aff_Class from "../Effect.Aff.Class/index.js";
-import * as Effect_Class from "../Effect.Class/index.js";
-import * as Effect_Class_Console from "../Effect.Class.Console/index.js";
-import * as Effect_Exception from "../Effect.Exception/index.js";
-import * as Node_Process from "../Node.Process/index.js";
-import * as PureScript_CST from "../PureScript.CST/index.js";
-import * as Tidy from "../Tidy/index.js";
-import * as TsBridgeGen_Types from "../TsBridgeGen.Types/index.js";
-var monadExceptT = /* #__PURE__ */ Control_Monad_Except_Trans.monadExceptT(Effect_Aff.monadAff);
-var functorReaderT = /* #__PURE__ */ Control_Monad_Reader_Trans.functorReaderT(/* #__PURE__ */ Control_Monad_Except_Trans.functorExceptT(Effect_Aff.functorAff));
-var defaultFormatOptions = /* #__PURE__ */ Tidy.defaultFormatOptions(Tidy.formatErrorVoid);
-var error = /* #__PURE__ */ Effect_Class_Console.error(Effect_Class.monadEffectEffect);
+var monoidRecord = /* #__PURE__ */ Data_Monoid.monoidRecord()(/* #__PURE__ */ Data_Monoid.monoidRecordCons({
+    reflectSymbol: function () {
+        return "errors";
+    }
+})(Data_Monoid.monoidArray)()(/* #__PURE__ */ Data_Monoid.monoidRecordCons({
+    reflectSymbol: function () {
+        return "logs";
+    }
+})(Data_Monoid.monoidArray)()(Data_Monoid.monoidRecordNil)));
+var monadWriterExceptT = /* #__PURE__ */ Control_Monad_Except_Trans.monadWriterExceptT(/* #__PURE__ */ Control_Monad_Reader_Trans.monadWriterReaderT(/* #__PURE__ */ Control_Monad_Writer_Trans.monadWriterWriterT(monoidRecord)(Effect_Aff.monadAff)));
+var monadWriterT = /* #__PURE__ */ Control_Monad_Writer_Trans.monadWriterT(monoidRecord)(Effect_Aff.monadAff);
+var monadReaderT = /* #__PURE__ */ Control_Monad_Reader_Trans.monadReaderT(monadWriterT);
+var functorExceptT = /* #__PURE__ */ Control_Monad_Except_Trans.functorExceptT(/* #__PURE__ */ Control_Monad_Reader_Trans.functorReaderT(/* #__PURE__ */ Control_Monad_Writer_Trans.functorWriterT(Effect_Aff.functorAff)));
+var $$try = /* #__PURE__ */ Control_Monad_Error_Class["try"](/* #__PURE__ */ Control_Monad_Reader_Trans.monadErrorReaderT(/* #__PURE__ */ Control_Monad_Writer_Trans.monadErrorWriterT(monoidRecord)(Effect_Aff.monadErrorAff)));
 var show = /* #__PURE__ */ Data_Show.show(Data_Show.showInt);
-var lines = /* #__PURE__ */ Dodo.lines(Data_Foldable.foldableArray);
-var mapFlipped = /* #__PURE__ */ Data_Functor.mapFlipped(Data_Functor.functorArray);
-var show1 = /* #__PURE__ */ Data_Show.show(Effect_Exception.showError);
-var pure = /* #__PURE__ */ Control_Applicative.pure(Effect.applicativeEffect);
-var bind = /* #__PURE__ */ Control_Bind.bind(Effect_Aff.bindAff);
-var $$try = /* #__PURE__ */ Control_Monad_Error_Class["try"](Effect_Aff.monadErrorAff);
-var mapFlipped1 = /* #__PURE__ */ Data_Functor.mapFlipped(functorReaderT);
-var liftEffect = /* #__PURE__ */ Effect_Class.liftEffect(Effect_Aff.monadEffectAff);
-var AppCapabalities = function (x) {
+var tell = /* #__PURE__ */ Control_Monad_Writer_Class.tell(/* #__PURE__ */ Control_Monad_Except_Trans.monadTellExceptT(/* #__PURE__ */ Control_Monad_Reader_Trans.monadTellReaderT(/* #__PURE__ */ Control_Monad_Writer_Trans.monadTellWriterT(monoidRecord)(Effect_Aff.monadAff))));
+var pure = /* #__PURE__ */ Control_Applicative.pure(Control_Applicative.applicativeArray);
+var mapFlipped = /* #__PURE__ */ Data_Functor.mapFlipped(functorExceptT);
+var listens = /* #__PURE__ */ Control_Monad_Writer_Class.listens(monadWriterExceptT);
+var AppEffects = function (x) {
     return x;
 };
 var AppEnv = function (x) {
@@ -47,205 +43,260 @@ var AppEnv = function (x) {
 var AppM = function (x) {
     return x;
 };
-var monadThrowAppErrorAppM = /* #__PURE__ */ Control_Monad_Reader_Trans.monadThrowReaderT(/* #__PURE__ */ Control_Monad_Except_Trans.monadThrowExceptT(Effect_Aff.monadAff));
-var monadRecAppM = /* #__PURE__ */ Control_Monad_Reader_Trans.monadRecReaderT(/* #__PURE__ */ Control_Monad_Except_Trans.monadRecExceptT(Effect_Aff.monadRecAff));
-var monadErrorAppErrorAppM = /* #__PURE__ */ Control_Monad_Reader_Trans.monadErrorReaderT(/* #__PURE__ */ Control_Monad_Except_Trans.monadErrorExceptT(Effect_Aff.monadAff));
-var monadEffectAppM = /* #__PURE__ */ Control_Monad_Reader_Trans.monadEffectReader(/* #__PURE__ */ Control_Monad_Except_Trans.monadEffectExceptT(Effect_Aff.monadEffectAff));
-var log1 = /* #__PURE__ */ Effect_Class_Console.log(monadEffectAppM);
-var monadAskAppEnvAppMAppM = /* #__PURE__ */ Control_Monad_Reader_Trans.monadAskReaderT(monadExceptT);
-var monadAppM = /* #__PURE__ */ Control_Monad_Reader_Trans.monadReaderT(monadExceptT);
-var monadAffAppM = /* #__PURE__ */ Effect_Aff_Class.monadAffReader(/* #__PURE__ */ Effect_Aff_Class.monadAffExceptT(Effect_Aff_Class.monadAffAff));
-var functorAppM = functorReaderT;
-var mapFlipped2 = /* #__PURE__ */ Data_Functor.mapFlipped(functorAppM);
-var bindAppM = /* #__PURE__ */ Control_Monad_Reader_Trans.bindReaderT(/* #__PURE__ */ Control_Monad_Except_Trans.bindExceptT(Effect_Aff.monadAff));
-var bind1 = /* #__PURE__ */ Control_Bind.bind(bindAppM);
-var applyAppM = /* #__PURE__ */ Control_Monad_Reader_Trans.applyReaderT(/* #__PURE__ */ Control_Monad_Except_Trans.applyExceptT(Effect_Aff.monadAff));
-var applicativeAppM = /* #__PURE__ */ Control_Monad_Reader_Trans.applicativeReaderT(/* #__PURE__ */ Control_Monad_Except_Trans.applicativeExceptT(Effect_Aff.monadAff));
-var showDoc = function (dictShow) {
-    var $140 = Data_Show.show(dictShow);
-    return function ($141) {
-        return (function (v) {
-            if (v instanceof PureScript_CST.ParseSucceeded) {
-                return (function (v1) {
-                    return v1.doc;
-                })(Tidy.formatExpr(defaultFormatOptions)(v.value0));
-            };
-            return Dodo.text("<invalid>");
-        })(PureScript_CST.parseExpr($140($141)));
+var monadThrowAppErrorAppM = /* #__PURE__ */ Control_Monad_Except_Trans.monadThrowExceptT(monadReaderT);
+var monadRecAppM = /* #__PURE__ */ Control_Monad_Except_Trans.monadRecExceptT(/* #__PURE__ */ Control_Monad_Reader_Trans.monadRecReaderT(/* #__PURE__ */ Control_Monad_Writer_Trans.monadRecWriterT(monoidRecord)(Effect_Aff.monadRecAff)));
+var monadErrorAppErrorAppM = /* #__PURE__ */ Control_Monad_Except_Trans.monadErrorExceptT(monadReaderT);
+var monadEffectAppM = /* #__PURE__ */ Control_Monad_Except_Trans.monadEffectExceptT(/* #__PURE__ */ Control_Monad_Reader_Trans.monadEffectReader(/* #__PURE__ */ Control_Monad_Writer_Trans.monadEffectWriter(monoidRecord)(Effect_Aff.monadEffectAff)));
+var monadAskAppEnvAppMAppM = /* #__PURE__ */ Control_Monad_Except_Trans.monadAskExceptT(/* #__PURE__ */ Control_Monad_Reader_Trans.monadAskReaderT(monadWriterT));
+var ask = /* #__PURE__ */ Control_Monad_Reader_Class.ask(monadAskAppEnvAppMAppM);
+var monadAppM = /* #__PURE__ */ Control_Monad_Except_Trans.monadExceptT(monadReaderT);
+var monadAffAppM = /* #__PURE__ */ Effect_Aff_Class.monadAffExceptT(/* #__PURE__ */ Effect_Aff_Class.monadAffReader(/* #__PURE__ */ Effect_Aff_Class.monadAffWriter(Effect_Aff_Class.monadAffAff)(monoidRecord)));
+var functorAppM = functorExceptT;
+var bindAppM = /* #__PURE__ */ Control_Monad_Except_Trans.bindExceptT(monadReaderT);
+var bind = /* #__PURE__ */ Control_Bind.bind(bindAppM);
+var applyAppM = /* #__PURE__ */ Control_Monad_Except_Trans.applyExceptT(monadReaderT);
+var applicativeAppM = /* #__PURE__ */ Control_Monad_Except_Trans.applicativeExceptT(monadReaderT);
+var pure1 = /* #__PURE__ */ Control_Applicative.pure(applicativeAppM);
+var monadAppConfigAppM = {
+    askAppConfig: /* #__PURE__ */ bind(ask)(function (v) {
+        return pure1(v.config);
+    })
+};
+var monadAppEffectsAppM = {
+    askAppEffects: /* #__PURE__ */ bind(ask)(function (v) {
+        return pure1(v.capabilities);
+    })
+};
+var runAppM = function (env) {
+    return function (v) {
+        return Control_Monad_Writer_Trans.runWriterT(Data_Function.flip(Control_Monad_Reader_Trans.runReaderT)(env)($$try(Control_Monad_Except_Trans.runExceptT(v))));
     };
 };
-var showDoc1 = /* #__PURE__ */ showDoc(TsBridgeGen_Types.showAppError);
-var showDoc2 = /* #__PURE__ */ showDoc(TsBridgeGen_Types.showAppLog);
-var quitWithError = function (msg) {
-    return function __do() {
-        error(msg)();
-        return Node_Process.exit(1)();
+var pushError = function (dict) {
+    return dict.pushError;
+};
+var monadMultipleErrorsWriter = function (dictMonoid) {
+    var lift = Control_Monad_Trans_Class.lift(Control_Monad_Writer_Trans.monadTransWriterT(dictMonoid));
+    var monadWriterT1 = Control_Monad_Writer_Trans.monadWriterT(dictMonoid);
+    return function (dictMonadMultipleErrors) {
+        var Monad0 = dictMonadMultipleErrors.Monad0();
+        var monadWriterT2 = monadWriterT1(Monad0);
+        return {
+            pushError: (function () {
+                var $186 = lift(Monad0);
+                var $187 = pushError(dictMonadMultipleErrors);
+                return function ($188) {
+                    return $186($187($188));
+                };
+            })(),
+            Monad0: function () {
+                return monadWriterT2;
+            }
+        };
     };
 };
 var printPos = function (fp) {
     return function (v) {
-        return fp + (":" + (show(v.line) + (":" + show(v.column))));
+        return fp + (":" + (show(v.line + 1 | 0) + (":" + show(v.column + 1 | 0))));
     };
 };
-var printError = function (v) {
-    return function (x) {
-        if (v.debug) {
-            return showDoc1(x);
+var log = function (dict) {
+    return dict.log;
+};
+var liftAppEffects = function (dictMonad) {
+    return function (dictMonadTrans) {
+        var lift = Control_Monad_Trans_Class.lift(dictMonadTrans)(dictMonad);
+        return function (v) {
+            return {
+                mkdirRec: function (x1) {
+                    return lift(v.mkdirRec(x1));
+                },
+                readTextFile: function (x1) {
+                    return lift(v.readTextFile(x1));
+                },
+                writeTextFile: function (x1) {
+                    return function (x2) {
+                        return lift(v.writeTextFile(x1)(x2));
+                    };
+                },
+                expandGlobsCwd: function (x1) {
+                    return lift(v.expandGlobsCwd(x1));
+                },
+                runPrettier: function (x1) {
+                    return lift(v.runPrettier(x1));
+                },
+                spagoLsDepsTransitive: lift(v.spagoLsDepsTransitive),
+                spagoSources: lift(v.spagoSources)
+            };
         };
-        if (x instanceof TsBridgeGen_Types.ErrSpawn) {
-            return Dodo.text("Failed to spawn Command " + x.value0);
-        };
-        if (x instanceof TsBridgeGen_Types.ErrParseModule) {
-            return Dodo.text("Failed to parse PureScript module");
-        };
-        if (x instanceof TsBridgeGen_Types.ErrReadFile) {
-            return Dodo.text("Failed to read from file " + x.value0);
-        };
-        if (x instanceof TsBridgeGen_Types.ErrWriteFile) {
-            return Dodo.text("Failed to write to file " + x.value0);
-        };
-        if (x instanceof TsBridgeGen_Types.ErrExpandGlobs) {
-            return Dodo.text("Failed to expand globs");
-        };
-        if (x instanceof TsBridgeGen_Types.ErrParseEnvVars) {
-            return Dodo.text("Failed to parse environment variables");
-        };
-        if (x instanceof TsBridgeGen_Types.ErrLiteral) {
-            return lines(mapFlipped(Data_String_Common.split("\x0a")(x.value0))(Dodo.text));
-        };
-        if (x instanceof TsBridgeGen_Types.ErrParseToJson) {
-            return Dodo.text("Found invalid JSON");
-        };
-        if (x instanceof TsBridgeGen_Types.ErrParseToData) {
-            return Dodo.text("JSON config does not have the right shape");
-        };
-        if (x instanceof TsBridgeGen_Types.ErrUnknown) {
-            return Dodo.text("An unknown error occured. Try DEBUG=true");
-        };
-        if (x instanceof TsBridgeGen_Types.AtFilePosition) {
-            return lines([ printError(v)(x.value2), Dodo.text("at " + printPos(x.value0)(x.value1)) ]);
-        };
-        throw new Error("Failed pattern match at TsBridgeGen.Monad (line 114, column 8 - line 140, column 8): " + [ x.constructor.name ]);
     };
 };
-var printAppLog = function (dictMonadApp) {
-    var Monad0 = (dictMonadApp.MonadRec3()).Monad0();
-    var bind2 = Control_Bind.bind(Monad0.Bind1());
-    var ask = Control_Monad_Reader_Class.ask(dictMonadApp.MonadAsk0());
-    var pure1 = Control_Applicative.pure(Monad0.Applicative0());
-    return function (x) {
-        return bind2(ask)(function (v) {
-            return bind2(pure1(0))(function (c) {
-                return pure1((function () {
-                    if (v.config.debug) {
-                        return showDoc2(x);
-                    };
-                    if (x instanceof TsBridgeGen_Types.LogLiteral) {
-                        return lines(mapFlipped(Data_String_Common.split("\x0a")(x.value0))(Dodo.text));
-                    };
-                    if (x instanceof TsBridgeGen_Types.LogError) {
-                        return lines([ Dodo.text("Error " + (show(c + 1 | 0) + ":")), Dodo.indent(printError(v.config)(x.value0)) ]);
-                    };
-                    throw new Error("Failed pattern match at TsBridgeGen.Monad (line 104, column 10 - line 109, column 10): " + [ x.constructor.name ]);
-                })());
-            });
-        });
+var getLogs = function (dict) {
+    return dict.getLogs;
+};
+var monadLogWriterT = function (dictMonoid) {
+    var lift = Control_Monad_Trans_Class.lift(Control_Monad_Writer_Trans.monadTransWriterT(dictMonoid));
+    var monadWriterT1 = Control_Monad_Writer_Trans.monadWriterT(dictMonoid);
+    return function (dictMonadLog) {
+        var Monad0 = dictMonadLog.Monad0();
+        var bind1 = Control_Bind.bind(Monad0.Bind1());
+        var getLogs1 = getLogs(dictMonadLog);
+        var pure2 = Control_Applicative.pure(Monad0.Applicative0());
+        var monadWriterT2 = monadWriterT1(Monad0);
+        return {
+            log: (function () {
+                var $189 = lift(Monad0);
+                var $190 = log(dictMonadLog);
+                return function ($191) {
+                    return $189($190($191));
+                };
+            })(),
+            getLogs: function (v) {
+                return bind1(getLogs1(v))(function (logs) {
+                    return bind1(v)(function (v1) {
+                        return pure2(new Data_Tuple.Tuple(logs, v1.value1));
+                    });
+                });
+            },
+            Monad0: function () {
+                return monadWriterT2;
+            }
+        };
     };
 };
+var emptyAppMAccum = /* #__PURE__ */ Data_Monoid.mempty(monoidRecord);
 var monadLogAppLogAppM = {
-    log: function (x) {
-        return bind1(mapFlipped2(printAppLog(monadAppAppM)(x))(Dodo.print(Dodo.plainText)(Dodo.twoSpaces)))(log1);
+    log: function (l) {
+        return tell({
+            logs: pure(l),
+            errors: emptyAppMAccum.errors
+        });
+    },
+    getLogs: function (v) {
+        return mapFlipped(listens(function (v1) {
+            return v1.logs;
+        })(v))(Data_Tuple.snd);
+    },
+    Monad0: function () {
+        return monadAppM;
+    }
+};
+var monadMultipleErrorsAppErr = {
+    pushError: function (error) {
+        return tell({
+            errors: pure(error),
+            logs: emptyAppMAccum.logs
+        });
     },
     Monad0: function () {
         return monadAppM;
     }
 };
 var monadAppAppM = {
-    MonadAsk0: function () {
-        return monadAskAppEnvAppMAppM;
-    },
-    MonadError1: function () {
+    MonadError0: function () {
         return monadErrorAppErrorAppM;
     },
-    MonadLog2: function () {
+    MonadLog1: function () {
         return monadLogAppLogAppM;
+    },
+    MonadMultipleErrors2: function () {
+        return monadMultipleErrorsAppErr;
     },
     MonadRec3: function () {
         return monadRecAppM;
+    },
+    MonadAppEffects4: function () {
+        return monadAppEffectsAppM;
+    },
+    MonadAppConfig5: function () {
+        return monadAppConfigAppM;
     }
 };
-var log = function (dict) {
-    return dict.log;
+var askAppEffects = function (dict) {
+    return dict.askAppEffects;
 };
-var monadLogWriterT = function (dictMonoid) {
-    var lift = Control_Monad_Trans_Class.lift(Control_Monad_Writer_Trans.monadTransWriterT(dictMonoid));
-    var monadWriterT = Control_Monad_Writer_Trans.monadWriterT(dictMonoid);
-    return function (dictMonadLog) {
-        var Monad0 = dictMonadLog.Monad0();
-        var monadWriterT1 = monadWriterT(Monad0);
-        return {
-            log: (function () {
-                var $142 = lift(Monad0);
-                var $143 = log(dictMonadLog);
-                return function ($144) {
-                    return $142($143($144));
-                };
-            })(),
-            Monad0: function () {
-                return monadWriterT1;
-            }
-        };
-    };
-};
-var handleErrors = function (v) {
-    return function (v1) {
-        if (v1 instanceof Data_Either.Left) {
-            if (v.debug) {
-                return quitWithError("Unexpected Error.\x0a" + show1(v1.value0));
+var monadAppEffectsWriterT = function (dictMonoid) {
+    var monadTransWriterT = Control_Monad_Writer_Trans.monadTransWriterT(dictMonoid);
+    var lift = Control_Monad_Trans_Class.lift(monadTransWriterT);
+    return function (dictMonad) {
+        var lift1 = lift(dictMonad);
+        var map = Data_Functor.map(((dictMonad.Bind1()).Apply0()).Functor0());
+        var liftAppEffects1 = liftAppEffects(dictMonad)(monadTransWriterT);
+        return function (dictMonadAppEffects) {
+            return {
+                askAppEffects: lift1(map(liftAppEffects1)(askAppEffects(dictMonadAppEffects)))
             };
-            return quitWithError("Unexpected Error. Try to set DEBUG=true");
         };
-        if (v1 instanceof Data_Either.Right && v1.value0 instanceof Data_Either.Left) {
-            return quitWithError(Dodo.print(Dodo.plainText)(Dodo.twoSpaces)(printError(v)(v1.value0.value0)));
-        };
-        if (v1 instanceof Data_Either.Right && v1.value0 instanceof Data_Either.Right) {
-            return pure(v1.value0.value0);
-        };
-        throw new Error("Failed pattern match at TsBridgeGen.Monad (line 162, column 45 - line 169, column 28): " + [ v1.constructor.name ]);
     };
 };
-var runAppM = function (v) {
-    return function (v1) {
-        return Effect_Aff.launchAff_(bind($$try(Control_Monad_Except_Trans.runExceptT(Data_Function.flip(Control_Monad_Reader_Trans.runReaderT)(v)(mapFlipped1(v1)(Data_Function["const"](Data_Unit.unit))))))((function () {
-            var $145 = handleErrors(v.config);
-            return function ($146) {
-                return liftEffect($145($146));
-            };
-        })()));
-    };
+var askAppConfig = function (dict) {
+    return dict.askAppConfig;
 };
-var errorCount = function (dict) {
-    return dict.errorCount;
-};
-var monadErrorCountWriterT = function (dictMonoid) {
+var monadAppConfigWriterT = function (dictMonoid) {
     var lift = Control_Monad_Trans_Class.lift(Control_Monad_Writer_Trans.monadTransWriterT(dictMonoid));
-    var monadWriterT = Control_Monad_Writer_Trans.monadWriterT(dictMonoid);
-    return function (dictMonadErrorCount) {
-        var Monad0 = dictMonadErrorCount.Monad0();
-        var monadWriterT1 = monadWriterT(Monad0);
+    return function (dictMonad) {
+        var lift1 = lift(dictMonad);
+        return function (dictMonadAppConfig) {
+            return {
+                askAppConfig: lift1(askAppConfig(dictMonadAppConfig))
+            };
+        };
+    };
+};
+var monadAppWriterT = function (dictMonoid) {
+    var monadErrorWriterT = Control_Monad_Writer_Trans.monadErrorWriterT(dictMonoid);
+    var monadLogWriterT1 = monadLogWriterT(dictMonoid);
+    var monadMultipleErrorsWriter1 = monadMultipleErrorsWriter(dictMonoid);
+    var monadRecWriterT = Control_Monad_Writer_Trans.monadRecWriterT(dictMonoid);
+    var monadAppEffectsWriterT1 = monadAppEffectsWriterT(dictMonoid);
+    var monadAppConfigWriterT1 = monadAppConfigWriterT(dictMonoid);
+    return function (dictMonadApp) {
+        var monadErrorWriterT1 = monadErrorWriterT(dictMonadApp.MonadError0());
+        var monadLogWriterT2 = monadLogWriterT1(dictMonadApp.MonadLog1());
+        var monadMultipleErrorsWriter2 = monadMultipleErrorsWriter1(dictMonadApp.MonadMultipleErrors2());
+        var MonadRec3 = dictMonadApp.MonadRec3();
+        var monadRecWriterT1 = monadRecWriterT(MonadRec3);
+        var Monad0 = MonadRec3.Monad0();
+        var monadAppEffectsWriterT2 = monadAppEffectsWriterT1(Monad0)(dictMonadApp.MonadAppEffects4());
+        var monadAppConfigWriterT2 = monadAppConfigWriterT1(Monad0)(dictMonadApp.MonadAppConfig5());
         return {
-            errorCount: lift(Monad0)(errorCount(dictMonadErrorCount)),
-            Monad0: function () {
-                return monadWriterT1;
+            MonadError0: function () {
+                return monadErrorWriterT1;
+            },
+            MonadLog1: function () {
+                return monadLogWriterT2;
+            },
+            MonadMultipleErrors2: function () {
+                return monadMultipleErrorsWriter2;
+            },
+            MonadRec3: function () {
+                return monadRecWriterT1;
+            },
+            MonadAppEffects4: function () {
+                return monadAppEffectsWriterT2;
+            },
+            MonadAppConfig5: function () {
+                return monadAppConfigWriterT2;
             }
         };
     };
 };
 export {
-    AppCapabalities,
+    AppEffects,
     AppEnv,
+    askAppConfig,
+    askAppEffects,
+    getLogs,
     log,
+    pushError,
     runAppM,
+    monadAppEffectsAppM,
+    monadAppConfigAppM,
+    monadAppEffectsWriterT,
+    monadAppConfigWriterT,
+    monadAppWriterT,
+    monadLogWriterT,
+    monadMultipleErrorsWriter,
     monadAppAppM,
     monadAffAppM,
     monadEffectAppM,
@@ -259,5 +310,5 @@ export {
     monadAskAppEnvAppMAppM,
     monadRecAppM,
     monadLogAppLogAppM,
-    monadLogWriterT
+    monadMultipleErrorsAppErr
 };

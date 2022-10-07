@@ -4,22 +4,32 @@ import * as Control_Applicative from "../Control.Applicative/index.js";
 import * as Control_Bind from "../Control.Bind/index.js";
 import * as Control_Monad_Error_Class from "../Control.Monad.Error.Class/index.js";
 import * as Data_Argonaut_Decode_Class from "../Data.Argonaut.Decode.Class/index.js";
+import * as Data_Argonaut_Decode_Error from "../Data.Argonaut.Decode.Error/index.js";
+import * as Data_Array from "../Data.Array/index.js";
 import * as Data_Bifunctor from "../Data.Bifunctor/index.js";
 import * as Data_Either from "../Data.Either/index.js";
+import * as Data_Foldable from "../Data.Foldable/index.js";
 import * as Data_Function from "../Data.Function/index.js";
 import * as Data_Functor from "../Data.Functor/index.js";
 import * as Data_Maybe from "../Data.Maybe/index.js";
+import * as Data_Show from "../Data.Show/index.js";
 import * as Data_String_Common from "../Data.String.Common/index.js";
 import * as Data_Traversable from "../Data.Traversable/index.js";
+import * as Dodo from "../Dodo/index.js";
 import * as Effect_Aff from "../Effect.Aff/index.js";
 import * as Effect_Aff_Class from "../Effect.Aff.Class/index.js";
 import * as Effect_Class from "../Effect.Class/index.js";
+import * as Effect_Class_Console from "../Effect.Class.Console/index.js";
+import * as Effect_Exception from "../Effect.Exception/index.js";
 import * as Node_ChildProcess from "../Node.ChildProcess/index.js";
 import * as Node_Encoding from "../Node.Encoding/index.js";
 import * as Node_FS_Aff from "../Node.FS.Aff/index.js";
 import * as Node_FS_Perms from "../Node.FS.Perms/index.js";
 import * as Node_Glob_Basic from "../Node.Glob.Basic/index.js";
+import * as Node_Process from "../Node.Process/index.js";
+import * as PureScript_CST from "../PureScript.CST/index.js";
 import * as Sunde from "../Sunde/index.js";
+import * as Tidy from "../Tidy/index.js";
 import * as TsBridgeGen_Cli from "../TsBridgeGen.Cli/index.js";
 import * as TsBridgeGen_Config from "../TsBridgeGen.Config/index.js";
 import * as TsBridgeGen_Monad from "../TsBridgeGen.Monad/index.js";
@@ -28,12 +38,24 @@ var bind = /* #__PURE__ */ Control_Bind.bind(TsBridgeGen_Monad.bindAppM);
 var liftAff = /* #__PURE__ */ Effect_Aff_Class.liftAff(TsBridgeGen_Monad.monadAffAppM);
 var pure = /* #__PURE__ */ Control_Applicative.pure(TsBridgeGen_Monad.applicativeAppM);
 var throwError = /* #__PURE__ */ Control_Monad_Error_Class.throwError(TsBridgeGen_Monad.monadThrowAppErrorAppM);
+var map = /* #__PURE__ */ Data_Functor.map(Data_Functor.functorArray);
+var defaultFormatOptions = /* #__PURE__ */ Tidy.defaultFormatOptions(Tidy.formatErrorVoid);
+var discard = /* #__PURE__ */ Control_Bind.discard(Control_Bind.discardUnit)(Effect_Aff.bindAff);
+var error = /* #__PURE__ */ Effect_Class_Console.error(Effect_Aff.monadEffectAff);
+var liftEffect = /* #__PURE__ */ Effect_Class.liftEffect(Effect_Aff.monadEffectAff);
+var lines = /* #__PURE__ */ Dodo.lines(Data_Foldable.foldableArray);
+var mapFlipped = /* #__PURE__ */ Data_Functor.mapFlipped(Data_Functor.functorArray);
+var show = /* #__PURE__ */ Data_Show.show(Data_Show.showInt);
 var traverse = /* #__PURE__ */ Data_Traversable.traverse(Data_Traversable.traversableArray)(Data_Either.applicativeEither);
 var liftEither = /* #__PURE__ */ Control_Monad_Error_Class.liftEither(TsBridgeGen_Monad.monadThrowAppErrorAppM);
-var mapFlipped = /* #__PURE__ */ Data_Functor.mapFlipped(Effect_Aff.functorAff);
+var mapFlipped1 = /* #__PURE__ */ Data_Functor.mapFlipped(Effect_Aff.functorAff);
 var $$try = /* #__PURE__ */ Control_Monad_Error_Class["try"](Effect_Aff.monadErrorAff);
 var lmap = /* #__PURE__ */ Data_Bifunctor.lmap(Data_Bifunctor.bifunctorEither);
-var liftEffect = /* #__PURE__ */ Effect_Class.liftEffect(Effect_Aff.monadEffectAff);
+var show1 = /* #__PURE__ */ Data_Show.show(Effect_Exception.showError);
+var pure1 = /* #__PURE__ */ Control_Applicative.pure(Effect_Aff.applicativeAff);
+var foldWithSeparator = /* #__PURE__ */ Dodo.foldWithSeparator(Data_Foldable.foldableArray);
+var words = /* #__PURE__ */ Dodo.words(Data_Foldable.foldableArray);
+var bind1 = /* #__PURE__ */ Control_Bind.bind(Effect_Aff.bindAff);
 var app = /* #__PURE__ */ TsBridgeGen_Cli.app(TsBridgeGen_Monad.monadAppAppM);
 var spawn = function (cmd) {
     return function (args) {
@@ -53,14 +75,93 @@ var spawn = function (cmd) {
     };
 };
 var spagoSources = /* #__PURE__ */ Data_Functor.mapFlipped(TsBridgeGen_Monad.functorAppM)(/* #__PURE__ */ spawn("spago")([ "sources" ]))(/* #__PURE__ */ (function () {
-    var $37 = Data_Functor.map(Data_Functor.functorArray)(TsBridgeGen_Types.Glob);
-    var $38 = Data_String_Common.split("\x0a");
-    return function ($39) {
-        return $37($38((function (v) {
+    var $109 = map(TsBridgeGen_Types.Glob);
+    var $110 = Data_String_Common.split("\x0a");
+    return function ($111) {
+        return $109($110((function (v) {
             return v.stdout;
-        })($39)));
+        })($111)));
     };
 })());
+var showDoc = function (dictShow) {
+    var $112 = Data_Show.show(dictShow);
+    return function ($113) {
+        return (function (v) {
+            if (v instanceof PureScript_CST.ParseSucceeded) {
+                return (function (v1) {
+                    return v1.doc;
+                })(Tidy.formatExpr(defaultFormatOptions)(v.value0));
+            };
+            return Dodo.text("<invalid>");
+        })(PureScript_CST.parseExpr($112($113)));
+    };
+};
+var showDoc1 = /* #__PURE__ */ showDoc(TsBridgeGen_Types.showAppLog);
+var showDoc2 = /* #__PURE__ */ showDoc(TsBridgeGen_Types.showAppError);
+var quitWithError = function (msg) {
+    return discard(error(msg))(function () {
+        return liftEffect(Node_Process.exit(1));
+    });
+};
+var printDoc = /* #__PURE__ */ Dodo.print(Dodo.plainText)(Dodo.twoSpaces);
+var printAppLog = function (v) {
+    return function (x) {
+        if (v.debug) {
+            return showDoc1(x);
+        };
+        return lines(mapFlipped(Data_String_Common.split("\x0a")(x.value0))(Dodo.text));
+    };
+};
+var printAppError = function (v) {
+    return function (x) {
+        if (v.debug) {
+            return showDoc2(x);
+        };
+        if (x instanceof TsBridgeGen_Types.ErrSpawn) {
+            return Dodo.text("Failed to spawn Command " + x.value0);
+        };
+        if (x instanceof TsBridgeGen_Types.ErrParseModule) {
+            return Dodo.text("Failed to parse PureScript module");
+        };
+        if (x instanceof TsBridgeGen_Types.ErrReadFile) {
+            return Dodo.text("Failed to read from file " + x.value0);
+        };
+        if (x instanceof TsBridgeGen_Types.ErrWriteFile) {
+            return Dodo.text("Failed to write to file " + x.value0);
+        };
+        if (x instanceof TsBridgeGen_Types.ErrExpandGlobs) {
+            return Dodo.text("Failed to expand globs");
+        };
+        if (x instanceof TsBridgeGen_Types.ErrParseEnvVars) {
+            return Dodo.text("Failed to parse environment variables");
+        };
+        if (x instanceof TsBridgeGen_Types.ErrLiteral) {
+            return lines(mapFlipped(Data_String_Common.split("\x0a")(x.value0))(Dodo.text));
+        };
+        if (x instanceof TsBridgeGen_Types.ErrParseToJson) {
+            return Dodo.text("Found invalid JSON");
+        };
+        if (x instanceof TsBridgeGen_Types.ErrParseToData) {
+            return lines(map(Dodo.text)(Data_String_Common.split("\x0a")(Data_Argonaut_Decode_Error.printJsonDecodeError(x.value0))));
+        };
+        if (x instanceof TsBridgeGen_Types.ErrUnknown) {
+            return Dodo.text("An unknown error occured. Try DEBUG=true");
+        };
+        if (x instanceof TsBridgeGen_Types.AtFileSection) {
+            return lines([ printAppError(v)(x.value2), Dodo.text("in file " + (x.value0 + (" at section: " + x.value1))) ]);
+        };
+        throw new Error("Failed pattern match at TsBridgeGen.Main (line 184, column 8 - line 210, column 8): " + [ x.constructor.name ]);
+    };
+};
+var printOneOfManyErrors = function (config) {
+    return function (idx) {
+        return function (count) {
+            return function (e) {
+                return lines([ Dodo.text("Error " + (show(idx + 1 | 0) + (" of " + (show(count) + ":")))), Dodo.indent(printAppError(config)(e)) ]);
+            };
+        };
+    };
+};
 var parseLinesStrToData = function (dictDecodeJson) {
     var parseStrToData = TsBridgeGen_Cli.parseStrToData(dictDecodeJson);
     return function (str) {
@@ -68,20 +169,20 @@ var parseLinesStrToData = function (dictDecodeJson) {
     };
 };
 var spagoLsDepsTransitive = /* #__PURE__ */ bind(/* #__PURE__ */ spawn("spago")([ "ls", "deps", "--transitive", "--json" ]))(/* #__PURE__ */ (function () {
-    var $40 = parseLinesStrToData(Data_Argonaut_Decode_Class.decodeRecord(Data_Argonaut_Decode_Class.gDecodeJsonCons(Data_Argonaut_Decode_Class.decodeFieldId(Data_Argonaut_Decode_Class.decodeJsonString))(Data_Argonaut_Decode_Class.gDecodeJsonNil)({
+    var $114 = parseLinesStrToData(Data_Argonaut_Decode_Class.decodeRecord(Data_Argonaut_Decode_Class.gDecodeJsonCons(Data_Argonaut_Decode_Class.decodeFieldId(Data_Argonaut_Decode_Class.decodeJsonString))(Data_Argonaut_Decode_Class.gDecodeJsonNil)({
         reflectSymbol: function () {
             return "packageName";
         }
     })()())());
-    return function ($41) {
-        return liftEither($40((function (v) {
+    return function ($115) {
+        return liftEither($114((function (v) {
             return v.stdout;
-        })($41)));
+        })($115)));
     };
 })());
 var liftAffWithErr = function (mkError) {
     return function (ma) {
-        return bind(liftAff(mapFlipped($$try(ma))(lmap(mkError))))(liftEither);
+        return bind(liftAff(mapFlipped1($$try(ma))(lmap(mkError))))(liftEither);
     };
 };
 var mkdirRec = function (path) {
@@ -101,6 +202,39 @@ var writeTextFile = function (path) {
         return liftAffWithErr(Data_Function["const"](new TsBridgeGen_Types.ErrWriteFile(path)))(Node_FS_Aff.writeTextFile(Node_Encoding.UTF8.value)(path)(content));
     };
 };
+var handleErrors = function (v) {
+    return function (errorCount) {
+        return function (v1) {
+            if (v1 instanceof Data_Either.Left) {
+                if (v.debug) {
+                    return quitWithError("Unexpected Error.\x0a" + show1(v1.value0));
+                };
+                return quitWithError("Unexpected Error. Try to set DEBUG=true");
+            };
+            if (v1 instanceof Data_Either.Right && v1.value0 instanceof Data_Either.Left) {
+                return quitWithError(printDoc(printAppError(v)(v1.value0.value0)));
+            };
+            if (v1 instanceof Data_Either.Right && (v1.value0 instanceof Data_Either.Right && errorCount !== 0)) {
+                return quitWithError("\x0aNot all of the replacements succeeded.");
+            };
+            if (v1 instanceof Data_Either.Right && v1.value0 instanceof Data_Either.Right) {
+                return pure1(v1.value0.value0);
+            };
+            throw new Error("Failed pattern match at TsBridgeGen.Main (line 102, column 56 - line 112, column 28): " + [ v1.constructor.name ]);
+        };
+    };
+};
+var handleAccum = function (config) {
+    return function (v) {
+        var l = lines(mapFlipped(v.logs)(printAppLog(config)));
+        var e = foldWithSeparator(words([ Dodo["break"], Dodo["break"] ]))(Data_Array.mapWithIndex(function (idx) {
+            return function (error1) {
+                return printOneOfManyErrors(config)(idx)(Data_Array.length(v.errors))(error1);
+            };
+        })(v.errors));
+        return error(printDoc(foldWithSeparator(words([ Dodo["break"], Dodo["break"] ]))([ l, e ])));
+    };
+};
 var expandGlobsCwd = function (globs) {
     return liftAffWithErr(Data_Function["const"](TsBridgeGen_Types.ErrExpandGlobs.value))(Node_Glob_Basic.expandGlobsCwd(globs));
 };
@@ -118,13 +252,23 @@ var main = function __do() {
             spagoSources: spagoSources
         }
     };
-    return TsBridgeGen_Monad.runAppM(appEnv)(app)();
+    return Effect_Aff.launchAff_(bind1(TsBridgeGen_Monad.runAppM(appEnv)(app))(function (v) {
+        return discard(handleAccum(config)(v.value1))(function () {
+            return handleErrors(config)(Data_Array.length(v.value1.errors))(v.value0);
+        });
+    }))();
 };
 export {
     runPrettierImpl
 } from "./foreign.js";
 export {
     main,
+    handleAccum,
+    printOneOfManyErrors,
+    printAppLog,
+    handleErrors,
+    printDoc,
+    quitWithError,
     spagoSources,
     expandGlobsCwd,
     writeTextFile,
@@ -134,5 +278,7 @@ export {
     runPrettier,
     spawn,
     liftAffWithErr,
-    parseLinesStrToData
+    parseLinesStrToData,
+    printAppError,
+    showDoc
 };

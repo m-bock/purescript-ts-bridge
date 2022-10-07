@@ -53,7 +53,7 @@ in  upstream
       , "typelevel-prelude"
       ]
     , repo = "https://github.com/thought2/purescript-typescript-bridge.git"
-    , version = "c6f7bf090ba46ec9fbc2e55251bed9927dc13605"
+    , version = "main"
     }
   with node-glob-basic =
     { dependencies =

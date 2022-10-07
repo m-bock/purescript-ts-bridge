@@ -4,7 +4,6 @@ import * as Control_Applicative from "../Control.Applicative/index.js";
 import * as Control_Apply from "../Control.Apply/index.js";
 import * as Control_Bind from "../Control.Bind/index.js";
 import * as Control_Monad_Error_Class from "../Control.Monad.Error.Class/index.js";
-import * as Control_Monad_Reader_Class from "../Control.Monad.Reader.Class/index.js";
 import * as Control_Monad_Trans_Class from "../Control.Monad.Trans.Class/index.js";
 import * as Control_Monad_Writer_Trans from "../Control.Monad.Writer.Trans/index.js";
 import * as Data_Argonaut_Decode_Class from "../Data.Argonaut.Decode.Class/index.js";
@@ -19,26 +18,37 @@ import * as Data_Maybe from "../Data.Maybe/index.js";
 import * as Data_Monoid from "../Data.Monoid/index.js";
 import * as Data_Semigroup from "../Data.Semigroup/index.js";
 import * as Data_Set from "../Data.Set/index.js";
+import * as Data_String_CodePoints from "../Data.String.CodePoints/index.js";
 import * as Data_String_Common from "../Data.String.Common/index.js";
 import * as Data_Traversable from "../Data.Traversable/index.js";
 import * as Data_Unfoldable from "../Data.Unfoldable/index.js";
+import * as Data_Unit from "../Data.Unit/index.js";
+import * as Dodo from "../Dodo/index.js";
+import * as Effect_Unsafe from "../Effect.Unsafe/index.js";
 import * as Node_Path from "../Node.Path/index.js";
 import * as Parsing from "../Parsing/index.js";
 import * as Parsing_String from "../Parsing.String/index.js";
 import * as Parsing_String_Replace from "../Parsing.String.Replace/index.js";
+import * as PureScript_CST from "../PureScript.CST/index.js";
 import * as Safe_Coerce from "../Safe.Coerce/index.js";
+import * as Tidy from "../Tidy/index.js";
 import * as TsBridgeGen_Core from "../TsBridgeGen.Core/index.js";
 import * as TsBridgeGen_Monad from "../TsBridgeGen.Monad/index.js";
 import * as TsBridgeGen_Print from "../TsBridgeGen.Print/index.js";
 import * as TsBridgeGen_Types from "../TsBridgeGen.Types/index.js";
 var discard = /* #__PURE__ */ Control_Bind.discard(Control_Bind.discardUnit);
-var map = /* #__PURE__ */ Data_Functor.map(Data_Functor.functorArray);
-var mapFlipped = /* #__PURE__ */ Data_Functor.mapFlipped(Data_Functor.functorArray);
-var bind = /* #__PURE__ */ Control_Bind.bind(Data_Either.bindEither);
-var lmap = /* #__PURE__ */ Data_Bifunctor.lmap(Data_Bifunctor.bifunctorEither);
-var bind1 = /* #__PURE__ */ Control_Bind.bind(Parsing.bindParserT);
+var defaultFormatOptions = /* #__PURE__ */ Tidy.defaultFormatOptions(Tidy.formatErrorVoid);
+var $$try = /* #__PURE__ */ Control_Monad_Error_Class["try"](Control_Monad_Error_Class.monadErrorEffect);
+var bind = /* #__PURE__ */ Control_Bind.bind(Parsing.bindParserT);
+var mapFlipped = /* #__PURE__ */ Data_Functor.mapFlipped(Parsing.functorParserT);
+var lmap = /* #__PURE__ */ Data_Bifunctor.lmap(Data_Bifunctor.bifunctorTuple);
+var lmap1 = /* #__PURE__ */ Data_Bifunctor.lmap(Data_Bifunctor.bifunctorEither);
+var mempty = /* #__PURE__ */ Data_Monoid.mempty(TsBridgeGen_Types.monoidSourcePosition);
 var lift = /* #__PURE__ */ Control_Monad_Trans_Class.lift(Parsing.monadTransParserT);
 var pure = /* #__PURE__ */ Control_Applicative.pure(Parsing.applicativeParserT);
+var map = /* #__PURE__ */ Data_Functor.map(Data_Functor.functorArray);
+var mapFlipped1 = /* #__PURE__ */ Data_Functor.mapFlipped(Data_Functor.functorArray);
+var bind1 = /* #__PURE__ */ Control_Bind.bind(Data_Either.bindEither);
 var heytingAlgebraFunction = /* #__PURE__ */ Data_HeytingAlgebra.heytingAlgebraFunction(Data_HeytingAlgebra.heytingAlgebraBoolean);
 var conj = /* #__PURE__ */ Data_HeytingAlgebra.conj(heytingAlgebraFunction);
 var or = /* #__PURE__ */ Data_Foldable.or(Data_Foldable.foldableArray)(heytingAlgebraFunction);
@@ -53,11 +63,10 @@ var bindWriterT = /* #__PURE__ */ Control_Monad_Writer_Trans.bindWriterT(/* #__P
 var monoidRecord = /* #__PURE__ */ Data_Monoid.monoidRecord()(/* #__PURE__ */ Data_Monoid.monoidRecordCons(importsIsSymbol)(/* #__PURE__ */ Data_Set.monoidSet(TsBridgeGen_Types.ordImport))()(Data_Monoid.monoidRecordNil));
 var applicativeWriterT = /* #__PURE__ */ Control_Monad_Writer_Trans.applicativeWriterT(monoidRecord);
 var union = /* #__PURE__ */ Data_Set.union(TsBridgeGen_Types.ordImport);
-var mapFlipped1 = /* #__PURE__ */ Data_Functor.mapFlipped(Data_Maybe.functorMaybe);
+var mapFlipped2 = /* #__PURE__ */ Data_Functor.mapFlipped(Data_Maybe.functorMaybe);
 var map1 = /* #__PURE__ */ Data_Set.map(TsBridgeGen_Types.ordImport);
 var monadRecWriterT = /* #__PURE__ */ Control_Monad_Writer_Trans.monadRecWriterT(monoidRecord);
-var monadErrorWriterT = /* #__PURE__ */ Control_Monad_Writer_Trans.monadErrorWriterT(monoidRecord);
-var monadLogWriterT = /* #__PURE__ */ TsBridgeGen_Monad.monadLogWriterT(monoidRecord);
+var monadAppWriterT = /* #__PURE__ */ TsBridgeGen_Monad.monadAppWriterT(monoidRecord);
 var gDecodeJsonCons = /* #__PURE__ */ Data_Argonaut_Decode_Class.gDecodeJsonCons(/* #__PURE__ */ Data_Argonaut_Decode_Class.decodeFieldId(/* #__PURE__ */ Data_Argonaut_Decode_Class.decodeArray(TsBridgeGen_Types.decodeJsonModuleGlob)));
 var decodeRecord = /* #__PURE__ */ Data_Argonaut_Decode_Class.decodeRecord(/* #__PURE__ */ gDecodeJsonCons(/* #__PURE__ */ gDecodeJsonCons(Data_Argonaut_Decode_Class.gDecodeJsonNil)({
     reflectSymbol: function () {
@@ -125,20 +134,20 @@ var DhallExprTypeAnnot = /* #__PURE__ */ (function () {
 var writeFileIfNotExists = function (dictMonadApp) {
     var Bind1 = ((dictMonadApp.MonadRec3()).Monad0()).Bind1();
     var bind2 = Control_Bind.bind(Bind1);
-    var ask = Control_Monad_Reader_Class.ask(dictMonadApp.MonadAsk0());
-    var MonadError1 = dictMonadApp.MonadError1();
-    var catchError = Control_Monad_Error_Class.catchError(MonadError1);
+    var askAppEffects = TsBridgeGen_Monad.askAppEffects(dictMonadApp.MonadAppEffects4());
+    var MonadError0 = dictMonadApp.MonadError0();
+    var catchError = Control_Monad_Error_Class.catchError(MonadError0);
     var $$void = Data_Functor["void"]((Bind1.Apply0()).Functor0());
     var discard1 = discard(Bind1);
-    var throwError = Control_Monad_Error_Class.throwError(MonadError1.MonadThrow0());
+    var throwError = Control_Monad_Error_Class.throwError(MonadError0.MonadThrow0());
     return function (fallback) {
         return function (filePath) {
-            return bind2(ask)(function (v) {
-                return catchError($$void(v.capabilities.readTextFile(filePath)))(function (v1) {
+            return bind2(askAppEffects)(function (v) {
+                return catchError($$void(v.readTextFile(filePath)))(function (v1) {
                     if (v1 instanceof TsBridgeGen_Types.ErrReadFile) {
                         return bind2(fallback)(function (content) {
-                            return discard1(v.capabilities.mkdirRec(Node_Path.dirname(filePath)))(function () {
-                                return v.capabilities.writeTextFile(filePath)(content);
+                            return discard1(v.mkdirRec(Node_Path.dirname(filePath)))(function () {
+                                return v.writeTextFile(filePath)(content);
                             });
                         });
                     };
@@ -151,26 +160,26 @@ var writeFileIfNotExists = function (dictMonadApp) {
 var updateFile = function (dictMonadApp) {
     var Bind1 = ((dictMonadApp.MonadRec3()).Monad0()).Bind1();
     var bind2 = Control_Bind.bind(Bind1);
-    var ask = Control_Monad_Reader_Class.ask(dictMonadApp.MonadAsk0());
-    var MonadError1 = dictMonadApp.MonadError1();
-    var catchError = Control_Monad_Error_Class.catchError(MonadError1);
+    var askAppEffects = TsBridgeGen_Monad.askAppEffects(dictMonadApp.MonadAppEffects4());
+    var MonadError0 = dictMonadApp.MonadError0();
+    var catchError = Control_Monad_Error_Class.catchError(MonadError0);
     var applyFirst = Control_Apply.applyFirst(Bind1.Apply0());
-    var log = TsBridgeGen_Monad.log(dictMonadApp.MonadLog2());
-    var throwError = Control_Monad_Error_Class.throwError(MonadError1.MonadThrow0());
+    var log = TsBridgeGen_Monad.log(dictMonadApp.MonadLog1());
+    var throwError = Control_Monad_Error_Class.throwError(MonadError0.MonadThrow0());
     var discard1 = discard(Bind1);
     return function (fallback) {
         return function (filePath) {
             return function (f) {
-                return bind2(ask)(function (v) {
-                    return bind2(catchError(applyFirst(v.capabilities.readTextFile(filePath))(log(new TsBridgeGen_Types.LogLiteral("Patching module at " + filePath))))(function (v1) {
+                return bind2(askAppEffects)(function (v) {
+                    return bind2(catchError(applyFirst(v.readTextFile(filePath))(log(new TsBridgeGen_Types.LogLiteral("Patching module at " + filePath))))(function (v1) {
                         if (v1 instanceof TsBridgeGen_Types.ErrReadFile) {
                             return applyFirst(fallback)(log(new TsBridgeGen_Types.LogLiteral("Module at " + (filePath + " does not exist yet. Using a starter template."))));
                         };
                         return throwError(v1);
                     }))(function (content) {
                         return bind2(f(content))(function (content$prime) {
-                            return discard1(v.capabilities.mkdirRec(Node_Path.dirname(filePath)))(function () {
-                                return v.capabilities.writeTextFile(filePath)(content$prime);
+                            return discard1(v.mkdirRec(Node_Path.dirname(filePath)))(function () {
+                                return v.writeTextFile(filePath)(content$prime);
                             });
                         });
                     });
@@ -179,12 +188,114 @@ var updateFile = function (dictMonadApp) {
         };
     };
 };
+var tidyPurs = function (str) {
+    return (function (v) {
+        if (v instanceof PureScript_CST.ParseSucceeded) {
+            return new Data_Maybe.Just(Dodo.print(Dodo.plainText)(Dodo.twoSpaces)((function (v1) {
+                return v1.doc;
+            })(Tidy.formatModule(defaultFormatOptions)(v.value0))));
+        };
+        return Data_Maybe.Nothing.value;
+    })(PureScript_CST.parseModule(str));
+};
+var runPrettier = function (str) {
+    return Data_Either.hush(Effect_Unsafe.unsafePerformEffect($$try($foreign.runPrettierImpl(str))));
+};
+var replaceComment = function (dictMonadRec) {
+    return function (dictMonadApp) {
+        var MonadRec3 = dictMonadApp.MonadRec3();
+        var Monad0 = MonadRec3.Monad0();
+        var replaceT = Parsing_String_Replace.replaceT(Monad0)(MonadRec3);
+        var anyTill = Parsing_String.anyTill(Monad0);
+        var MonadError0 = dictMonadApp.MonadError0();
+        var catchError = Control_Monad_Error_Class.catchError(MonadError0);
+        var MonadThrow0 = MonadError0.MonadThrow0();
+        var liftEither = Control_Monad_Error_Class.liftEither(MonadThrow0);
+        var Bind1 = Monad0.Bind1();
+        var discard1 = discard(Bind1);
+        var pushError = TsBridgeGen_Monad.pushError(dictMonadApp.MonadMultipleErrors2());
+        var throwError = Control_Monad_Error_Class.throwError(MonadThrow0);
+        var bind2 = Control_Bind.bind(Bind1);
+        var pure1 = Control_Applicative.pure(Monad0.Applicative0());
+        var lift1 = lift(Monad0);
+        var try1 = Control_Monad_Error_Class["try"](MonadError0);
+        return function (dictDecodeJson) {
+            var decodeJson = Data_Argonaut_Decode_Class.decodeJson(dictDecodeJson);
+            return function (path) {
+                return function (id) {
+                    return function (f) {
+                        return function (i) {
+                            return replaceT(i)(bind(Parsing_String.string("{-GEN:" + (id + "\x0a")))(function (genStartOpen) {
+                                return bind(mapFlipped(Parsing.position)(TsBridgeGen_Core.positionToSourcePosition))(function (posJson) {
+                                    return bind(mapFlipped(anyTill(Parsing_String.string("\x0a-}\x0a")))(lmap(function (j) {
+                                        return Data_Maybe.fromMaybe(j)(runPrettier(j));
+                                    })))(function (v) {
+                                        return bind(mapFlipped(Parsing.position)(TsBridgeGen_Core.positionToSourcePosition))(function (posContent) {
+                                            return bind(anyTill(Parsing_String.string("\x0a{-GEN:END-}")))(function (v1) {
+                                                var getJson = catchError(liftEither(lmap1(TsBridgeGen_Types.ErrParseToJson.create)(TsBridgeGen_Core.parseToJson(v.value0))))(function (e) {
+                                                    var p = Data_Maybe.fromMaybe(mempty)((function () {
+                                                        if (e instanceof TsBridgeGen_Types.ErrParseToJson && e.value0 instanceof TsBridgeGen_Types.UnexpectedTokenAtPos) {
+                                                            return TsBridgeGen_Core.indexToSourcePos(e.value0.value1)(v.value0);
+                                                        };
+                                                        if (e instanceof TsBridgeGen_Types.ErrParseToJson && e.value0 instanceof TsBridgeGen_Types.UnexpectedEndOfInput) {
+                                                            return TsBridgeGen_Core.indexToSourcePos(Data_String_CodePoints.length(v.value0))(v.value0);
+                                                        };
+                                                        return Data_Maybe.Nothing.value;
+                                                    })());
+                                                    return discard1(pushError(new TsBridgeGen_Types.AtFileSection(path, id, e)))(function () {
+                                                        return throwError(e);
+                                                    });
+                                                });
+                                                var getData = function (json) {
+                                                    return catchError(liftEither(lmap1(TsBridgeGen_Types.ErrParseToData.create)(decodeJson(json))))(function (e) {
+                                                        return discard1(pushError(new TsBridgeGen_Types.AtFileSection(path, id, e)))(function () {
+                                                            return throwError(e);
+                                                        });
+                                                    });
+                                                };
+                                                var getContent = function (data_) {
+                                                    return catchError(f(data_)(v1.value0))(function (appError) {
+                                                        return discard1(pushError(new TsBridgeGen_Types.AtFileSection(path, id, appError)))(function () {
+                                                            return throwError(appError);
+                                                        });
+                                                    });
+                                                };
+                                                var finalize = function (json) {
+                                                    return function (newContent) {
+                                                        return genStartOpen + (Data_String_Common.trim(json) + (v.value1 + ("\x0a" + (newContent + ("\x0a" + v1.value1)))));
+                                                    };
+                                                };
+                                                var getReplacement = catchError(bind2(getJson)(function (json) {
+                                                    return bind2(getData(json))(function (data_) {
+                                                        return bind2(getContent(data_))(function (newContent) {
+                                                            return pure1(finalize(v.value0)(newContent));
+                                                        });
+                                                    });
+                                                }))(function (e) {
+                                                    return pure1(finalize(v.value0)(v1.value0));
+                                                });
+                                                return bind(lift1(try1(getReplacement)))(Data_Either.either(Data_Function["const"](Parsing.fail("Cannot parse Json")))(pure));
+                                            });
+                                        });
+                                    });
+                                });
+                            }));
+                        };
+                    };
+                };
+            };
+        };
+    };
+};
 var readAsset = function (dictMonadApp) {
     var bind2 = Control_Bind.bind(((dictMonadApp.MonadRec3()).Monad0()).Bind1());
-    var ask = Control_Monad_Reader_Class.ask(dictMonadApp.MonadAsk0());
+    var askAppConfig = TsBridgeGen_Monad.askAppConfig(dictMonadApp.MonadAppConfig5());
+    var askAppEffects = TsBridgeGen_Monad.askAppEffects(dictMonadApp.MonadAppEffects4());
     return function (path) {
-        return bind2(ask)(function (v) {
-            return v.capabilities.readTextFile(Node_Path.concat([ v.config.assetsDir, path ]));
+        return bind2(askAppConfig)(function (v) {
+            return bind2(askAppEffects)(function (v1) {
+                return v1.readTextFile(Node_Path.concat([ v.assetsDir, path ]));
+            });
         });
     };
 };
@@ -195,7 +306,7 @@ var printDhallType = function (v) {
     if (v instanceof DhallTypeId) {
         return v.value0;
     };
-    throw new Error("Failed pattern match at TsBridgeGen.Cli (line 311, column 18 - line 313, column 21): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at TsBridgeGen.Cli (line 361, column 18 - line 363, column 21): " + [ v.constructor.name ]);
 };
 var printDhallExpr = function (v) {
     if (v instanceof DhallExprList) {
@@ -207,21 +318,21 @@ var printDhallExpr = function (v) {
     if (v instanceof DhallExprTypeAnnot) {
         return printDhallExpr(v.value0) + (" : " + printDhallType(v.value1));
     };
-    throw new Error("Failed pattern match at TsBridgeGen.Cli (line 305, column 18 - line 308, column 74): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at TsBridgeGen.Cli (line 355, column 18 - line 358, column 74): " + [ v.constructor.name ]);
 };
 var updateAllDepsFile = function (dictMonadApp) {
     var Monad0 = (dictMonadApp.MonadRec3()).Monad0();
     var bind2 = Control_Bind.bind(Monad0.Bind1());
-    var ask = Control_Monad_Reader_Class.ask(dictMonadApp.MonadAsk0());
+    var askAppEffects = TsBridgeGen_Monad.askAppEffects(dictMonadApp.MonadAppEffects4());
     var pure1 = Control_Applicative.pure(Monad0.Applicative0());
     return function (v) {
         return function (v1) {
-            return bind2(ask)(function (v2) {
-                return bind2(v2.capabilities.spagoLsDepsTransitive)(function (deps) {
-                    var dhallExpr = new DhallExprTypeAnnot(new DhallExprList(mapFlipped(deps)(function ($329) {
+            return bind2(askAppEffects)(function (v2) {
+                return bind2(v2.spagoLsDepsTransitive)(function (deps) {
+                    var dhallExpr = new DhallExprTypeAnnot(new DhallExprList(mapFlipped1(deps)(function ($354) {
                         return DhallExprString.create((function (v3) {
                             return v3.packageName;
-                        })($329));
+                        })($354));
                     })), new DhallTypeApp(new DhallTypeId("List"), new DhallTypeId("Text")));
                     return pure1(printDhallExpr(dhallExpr));
                 });
@@ -232,65 +343,12 @@ var updateAllDepsFile = function (dictMonadApp) {
 var parseStrToData = function (dictDecodeJson) {
     var decodeJson = Data_Argonaut_Decode_Class.decodeJson(dictDecodeJson);
     return function (str) {
-        return bind(lmap(TsBridgeGen_Types.ErrParseToJson.create)(TsBridgeGen_Core.parseToJson(str)))((function () {
-            var $330 = lmap(TsBridgeGen_Types.ErrParseToData.create);
-            return function ($331) {
-                return $330(decodeJson($331));
+        return bind1(lmap1(TsBridgeGen_Types.ErrParseToJson.create)(TsBridgeGen_Core.parseToJson(str)))((function () {
+            var $355 = lmap1(TsBridgeGen_Types.ErrParseToData.create);
+            return function ($356) {
+                return $355(decodeJson($356));
             };
         })());
-    };
-};
-var replaceComment = function (dictMonadRec) {
-    return function (dictMonadError) {
-        var MonadThrow0 = dictMonadError.MonadThrow0();
-        var Monad0 = MonadThrow0.Monad0();
-        var replaceT = Parsing_String_Replace.replaceT(Monad0)(dictMonadRec);
-        var anyTill = Parsing_String.anyTill(Monad0);
-        var lift1 = lift(Monad0);
-        var $$try = Control_Monad_Error_Class["try"](dictMonadError);
-        var catchError = Control_Monad_Error_Class.catchError(dictMonadError);
-        var liftEither = Control_Monad_Error_Class.liftEither(MonadThrow0);
-        var discard1 = discard(Monad0.Bind1());
-        var throwError = Control_Monad_Error_Class.throwError(MonadThrow0);
-        return function (dictMonadLog) {
-            var log = TsBridgeGen_Monad.log(dictMonadLog);
-            return function (dictDecodeJson) {
-                var parseStrToData1 = parseStrToData(dictDecodeJson);
-                return function (path) {
-                    return function (id) {
-                        return function (f) {
-                            return function (i) {
-                                return replaceT(i)(bind1(Parsing.position)(function (v) {
-                                    return bind1(Parsing_String.string("{-GEN:" + (id + "\x0a")))(function (genStartOpen) {
-                                        return bind1(anyTill(Parsing_String.string("\x0a-}\x0a")))(function (v1) {
-                                            return bind1(anyTill(Parsing_String.string("\x0a{-GEN:END-}")))(function (v2) {
-                                                var sourcePos = {
-                                                    line: v.line,
-                                                    column: v.column
-                                                };
-                                                return bind1(bind1(lift1($$try(catchError(liftEither(parseStrToData1(v1.value0)))(function (appError) {
-                                                    return discard1(log(new TsBridgeGen_Types.LogError(new TsBridgeGen_Types.AtFilePosition(path, sourcePos, appError))))(function () {
-                                                        return throwError(appError);
-                                                    });
-                                                }))))(Data_Either.either(Data_Function["const"](Parsing.fail("Cannot parse Json")))(pure)))(function (data_) {
-                                                    return bind1(bind1(lift1($$try(catchError(f(data_)(v2.value0))(function (appError) {
-                                                        return discard1(log(new TsBridgeGen_Types.LogError(new TsBridgeGen_Types.AtFilePosition(path, sourcePos, appError))))(function () {
-                                                            return throwError(appError);
-                                                        });
-                                                    }))))(Data_Either.either(Data_Function["const"](Parsing.fail("Execution failure")))(pure)))(function (newContent) {
-                                                        return pure(genStartOpen + (v1.value0 + (v1.value1 + ("\x0a" + (newContent + ("\x0a" + v2.value1))))));
-                                                    });
-                                                });
-                                            });
-                                        });
-                                    });
-                                }));
-                            };
-                        };
-                    };
-                };
-            };
-        };
     };
 };
 var matchModuleGlob = function (v) {
@@ -307,8 +365,8 @@ var mapModule = function (opts) {
             return matchModuleGlob(glob)(v.value0);
         };
         var filterName = conj(or(map(matcher)(opts.include)))(and(map(not(matcher))(opts.exclude)));
-        return new TsBridgeGen_Types.PursModule(v.value0, Data_Array.filter(function ($332) {
-            return filterName(TsBridgeGen_Core.getName($332));
+        return new TsBridgeGen_Types.PursModule(v.value0, Data_Array.filter(function ($357) {
+            return filterName(TsBridgeGen_Core.getName($357));
         })(v.value1));
     };
 };
@@ -322,16 +380,15 @@ var patchClassFile = function (dictMonadApp) {
     var pure1 = Control_Applicative.pure(applicativeWriterT(Applicative0));
     var pure2 = Control_Applicative.pure(Applicative0);
     var bind3 = Control_Bind.bind(Bind1);
-    var MonadError1 = dictMonadApp.MonadError1();
-    var MonadLog2 = dictMonadApp.MonadLog2();
-    var replaceComment1 = replaceComment(monadRecWriterT(MonadRec3))(monadErrorWriterT(MonadError1))(monadLogWriterT(MonadLog2))(decodeRecord);
-    var replaceComment2 = replaceComment(MonadRec3)(MonadError1)(MonadLog2)(decodeRecord1);
+    var replaceComment1 = replaceComment(monadRecWriterT(MonadRec3))(monadAppWriterT(dictMonadApp))(decodeRecord);
+    var mapFlipped3 = Data_Functor.mapFlipped((Bind1.Apply0()).Functor0());
+    var replaceComment2 = replaceComment(MonadRec3)(dictMonadApp)(decodeRecord1);
     return function (path) {
         return function (defs) {
             return function (file) {
                 var replaceInstances = function (opts) {
                     return function (v) {
-                        return bind2(genInstances(mapFlipped(defs)(mapModule(opts))))(function (instances) {
+                        return bind2(genInstances(mapFlipped1(defs)(mapModule(opts))))(function (instances) {
                             return pure1(TsBridgeGen_Print.printPursSnippets(instances));
                         });
                     };
@@ -339,12 +396,14 @@ var patchClassFile = function (dictMonadApp) {
                 var replaceImports = function (imports) {
                     return function (v) {
                         return function (oldImports) {
-                            return pure2(TsBridgeGen_Print.printImports(union(imports)(Data_Maybe.fromMaybe(Data_Set.empty)(mapFlipped1(TsBridgeGen_Core.parseUserImports(oldImports))(map1(TsBridgeGen_Types.ImportUser.create))))));
+                            return pure2(TsBridgeGen_Print.printImports(union(imports)(Data_Maybe.fromMaybe(Data_Set.empty)(mapFlipped2(TsBridgeGen_Core.parseUserImports(oldImports))(map1(TsBridgeGen_Types.ImportUser.create))))));
                         };
                     };
                 };
                 return bind3(TsBridgeGen_Print.runImportWriterT(replaceComment1(path)("instances")(replaceInstances)(file)))(function (v) {
-                    return replaceComment2(path)("imports")(replaceImports(v.value1.imports))(v.value0);
+                    return mapFlipped3(replaceComment2(path)("imports")(replaceImports(v.value1.imports))(v.value0))(function (str) {
+                        return Data_Maybe.fromMaybe(str)(tidyPurs(str));
+                    });
                 });
             };
         };
@@ -360,10 +419,9 @@ var patchModulesFile = function (dictMonadApp) {
     var pure1 = Control_Applicative.pure(applicativeWriterT(Applicative0));
     var pure2 = Control_Applicative.pure(Applicative0);
     var bind3 = Control_Bind.bind(Bind1);
-    var MonadError1 = dictMonadApp.MonadError1();
-    var MonadLog2 = dictMonadApp.MonadLog2();
-    var replaceComment1 = replaceComment(monadRecWriterT(MonadRec3))(monadErrorWriterT(MonadError1))(monadLogWriterT(MonadLog2))(decodeRecord);
-    var replaceComment2 = replaceComment(MonadRec3)(MonadError1)(MonadLog2)(decodeRecord1);
+    var replaceComment1 = replaceComment(monadRecWriterT(MonadRec3))(monadAppWriterT(dictMonadApp))(decodeRecord);
+    var mapFlipped3 = Data_Functor.mapFlipped((Bind1.Apply0()).Functor0());
+    var replaceComment2 = replaceComment(MonadRec3)(dictMonadApp)(decodeRecord1);
     return function (path) {
         return function (defs) {
             return function (file) {
@@ -371,7 +429,7 @@ var patchModulesFile = function (dictMonadApp) {
                     return function (v1) {
                         return bind2(genTsProgram(Data_Array.filter(function (v2) {
                             return !Data_Array["null"](v2.value1);
-                        })(mapFlipped(defs)(mapModule(v)))))(function (tsProgram) {
+                        })(mapFlipped1(defs)(mapModule(v)))))(function (tsProgram) {
                             return pure1(tsProgram);
                         });
                     };
@@ -379,12 +437,14 @@ var patchModulesFile = function (dictMonadApp) {
                 var replaceImports = function (imports) {
                     return function (v) {
                         return function (oldImports) {
-                            return pure2(TsBridgeGen_Print.printImports(union(imports)(Data_Maybe.fromMaybe(Data_Set.empty)(mapFlipped1(TsBridgeGen_Core.parseUserImports(oldImports))(map1(TsBridgeGen_Types.ImportUser.create))))));
+                            return pure2(TsBridgeGen_Print.printImports(union(imports)(Data_Maybe.fromMaybe(Data_Set.empty)(mapFlipped2(TsBridgeGen_Core.parseUserImports(oldImports))(map1(TsBridgeGen_Types.ImportUser.create))))));
                         };
                     };
                 };
                 return bind3(TsBridgeGen_Print.runImportWriterT(replaceComment1(path)("ts-program")(replaceTsProgram)(file)))(function (v) {
-                    return replaceComment2(path)("imports")(replaceImports(v.value1.imports))(v.value0);
+                    return mapFlipped3(replaceComment2(path)("imports")(replaceImports(v.value1.imports))(v.value0))(function (str) {
+                        return Data_Maybe.fromMaybe(str)(tidyPurs(str));
+                    });
                 });
             };
         };
@@ -393,29 +453,29 @@ var patchModulesFile = function (dictMonadApp) {
 var getPaths = function (dictMonadApp) {
     var Bind1 = ((dictMonadApp.MonadRec3()).Monad0()).Bind1();
     var bind2 = Control_Bind.bind(Bind1);
-    var ask = Control_Monad_Reader_Class.ask(dictMonadApp.MonadAsk0());
-    var mapFlipped2 = Data_Functor.mapFlipped((Bind1.Apply0()).Functor0());
+    var askAppEffects = TsBridgeGen_Monad.askAppEffects(dictMonadApp.MonadAppEffects4());
+    var mapFlipped3 = Data_Functor.mapFlipped((Bind1.Apply0()).Functor0());
     return function (globs) {
-        return bind2(ask)(function (v) {
-            return mapFlipped2(v.capabilities.expandGlobsCwd(coerce(globs)))(toUnfoldable);
+        return bind2(askAppEffects)(function (v) {
+            return mapFlipped3(v.expandGlobsCwd(coerce(globs)))(toUnfoldable);
         });
     };
 };
 var getPursModules = function (dictMonadApp) {
     var Monad0 = (dictMonadApp.MonadRec3()).Monad0();
     var bind2 = Control_Bind.bind(Monad0.Bind1());
-    var ask = Control_Monad_Reader_Class.ask(dictMonadApp.MonadAsk0());
+    var askAppEffects = TsBridgeGen_Monad.askAppEffects(dictMonadApp.MonadAppEffects4());
     var getPaths1 = getPaths(dictMonadApp);
     var Applicative0 = Monad0.Applicative0();
     var $$for = Data_Traversable["for"](Applicative0)(Data_Traversable.traversableArray);
-    var liftEither = Control_Monad_Error_Class.liftEither((dictMonadApp.MonadError1()).MonadThrow0());
+    var liftEither = Control_Monad_Error_Class.liftEither((dictMonadApp.MonadError0()).MonadThrow0());
     var pure1 = Control_Applicative.pure(Applicative0);
     return function (globs) {
-        return bind2(ask)(function (v) {
+        return bind2(askAppEffects)(function (v) {
             return bind2(getPaths1(globs))(function (paths) {
-                return bind2($$for(paths)(v.capabilities.readTextFile))(function (sources) {
-                    return bind2($$for(sources)(function ($333) {
-                        return liftEither(TsBridgeGen_Core.parseCstModule($333));
+                return bind2($$for(paths)(v.readTextFile))(function (sources) {
+                    return bind2($$for(sources)(function ($358) {
+                        return liftEither(TsBridgeGen_Core.parseCstModule($358));
                     }))(function (cstModules) {
                         return pure1(map(TsBridgeGen_Core.getPursModule)(cstModules));
                     });
@@ -435,6 +495,7 @@ var app = function (dictMonadApp) {
     var Monad0 = (dictMonadApp.MonadRec3()).Monad0();
     var Bind1 = Monad0.Bind1();
     var bind2 = Control_Bind.bind(Bind1);
+    var askAppEffects = TsBridgeGen_Monad.askAppEffects(dictMonadApp.MonadAppEffects4());
     var getPursModules1 = getPursModules(dictMonadApp);
     var discard1 = discard(Bind1);
     var updateFile1 = updateFile(dictMonadApp);
@@ -444,14 +505,18 @@ var app = function (dictMonadApp) {
     var updateAllDepsFile1 = updateAllDepsFile(dictMonadApp);
     var pure1 = Control_Applicative.pure(Monad0.Applicative0());
     var writeFileIfNotExists1 = writeFileIfNotExists(dictMonadApp);
-    return bind2(Control_Monad_Reader_Class.ask(dictMonadApp.MonadAsk0()))(function (v) {
-        return bind2(v.capabilities.spagoSources)(function (globs) {
-            return bind2(getPursModules1(globs))(function (defs) {
-                return discard1(updateFile1(readAsset1(assets.myTsBridgeClass))(v.config.classFile)(patchClassFile1(v.config.classFile)(defs)))(function () {
-                    return discard1(updateFile1(readAsset1(assets.myTsModules))(v.config.modulesFile)(patchModulesFile1(v.config.modulesFile)(defs)))(function () {
-                        return discard1(updateFile1(readAsset1(assets.allDeps))(v.config.allDepsFile)(updateAllDepsFile1(v.config.allDepsFile)))(function () {
-                            return discard1(updateFile1(readAsset1(assets.packagesFile))(v.config.packagesFile)(pure1))(function () {
-                                return writeFileIfNotExists1(readAsset1(assets.spagoFile))(v.config.spagoFile);
+    return bind2(TsBridgeGen_Monad.askAppConfig(dictMonadApp.MonadAppConfig5()))(function (v) {
+        return bind2(askAppEffects)(function (v1) {
+            return bind2(v1.spagoSources)(function (globs) {
+                return bind2(getPursModules1(globs))(function (defs) {
+                    return discard1(updateFile1(readAsset1(assets.myTsBridgeClass))(v.classFile)(patchClassFile1(v.classFile)(defs)))(function () {
+                        return discard1(updateFile1(readAsset1(assets.myTsModules))(v.modulesFile)(patchModulesFile1(v.modulesFile)(defs)))(function () {
+                            return discard1(updateFile1(readAsset1(assets.allDeps))(v.allDepsFile)(updateAllDepsFile1(v.allDepsFile)))(function () {
+                                return discard1(updateFile1(readAsset1(assets.packagesFile))(v.packagesFile)(pure1))(function () {
+                                    return discard1(writeFileIfNotExists1(readAsset1(assets.spagoFile))(v.spagoFile))(function () {
+                                        return pure1(Data_Unit.unit);
+                                    });
+                                });
                             });
                         });
                     });
@@ -460,9 +525,19 @@ var app = function (dictMonadApp) {
         });
     });
 };
+var app$prime = function (dictMonadApp) {
+    var Monad0 = (dictMonadApp.MonadRec3()).Monad0();
+    var pure1 = Control_Applicative.pure(Monad0.Applicative0());
+    return Control_Bind.bind(Monad0.Bind1())(TsBridgeGen_Monad.getLogs(dictMonadApp.MonadLog1())(app(dictMonadApp)))(function (v) {
+        return pure1({
+            logs: v
+        });
+    });
+};
 export {
     app,
     parseStrToData,
     patchClassFile,
+    patchModulesFile,
     replaceComment
 };

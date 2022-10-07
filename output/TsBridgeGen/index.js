@@ -14,17 +14,22 @@ export {
     parseCstModule,
     parseJsonError,
     parseToJson,
-    parseUserImports
+    parseUserImports,
+    positionToSourcePosition
 } from "../TsBridgeGen.Core/index.js";
 export {
-    AppCapabalities,
+    AppEffects,
     AppEnv,
+    askAppConfig,
+    askAppEffects,
+    getLogs,
     log,
+    pushError,
     runAppM
 } from "../TsBridgeGen.Monad/index.js";
 export {
     CodeSnipComments,
-    CodeSnipDecl,
+    CodeSnipDecls,
     genInstances,
     genProxy,
     genTsBridgeInstance,
@@ -41,7 +46,7 @@ export {
     unsupported
 } from "../TsBridgeGen.Print/index.js";
 export {
-    AtFilePosition,
+    AtFileSection,
     ErrExpandGlobs,
     ErrLiteral,
     ErrParseEnvVars,
@@ -52,7 +57,6 @@ export {
     ErrSpawn,
     ErrUnknown,
     ErrWriteFile,
-    LogError,
     LogLiteral,
     WarnLiteral,
     Other,

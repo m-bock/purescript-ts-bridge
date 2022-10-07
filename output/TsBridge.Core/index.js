@@ -29,33 +29,16 @@ import * as TsBridge_Print from "../TsBridge.Print/index.js";
 import * as Type_Proxy from "../Type.Proxy/index.js";
 var pure = /* #__PURE__ */ Control_Applicative.pure(TsBridge_Monad.applicativeTsBridgeM);
 var bind = /* #__PURE__ */ Control_Bind.bind(TsBridge_Monad.bindTsBridgeM);
-var wrap = /* #__PURE__ */ Data_Newtype.wrap();
-var monoidTsBridge_Monad_Wrap = /* #__PURE__ */ TsBridge_Monad.monoidTsBridge_Monad_Wrap(TsBridge_DTS.eqTsName);
-var mempty = /* #__PURE__ */ Data_Monoid.mempty(monoidTsBridge_Monad_Wrap);
-var discard = /* #__PURE__ */ Control_Bind.discard(Control_Bind.discardUnit)(TsBridge_Monad.bindTsBridgeM);
-var tell = /* #__PURE__ */ Control_Monad_Writer_Class.tell(TsBridge_Monad.monadTellTsBridgeAccumTsB);
-var over = /* #__PURE__ */ Data_Newtype.over()();
 var map = /* #__PURE__ */ Data_Functor.map(TsBridge_Monad.functorTsBridgeM);
 var coerce = /* #__PURE__ */ Safe_Coerce.coerce();
 var listens = /* #__PURE__ */ Control_Monad_Writer_Class.listens(TsBridge_Monad.monadWriterTsBridgeAccumT);
 var un = /* #__PURE__ */ Data_Newtype.un();
-var join = /* #__PURE__ */ Control_Bind.join(Control_Bind.bindArray);
-var sequence = /* #__PURE__ */ Data_Traversable.sequence(Data_Traversable.traversableArray)(TsBridge_Monad.applicativeTsBridgeM);
-var append1 = /* #__PURE__ */ Data_Semigroup.append(Data_Semigroup.semigroupArray);
-var show = /* #__PURE__ */ Data_Show.show(Data_Show.showInt);
-var toUnfoldable = /* #__PURE__ */ Data_Set_Ordered.toUnfoldable(Data_Unfoldable.unfoldableArray);
-var union = /* #__PURE__ */ Data_Set.union(TsBridge_DTS.ordTsImport);
-var nub = /* #__PURE__ */ Data_Array.nub(TsBridge_DTS.ordTsDeclaration);
-var fromFoldableWith = /* #__PURE__ */ Data_Map_Internal.fromFoldableWith(TsBridge_DTS.ordTsFilePath)(Data_Foldable.foldableArray);
-var mapFlipped = /* #__PURE__ */ Data_Functor.mapFlipped(Data_Functor.functorArray);
-var append2 = /* #__PURE__ */ Data_Semigroup.append(/* #__PURE__ */ TsBridge_Monad.semigroupTsBridge_Monad_W(TsBridge_DTS.eqTsName));
-var union1 = /* #__PURE__ */ Record.union();
+var discard = /* #__PURE__ */ Control_Bind.discard(Control_Bind.discardUnit)(TsBridge_Monad.bindTsBridgeM);
+var tell = /* #__PURE__ */ Control_Monad_Writer_Class.tell(TsBridge_Monad.monadTellTsBridgeAccumTsB);
+var mempty = /* #__PURE__ */ Data_Monoid.mempty(Data_Monoid.monoidArray);
 var monoidRecord = /* #__PURE__ */ Data_Monoid.monoidRecord();
-var mempty1 = /* #__PURE__ */ Data_Monoid.mempty(/* #__PURE__ */ monoidRecord(/* #__PURE__ */ Data_Monoid.monoidRecordCons({
-    reflectSymbol: function () {
-        return "scope";
-    }
-})(/* #__PURE__ */ monoidRecord(/* #__PURE__ */ Data_Monoid.monoidRecordCons({
+var monoidTsBridge_Monad_Wrap = /* #__PURE__ */ TsBridge_Monad.monoidTsBridge_Monad_Wrap(TsBridge_DTS.eqTsName);
+var monoidRecord1 = /* #__PURE__ */ monoidRecord(/* #__PURE__ */ Data_Monoid.monoidRecordCons({
     reflectSymbol: function () {
         return "fixed";
     }
@@ -63,7 +46,27 @@ var mempty1 = /* #__PURE__ */ Data_Monoid.mempty(/* #__PURE__ */ monoidRecord(/*
     reflectSymbol: function () {
         return "floating";
     }
-})(monoidTsBridge_Monad_Wrap)()(Data_Monoid.monoidRecordNil))))()(Data_Monoid.monoidRecordNil)));
+})(monoidTsBridge_Monad_Wrap)()(Data_Monoid.monoidRecordNil)));
+var mempty1 = /* #__PURE__ */ Data_Monoid.mempty(monoidRecord1);
+var join = /* #__PURE__ */ Control_Bind.join(Control_Bind.bindArray);
+var sequence = /* #__PURE__ */ Data_Traversable.sequence(Data_Traversable.traversableArray)(TsBridge_Monad.applicativeTsBridgeM);
+var show = /* #__PURE__ */ Data_Show.show(Data_Show.showInt);
+var toUnfoldable = /* #__PURE__ */ Data_Set_Ordered.toUnfoldable(Data_Unfoldable.unfoldableArray);
+var union = /* #__PURE__ */ Data_Set.union(TsBridge_DTS.ordTsImport);
+var nub = /* #__PURE__ */ Data_Array.nub(TsBridge_DTS.ordTsDeclaration);
+var append1 = /* #__PURE__ */ Data_Semigroup.append(Data_Semigroup.semigroupArray);
+var fromFoldableWith = /* #__PURE__ */ Data_Map_Internal.fromFoldableWith(TsBridge_DTS.ordTsFilePath)(Data_Foldable.foldableArray);
+var mapFlipped = /* #__PURE__ */ Data_Functor.mapFlipped(Data_Functor.functorArray);
+var mempty2 = /* #__PURE__ */ Data_Monoid.mempty(monoidTsBridge_Monad_Wrap);
+var append2 = /* #__PURE__ */ Data_Semigroup.append(/* #__PURE__ */ TsBridge_Monad.semigroupTsBridge_Monad_W(TsBridge_DTS.eqTsName));
+var union1 = /* #__PURE__ */ Record.union();
+var mempty3 = /* #__PURE__ */ Data_Monoid.mempty(/* #__PURE__ */ monoidRecord(/* #__PURE__ */ Data_Monoid.monoidRecordCons({
+    reflectSymbol: function () {
+        return "scope";
+    }
+})(monoidRecord1)()(Data_Monoid.monoidRecordNil)));
+var wrap = /* #__PURE__ */ Data_Newtype.wrap();
+var over = /* #__PURE__ */ Data_Newtype.over()();
 var fromFoldable = /* #__PURE__ */ Data_Set_Ordered.fromFoldable(Data_Foldable.foldableArray);
 var map1 = /* #__PURE__ */ Data_Functor.map(Data_Functor.functorArray);
 var censor = /* #__PURE__ */ Control_Monad_Writer_Class.censor(TsBridge_Monad.monadWriterTsBridgeAccumT);
@@ -97,22 +100,6 @@ var tsUnsupported = function (x) {
         return pure([ new TsBridge_DTS.TsDeclComments([ "`" + (x + ("` is unsupported: " + reason)) ]) ]);
     };
 };
-var tsTypeVar = function (x) {
-    var tsName = new TsBridge_DTS.TsName(x);
-    var scope = {
-        floating: wrap(Data_Set_Ordered.singleton(tsName)),
-        fixed: mempty
-    };
-    return discard(tell(over(TsBridge_Monad.TsBridgeAccum)(function (v) {
-        return {
-            scope: scope,
-            imports: v.imports,
-            typeDefs: v.typeDefs
-        };
-    })(TsBridge_Monad.defaultTsBridgeAccum)))(function () {
-        return pure(new TsBridge_DTS.TsTypeVar(tsName));
-    });
-};
 var tsTypeAlias = function (dictMapping) {
     var mapping = Heterogeneous_Mapping.mapping(dictMapping);
     return function (mp) {
@@ -122,22 +109,50 @@ var tsTypeAlias = function (dictMapping) {
                 return map(function (v) {
                     return [ new TsBridge_DTS.TsDeclTypeDef(new TsBridge_DTS.TsName(n), TsBridge_DTS.Public.value, coerce(v.value1.floating), v.value0) ];
                 })(listens((function () {
-                    var $196 = un(TsBridge_Monad.TsBridgeAccum);
-                    return function ($197) {
+                    var $166 = un(TsBridge_Monad.TsBridgeAccum);
+                    return function ($167) {
                         return (function (v) {
                             return v.scope;
-                        })($196($197));
+                        })($166($167));
                     };
                 })())(t));
             };
         };
     };
 };
-var tsNewtype = Data_Typelevel_Undefined["undefined"];
+var tsOpaqueType = function (dictMapping) {
+    var mapping = Heterogeneous_Mapping.mapping(dictMapping);
+    return function (mp) {
+        return function (n) {
+            return function (x) {
+                return bind(listens((function () {
+                    var $168 = un(TsBridge_Monad.TsBridgeAccum);
+                    return function ($169) {
+                        return (function (v) {
+                            return v.typeDefs;
+                        })($168($169));
+                    };
+                })())(mapping(mp)(x)))(function (v) {
+                    var v1 = Data_Array.uncons(v.value1);
+                    if (v1 instanceof Data_Maybe.Just && v1.value0.tail.length === 0) {
+                        return discard(tell({
+                            typeDefs: mempty,
+                            imports: v1.value0.head.value1.value0,
+                            scope: mempty1
+                        }))(function () {
+                            return pure(v1.value0.head.value1.value1);
+                        });
+                    };
+                    return pure([  ]);
+                });
+            };
+        };
+    };
+};
 var tsModuleFile = function (n) {
     return function (xs) {
         var v = TsBridge_Monad.runTsBridgeM(map(join)(sequence(xs)));
-        return append1(v.value1.typeDefs)([ new TsBridge_DTS.TsModuleFile(TsBridge_DTS.dtsFilePath(n), new TsBridge_DTS.TsModule(v.value1.imports, v.value0)) ]);
+        return [ new TsBridge_DTS.TsModuleFile(TsBridge_DTS.dtsFilePath(n), new TsBridge_DTS.TsModule(v.value1.imports, v.value0)) ];
     };
 };
 var mkOpaqueTypeDecl = function (name) {
@@ -207,7 +222,7 @@ var genRecordCons = function (dictMapping) {
 };
 var fixScope = function (v) {
     return {
-        floating: mempty,
+        floating: mempty2,
         fixed: append2(v.fixed)(v.floating)
     };
 };
@@ -224,7 +239,7 @@ var opaqueType = function (filePath) {
                         var imports = Data_Set.singleton(new TsBridge_DTS.TsImport(moduleAlias, (function (v) {
                             return new TsBridge_DTS.TsModulePath("~/" + v.value0);
                         })(filePathToModulePath(filePath))));
-                        return discard(tell(union1(mempty1)({
+                        return discard(tell(union1(mempty3)({
                             typeDefs: typeDefs,
                             imports: imports
                         })))(function () {
@@ -237,181 +252,24 @@ var opaqueType = function (filePath) {
     };
 };
 var dotsToLodashes = /* #__PURE__ */ Data_String_Common.replaceAll(".")("_");
-var tsOpaqueTypeImpl = function (pursModuleName) {
-    return function (pursTypeName) {
-        return function (targs) {
-            return opaqueType(new TsBridge_DTS.TsFilePath(pursModuleName + "/index", "d.ts"))(dotsToLodashes(pursModuleName))(new TsBridge_DTS.TsName(pursTypeName))(fromFoldable(map1(TsBridge_DTS.TsName.create)(targs)));
-        };
-    };
-};
-var tsOpaqueType = function (pursModuleName) {
-    return function (pursTypeName) {
-        return function (v) {
-            return tsOpaqueTypeImpl(pursModuleName)(pursTypeName)([  ])([  ]);
-        };
-    };
-};
-var tsOpaqueType1 = function (dictMapping) {
-    var mapping = Heterogeneous_Mapping.mapping(dictMapping);
-    return function (mp) {
-        return function (pursModuleName) {
-            return function (pursTypeName) {
-                return function (a) {
-                    return function (v) {
-                        return tsOpaqueTypeImpl(pursModuleName)(pursTypeName)([ a ])([ mapping(mp)(Type_Proxy["Proxy"].value) ]);
-                    };
-                };
-            };
-        };
-    };
-};
-var tsOpaqueType2 = function (dictMapping) {
-    var mapping = Heterogeneous_Mapping.mapping(dictMapping);
-    return function (dictMapping1) {
-        var mapping1 = Heterogeneous_Mapping.mapping(dictMapping1);
-        return function (mp) {
-            return function (pursModuleName) {
-                return function (pursTypeName) {
-                    return function (a1) {
-                        return function (a2) {
-                            return function (v) {
-                                return tsOpaqueTypeImpl(pursModuleName)(pursTypeName)([ a1, a2 ])([ mapping(mp)(Type_Proxy["Proxy"].value), mapping1(mp)(Type_Proxy["Proxy"].value) ]);
-                            };
-                        };
-                    };
-                };
-            };
-        };
-    };
-};
-var tsOpaqueType3 = function (dictMapping) {
-    var mapping = Heterogeneous_Mapping.mapping(dictMapping);
-    return function (dictMapping1) {
-        var mapping1 = Heterogeneous_Mapping.mapping(dictMapping1);
-        return function (dictMapping2) {
-            var mapping2 = Heterogeneous_Mapping.mapping(dictMapping2);
-            return function (mp) {
-                return function (pursModuleName) {
-                    return function (pursTypeName) {
-                        return function (a1) {
-                            return function (a2) {
-                                return function (a3) {
-                                    return function (v) {
-                                        return tsOpaqueTypeImpl(pursModuleName)(pursTypeName)([ a1, a2, a3 ])([ mapping(mp)(Type_Proxy["Proxy"].value), mapping1(mp)(Type_Proxy["Proxy"].value), mapping2(mp)(Type_Proxy["Proxy"].value) ]);
-                                    };
-                                };
-                            };
-                        };
-                    };
-                };
-            };
-        };
-    };
-};
-var tsOpaqueType4 = function (dictMapping) {
-    var mapping = Heterogeneous_Mapping.mapping(dictMapping);
-    return function (dictMapping1) {
-        var mapping1 = Heterogeneous_Mapping.mapping(dictMapping1);
-        return function (dictMapping2) {
-            var mapping2 = Heterogeneous_Mapping.mapping(dictMapping2);
-            return function (dictMapping3) {
-                var mapping3 = Heterogeneous_Mapping.mapping(dictMapping3);
-                return function (mp) {
-                    return function (pursModuleName) {
-                        return function (pursTypeName) {
-                            return function (a1) {
-                                return function (a2) {
-                                    return function (a3) {
-                                        return function (a4) {
-                                            return function (v) {
-                                                return tsOpaqueTypeImpl(pursModuleName)(pursTypeName)([ a1, a2, a3, a4 ])([ mapping(mp)(Type_Proxy["Proxy"].value), mapping1(mp)(Type_Proxy["Proxy"].value), mapping2(mp)(Type_Proxy["Proxy"].value), mapping3(mp)(Type_Proxy["Proxy"].value) ]);
-                                            };
-                                        };
-                                    };
-                                };
-                            };
-                        };
-                    };
-                };
-            };
-        };
-    };
-};
-var tsOpaqueType5 = function (dictMapping) {
-    var mapping = Heterogeneous_Mapping.mapping(dictMapping);
-    return function (dictMapping1) {
-        var mapping1 = Heterogeneous_Mapping.mapping(dictMapping1);
-        return function (dictMapping2) {
-            var mapping2 = Heterogeneous_Mapping.mapping(dictMapping2);
-            return function (dictMapping3) {
-                var mapping3 = Heterogeneous_Mapping.mapping(dictMapping3);
-                return function (dictMapping4) {
-                    var mapping4 = Heterogeneous_Mapping.mapping(dictMapping4);
-                    return function (mp) {
-                        return function (pursModuleName) {
-                            return function (pursTypeName) {
-                                return function (a1) {
-                                    return function (a2) {
-                                        return function (a3) {
-                                            return function (a4) {
-                                                return function (a5) {
-                                                    return function (v) {
-                                                        return tsOpaqueTypeImpl(pursModuleName)(pursTypeName)([ a1, a2, a3, a4, a5 ])([ mapping(mp)(Type_Proxy["Proxy"].value), mapping1(mp)(Type_Proxy["Proxy"].value), mapping2(mp)(Type_Proxy["Proxy"].value), mapping3(mp)(Type_Proxy["Proxy"].value), mapping4(mp)(Type_Proxy["Proxy"].value) ]);
-                                                    };
-                                                };
-                                            };
-                                        };
-                                    };
-                                };
-                            };
-                        };
-                    };
-                };
-            };
-        };
-    };
-};
-var tsOpaqueType6 = function (dictMapping) {
-    var mapping = Heterogeneous_Mapping.mapping(dictMapping);
-    return function (dictMapping1) {
-        var mapping1 = Heterogeneous_Mapping.mapping(dictMapping1);
-        return function (dictMapping2) {
-            var mapping2 = Heterogeneous_Mapping.mapping(dictMapping2);
-            return function (dictMapping3) {
-                var mapping3 = Heterogeneous_Mapping.mapping(dictMapping3);
-                return function (dictMapping4) {
-                    var mapping4 = Heterogeneous_Mapping.mapping(dictMapping4);
-                    return function (dictMapping5) {
-                        var mapping5 = Heterogeneous_Mapping.mapping(dictMapping5);
-                        return function (mp) {
-                            return function (pursModuleName) {
-                                return function (pursTypeName) {
-                                    return function (a1) {
-                                        return function (a2) {
-                                            return function (a3) {
-                                                return function (a4) {
-                                                    return function (a5) {
-                                                        return function (a6) {
-                                                            return function (v) {
-                                                                return tsOpaqueTypeImpl(pursModuleName)(pursTypeName)([ a1, a2, a3, a4, a5, a6 ])([ mapping(mp)(Type_Proxy["Proxy"].value), mapping1(mp)(Type_Proxy["Proxy"].value), mapping2(mp)(Type_Proxy["Proxy"].value), mapping3(mp)(Type_Proxy["Proxy"].value), mapping4(mp)(Type_Proxy["Proxy"].value), mapping5(mp)(Type_Proxy["Proxy"].value) ]);
-                                                            };
-                                                        };
-                                                    };
-                                                };
-                                            };
-                                        };
-                                    };
-                                };
-                            };
-                        };
-                    };
-                };
-            };
-        };
-    };
-};
 var defaultUnit = function (v) {
     return pure(TsBridge_DTS.TsTypeVoid.value);
+};
+var defaultTypeVar = function (x) {
+    var tsName = new TsBridge_DTS.TsName(x);
+    var scope = {
+        floating: wrap(Data_Set_Ordered.singleton(tsName)),
+        fixed: mempty2
+    };
+    return discard(tell(over(TsBridge_Monad.TsBridgeAccum)(function (v) {
+        return {
+            scope: scope,
+            imports: v.imports,
+            typeDefs: v.typeDefs
+        };
+    })(TsBridge_Monad.defaultTsBridgeAccum)))(function () {
+        return pure(new TsBridge_DTS.TsTypeVar(tsName));
+    });
 };
 var defaultString = function (v) {
     return pure(TsBridge_DTS.TsTypeString.value);
@@ -444,9 +302,21 @@ var defaultPromise = function (dictMapping) {
         };
     };
 };
+var defaultOpaqueType = function (pursModuleName) {
+    return function (pursTypeName) {
+        return function (targNames) {
+            return function (targs) {
+                return function (v) {
+                    return opaqueType(new TsBridge_DTS.TsFilePath(pursModuleName + "/index", "d.ts"))(dotsToLodashes(pursModuleName))(new TsBridge_DTS.TsName(pursTypeName))(fromFoldable(map1(TsBridge_DTS.TsName.create)(targNames)))(targs);
+                };
+            };
+        };
+    };
+};
 var defaultNumber = function (v) {
     return pure(TsBridge_DTS.TsTypeNumber.value);
 };
+var defaultNewtype = Data_Typelevel_Undefined["undefined"];
 var defaultFunction = function (dictMapping) {
     var mapping = Heterogeneous_Mapping.mapping(dictMapping);
     return function (dictMapping1) {
@@ -499,28 +369,23 @@ export {
     defaultBoolean,
     defaultEffect,
     defaultFunction,
+    defaultNewtype,
     defaultNumber,
+    defaultOpaqueType,
     defaultPromise,
     defaultProxy,
     defaultRecord,
     defaultString,
+    defaultTypeVar,
     defaultUnit,
     genRecord,
+    mergeTsPrograms,
     tsModuleFile,
-    tsNewtype,
     tsOpaqueType,
-    tsOpaqueType1,
-    tsOpaqueType2,
-    tsOpaqueType3,
-    tsOpaqueType4,
-    tsOpaqueType5,
-    tsOpaqueType6,
-    tsUnsupported,
     tsProgram,
     tsTypeAlias,
-    tsTypeVar,
+    tsUnsupported,
     tsValue,
-    mergeTsPrograms,
     genRecordNil,
     genRecordCons
 };

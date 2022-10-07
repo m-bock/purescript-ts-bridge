@@ -4,6 +4,7 @@ import * as Control_Bind from "../Control.Bind/index.js";
 import * as Control_Monad_Writer from "../Control.Monad.Writer/index.js";
 import * as Control_Monad_Writer_Class from "../Control.Monad.Writer.Class/index.js";
 import * as Control_Monad_Writer_Trans from "../Control.Monad.Writer.Trans/index.js";
+import * as Data_Array_NonEmpty from "../Data.Array.NonEmpty/index.js";
 import * as Data_Array_NonEmpty_Internal from "../Data.Array.NonEmpty.Internal/index.js";
 import * as Data_Functor from "../Data.Functor/index.js";
 import * as Data_Maybe from "../Data.Maybe/index.js";
@@ -36,14 +37,14 @@ var applicativeWriterT = /* #__PURE__ */ Control_Monad_Writer_Trans.applicativeW
 var traverse = /* #__PURE__ */ Data_Traversable.traverse(Data_Traversable.traversableArray);
 var sequence = /* #__PURE__ */ Data_Traversable.sequence(Data_Traversable.traversableArray);
 var bind = /* #__PURE__ */ Control_Bind.bind(Control_Bind.bindArray);
-var CodeSnipDecl = /* #__PURE__ */ (function () {
-    function CodeSnipDecl(value0) {
+var CodeSnipDecls = /* #__PURE__ */ (function () {
+    function CodeSnipDecls(value0) {
         this.value0 = value0;
     };
-    CodeSnipDecl.create = function (value0) {
-        return new CodeSnipDecl(value0);
+    CodeSnipDecls.create = function (value0) {
+        return new CodeSnipDecls(value0);
     };
-    return CodeSnipDecl;
+    return CodeSnipDecls;
 })();
 var CodeSnipComments = /* #__PURE__ */ (function () {
     function CodeSnipComments(value0) {
@@ -72,7 +73,7 @@ var printImport = function (v) {
     if (v instanceof TsBridgeGen_Types.ImportUser) {
         return v.value0;
     };
-    throw new Error("Failed pattern match at TsBridgeGen.Print (line 192, column 15 - line 195, column 20): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at TsBridgeGen.Print (line 197, column 15 - line 200, column 20): " + [ v.constructor.name ]);
 };
 var printImports = function (x) {
     return Data_String_Common.joinWith("\x0a")(mapFlipped(toUnfoldable(x))(printImport));
@@ -93,15 +94,25 @@ var instName = /* #__PURE__ */ (function () {
 var printPursSnippets = /* #__PURE__ */ (function () {
     var $121 = Data_String_Common.joinWith("\x0a\x0a");
     var $122 = Data_Functor.map(Data_Functor.functorArray)(function (v) {
-        if (v instanceof CodeSnipDecl) {
-            return instName.replace(Dodo.print(Dodo.plainText)(Dodo.twoSpaces)(Language_PS_CST_Printers.printDeclaration(v.value0)));
+        if (v instanceof CodeSnipDecls) {
+            return instName.replace(Data_String_Common.joinWith("\x0a")(mapFlipped(v.value0)((function () {
+                var $124 = Dodo.print(Dodo.plainText)({
+                    pageWidth: 300,
+                    ribbonRatio: 1.0,
+                    indentUnit: "  ",
+                    indentWidth: 2
+                });
+                return function ($125) {
+                    return $124(Language_PS_CST_Printers.printDeclaration($125));
+                };
+            })())));
         };
         if (v instanceof CodeSnipComments) {
             return Data_String_Common.joinWith("\x0a")(mapFlipped(v.value0)(function (v1) {
                 return "-- " + v1;
             }));
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Print (line 179, column 49 - line 183, column 65): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Print (line 181, column 49 - line 188, column 65): " + [ v.constructor.name ]);
     });
     return function ($123) {
         return $121($122($123));
@@ -146,7 +157,7 @@ var genTsDef = function (v) {
             return new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("tsValue")), new Language_PS_CST_Types_Declaration.ExprString(v1.value0)), new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("toTsBridge")), new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.qualifiedName(Language_PS_CST_Sugar_Leafs.mkModuleName(pure(v)))(v1.value0))));
         };
         if (v1 instanceof TsBridgeGen_Types.DefData) {
-            return new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("tsOpaqueType")), new Language_PS_CST_Types_Declaration.ExprString(v1.value0)), new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("toTsBridge")), genProxy(Language_PS_CST_Sugar_QualifiedName.qualifiedName(Language_PS_CST_Sugar_Leafs.mkModuleName(pure(v)))(v1.value0))));
+            return new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("tsOpaqueType")), new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("Mp"))), new Language_PS_CST_Types_Declaration.ExprString(v1.value0)), genProxy(Language_PS_CST_Sugar_QualifiedName.qualifiedName(Language_PS_CST_Sugar_Leafs.mkModuleName(Data_Array_NonEmpty.cons("Auto")(pure(v))))(v1.value0)));
         };
         if (v1 instanceof TsBridgeGen_Types.DefNewtype) {
             return new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("tsNewtype")), new Language_PS_CST_Types_Declaration.ExprString(v1.value0)), new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("toTsBridge")), genProxy(Language_PS_CST_Sugar_QualifiedName.qualifiedName(Language_PS_CST_Sugar_Leafs.mkModuleName(pure(v)))(v1.value0))));
@@ -157,7 +168,7 @@ var genTsDef = function (v) {
         if (v1 instanceof TsBridgeGen_Types.DefUnsupportedExport) {
             return unsupported(v1.value0)(v1.value1);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Print (line 128, column 28 - line 166, column 62): " + [ v1.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Print (line 131, column 28 - line 168, column 62): " + [ v1.constructor.name ]);
     };
 };
 var genTsModuleFile = function (dictMonad) {
@@ -187,13 +198,13 @@ var genTsProgram$prime = function (dictMonad) {
     return function (modules) {
         return bind1(mapFlipped1(traverse1(genTsModuleFile1)(modules))(Language_PS_CST_Types_Declaration.ExprArray.create))(function (ms) {
             var type_ = new Language_PS_CST_Types_Declaration.TypeConstructor(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("TsProgram"));
-            var signature = new CodeSnipDecl(new Language_PS_CST_Types_Declaration.DeclSignature({
+            var signature = new Language_PS_CST_Types_Declaration.DeclSignature({
                 comments: Data_Maybe.Nothing.value,
                 ident: "generatedTsProgram",
                 type_: type_
-            }));
+            });
             var body = new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("tsProgram")), ms);
-            var valueDef = new CodeSnipDecl(new Language_PS_CST_Types_Declaration.DeclValue({
+            var valueDef = new Language_PS_CST_Types_Declaration.DeclValue({
                 comments: Data_Maybe.Nothing.value,
                 valueBindingFields: {
                     name: "generatedTsProgram",
@@ -203,16 +214,16 @@ var genTsProgram$prime = function (dictMonad) {
                         whereBindings: [  ]
                     })
                 }
-            }));
-            return pure2([ signature, valueDef ]);
+            });
+            return pure2([ new CodeSnipDecls([ signature, valueDef ]) ]);
         });
     };
 };
 var genTsProgram = function (dictMonad) {
-    var $124 = Data_Functor.map(Control_Monad_Writer_Trans.functorWriterT(((dictMonad.Bind1()).Apply0()).Functor0()))(printPursSnippets);
-    var $125 = genTsProgram$prime(dictMonad);
-    return function ($126) {
-        return $124($125($126));
+    var $126 = Data_Functor.map(Control_Monad_Writer_Trans.functorWriterT(((dictMonad.Bind1()).Apply0()).Functor0()))(printPursSnippets);
+    var $127 = genTsProgram$prime(dictMonad);
+    return function ($128) {
+        return $126($127($128));
     };
 };
 var genInstances = function (dictMonad) {
@@ -231,7 +242,7 @@ var genInstances = function (dictMonad) {
                             as: "Auto." + v.value0
                         }))
                     }))(function () {
-                        return pure2(new CodeSnipDecl(genTsBridgeInstance(v.value0)(pursDef.value0)(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("tsOpaqueType")), new Language_PS_CST_Types_Declaration.ExprString(v.value0)), new Language_PS_CST_Types_Declaration.ExprString(pursDef.value0)))));
+                        return pure2(new CodeSnipDecls(pure1(genTsBridgeInstance(v.value0)(pursDef.value0)(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprApp(new Language_PS_CST_Types_Declaration.ExprIdent(Language_PS_CST_Sugar_QualifiedName.nonQualifiedName("defaultOpaqueType")), new Language_PS_CST_Types_Declaration.ExprString(v.value0)), new Language_PS_CST_Types_Declaration.ExprString(pursDef.value0)), new Language_PS_CST_Types_Declaration.ExprArray([  ])), new Language_PS_CST_Types_Declaration.ExprArray([  ]))))));
                     }));
                 };
                 if (pursDef instanceof TsBridgeGen_Types.DefType) {
@@ -249,13 +260,13 @@ var genInstances = function (dictMonad) {
                 if (pursDef instanceof TsBridgeGen_Types.DefNewtype) {
                     return [  ];
                 };
-                throw new Error("Failed pattern match at TsBridgeGen.Print (line 37, column 3 - line 62, column 9): " + [ pursDef.constructor.name ]);
+                throw new Error("Failed pattern match at TsBridgeGen.Print (line 38, column 3 - line 65, column 9): " + [ pursDef.constructor.name ]);
             });
         }));
     };
 };
 export {
-    CodeSnipDecl,
+    CodeSnipDecls,
     CodeSnipComments,
     runImportWriterM,
     runImportWriterT,

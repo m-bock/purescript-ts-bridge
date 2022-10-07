@@ -32,15 +32,21 @@ var mapFlipped = /* #__PURE__ */ Data_Functor.mapFlipped(Data_Maybe.functorMaybe
 var sequence = /* #__PURE__ */ Data_Traversable.sequence(Data_Traversable.traversableArray)(Data_Maybe.applicativeMaybe);
 var bind = /* #__PURE__ */ Control_Bind.bind(Control_Bind.bindArray);
 var fromFoldable = /* #__PURE__ */ Data_Set.fromFoldable(Data_Foldable.foldableArray)(Data_Ord.ordString);
-var pure1 = /* #__PURE__ */ Control_Applicative.pure(Data_Either.applicativeEither);
-var throwError = /* #__PURE__ */ Control_Monad_Error_Class.throwError(Control_Monad_Error_Class.monadThrowEither);
 var bind1 = /* #__PURE__ */ Control_Bind.bind(Parsing.bindParserT);
-var pure2 = /* #__PURE__ */ Control_Applicative.pure(Parsing.applicativeParserT);
+var pure1 = /* #__PURE__ */ Control_Applicative.pure(Parsing.applicativeParserT);
 var alt = /* #__PURE__ */ Control_Alt.alt(Parsing.altParserT);
 var identity = /* #__PURE__ */ Control_Category.identity(Control_Category.categoryFn);
 var lmap = /* #__PURE__ */ Data_Bifunctor.lmap(Data_Bifunctor.bifunctorEither);
+var pure2 = /* #__PURE__ */ Control_Applicative.pure(Data_Either.applicativeEither);
+var throwError = /* #__PURE__ */ Control_Monad_Error_Class.throwError(Control_Monad_Error_Class.monadThrowEither);
 var map = /* #__PURE__ */ Data_Functor.map(Data_Functor.functorArray);
 var elem = /* #__PURE__ */ Data_Array.elem(Data_Eq.eqString);
+var positionToSourcePosition = function (v) {
+    return {
+        line: v.line - 1 | 0,
+        column: v.column - 1 | 0
+    };
+};
 var parseUserImports = function (s) {
     var f = function (v) {
         if (v === "") {
@@ -56,7 +62,7 @@ var parseUserImports = function (s) {
                 if (v2 instanceof Data_Maybe.Nothing) {
                     return [ pure(v) ];
                 };
-                throw new Error("Failed pattern match at TsBridgeGen.Core (line 184, column 79 - line 186, column 31): " + [ v2.constructor.name ]);
+                throw new Error("Failed pattern match at TsBridgeGen.Core (line 188, column 79 - line 190, column 31): " + [ v2.constructor.name ]);
             };
             return [ pure(v) ];
         };
@@ -64,15 +70,45 @@ var parseUserImports = function (s) {
     };
     return mapFlipped(sequence(bind(Data_String_Common.split("\x0a")(s))(f)))(fromFoldable);
 };
+var parseJsonError = function (dictMonad) {
+    var anyTill = Parsing_String.anyTill(dictMonad);
+    var p2 = bind1(Parsing_String.string("Unexpected token "))(function () {
+        return bind1(anyTill(Parsing_String.string(" ")))(function (v) {
+            return bind1(Parsing_String.string("in JSON at position "))(function () {
+                return bind1(Parsing_String_Basic.intDecimal)(function (i) {
+                    return bind1(Parsing_String.eof)(function () {
+                        return pure1(new TsBridgeGen_Types.UnexpectedTokenAtPos(v.value0, i));
+                    });
+                });
+            });
+        });
+    });
+    var p1 = bind1(Parsing_String.string("Unexpected end of JSON input"))(function () {
+        return bind1(Parsing_String.eof)(function () {
+            return pure1(TsBridgeGen_Types.UnexpectedEndOfInput.value);
+        });
+    });
+    return alt(p1)(p2);
+};
+var parseJsonError1 = /* #__PURE__ */ parseJsonError(Data_Identity.monadIdentity);
+var parseToJson = function (s) {
+    var f = function (e) {
+        return Data_Either.either(Data_Function["const"](new TsBridgeGen_Types.Other(e)))(identity)(Parsing.runParser(e)(parseJsonError1));
+    };
+    return lmap(f)(Data_Argonaut_Parser.jsonParser(s));
+};
 var parseCstModule = function (mod) {
     var v = PureScript_CST.parseModule(mod);
     if (v instanceof PureScript_CST.ParseSucceeded) {
-        return pure1(v.value0);
+        return pure2(v.value0);
     };
     return throwError(TsBridgeGen_Types.ErrParseModule.value);
 };
-var indexToSourcePos = function (pos) {
-    return function (str) {
+var indexToSourcePos = function (v) {
+    return function (v1) {
+        if (v < 0) {
+            return Data_Maybe.Nothing.value;
+        };
         var go = function ($copy_line) {
             return function ($copy_idx) {
                 return function ($copy_xs) {
@@ -81,27 +117,27 @@ var indexToSourcePos = function (pos) {
                     var $tco_done = false;
                     var $tco_result;
                     function $tco_loop(line, idx, xs) {
-                        var v = Data_Array.uncons(xs);
-                        if (v instanceof Data_Maybe.Just) {
-                            var len = Data_String_CodePoints.length(v.value0.head);
-                            var $48 = pos < (idx + len | 0);
-                            if ($48) {
+                        var v2 = Data_Array.uncons(xs);
+                        if (v2 instanceof Data_Maybe.Just) {
+                            var len = Data_String_CodePoints.length(v2.value0.head);
+                            var $59 = v < (idx + len | 0);
+                            if ($59) {
                                 $tco_done = true;
                                 return new Data_Maybe.Just({
                                     line: line,
-                                    column: (pos - idx | 0) + 1 | 0
+                                    column: v - idx | 0
                                 });
                             };
                             $tco_var_line = line + 1 | 0;
                             $tco_var_idx = idx + len | 0;
-                            $copy_xs = v.value0.tail;
+                            $copy_xs = v2.value0.tail;
                             return;
                         };
-                        if (v instanceof Data_Maybe.Nothing) {
+                        if (v2 instanceof Data_Maybe.Nothing) {
                             $tco_done = true;
                             return Data_Maybe.Nothing.value;
                         };
-                        throw new Error("Failed pattern match at TsBridgeGen.Core (line 139, column 20 - line 147, column 23): " + [ v.constructor.name ]);
+                        throw new Error("Failed pattern match at TsBridgeGen.Core (line 142, column 20 - line 150, column 23): " + [ v2.constructor.name ]);
                     };
                     while (!$tco_done) {
                         $tco_result = $tco_loop($tco_var_line, $tco_var_idx, $copy_xs);
@@ -110,44 +146,12 @@ var indexToSourcePos = function (pos) {
                 };
             };
         };
-        return go(1)(1)(Data_String_Common.split("\x0a")(str));
+        return go(0)(0)(Data_String_Common.split("\x0a")(v1));
     };
-};
-var parseJsonError = function (dictMonad) {
-    var anyTill = Parsing_String.anyTill(dictMonad);
-    return function (json) {
-        var p2 = bind1(Parsing_String.string("Unexpected token "))(function () {
-            return bind1(anyTill(Parsing_String.string(" ")))(function (v) {
-                return bind1(Parsing_String.string("in JSON at position "))(function () {
-                    return bind1(Parsing_String_Basic.intDecimal)(function (i) {
-                        return bind1(Parsing_String.eof)(function () {
-                            return pure2(new TsBridgeGen_Types.UnexpectedTokenAtPos(v.value0, Data_Maybe.fromMaybe({
-                                line: 0,
-                                column: 0
-                            })(indexToSourcePos(i)(json))));
-                        });
-                    });
-                });
-            });
-        });
-        var p1 = bind1(Parsing_String.string("Unexpected end of JSON input"))(function () {
-            return bind1(Parsing_String.eof)(function () {
-                return pure2(TsBridgeGen_Types.UnexpectedEndOfInput.value);
-            });
-        });
-        return alt(p1)(p2);
-    };
-};
-var parseJsonError1 = /* #__PURE__ */ parseJsonError(Data_Identity.monadIdentity);
-var parseToJson = function (s) {
-    var f = function (e) {
-        return Data_Either.either(Data_Function["const"](new TsBridgeGen_Types.Other(e)))(identity)(Parsing.runParser(e)(parseJsonError1(s)));
-    };
-    return lmap(f)(Data_Argonaut_Parser.jsonParser(s));
 };
 var getPursDef = function (v) {
     if (v instanceof PureScript_CST_Types.DeclData && v.value0.vars.length === 0) {
-        return new Data_Maybe.Just(new TsBridgeGen_Types.DefUnsupportedExport(v.value0.name.name, "data type"));
+        return new Data_Maybe.Just(new TsBridgeGen_Types.DefData(v.value0.name.name));
     };
     if (v instanceof PureScript_CST_Types.DeclData) {
         return new Data_Maybe.Just(new TsBridgeGen_Types.DefUnsupportedInstAndExport(v.value0.name.name, "data type with arguments"));
@@ -162,7 +166,7 @@ var getPursDef = function (v) {
         return new Data_Maybe.Just(new TsBridgeGen_Types.DefUnsupportedExport(v.value0.name.name, "type alias"));
     };
     if (v instanceof PureScript_CST_Types.DeclType) {
-        return new Data_Maybe.Just(new TsBridgeGen_Types.DefUnsupportedExport(v.value0.name.name, "type with arguments"));
+        return new Data_Maybe.Just(new TsBridgeGen_Types.DefUnsupportedExport(v.value0.name.name, "type alias with arguments"));
     };
     if (v instanceof PureScript_CST_Types.DeclForeign && v.value2 instanceof PureScript_CST_Types.ForeignValue) {
         return new Data_Maybe.Just(new TsBridgeGen_Types.DefUnsupportedExport(v.value2.value0.label.name, "foreign import"));
@@ -194,7 +198,7 @@ var getName = function (v) {
     if (v instanceof TsBridgeGen_Types.DefUnsupportedExport) {
         return v.value0;
     };
-    throw new Error("Failed pattern match at TsBridgeGen.Core (line 126, column 11 - line 133, column 32): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at TsBridgeGen.Core (line 128, column 11 - line 135, column 32): " + [ v.constructor.name ]);
 };
 var exportToName = function (v) {
     if (v instanceof PureScript_CST_Types.ExportType) {
@@ -213,7 +217,7 @@ var isExported = function (v) {
                 return v2;
             })(getName(v1)))(exports$prime);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Core (line 42, column 1 - line 42, column 58): " + [ v.constructor.name, v1.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Core (line 44, column 1 - line 44, column 58): " + [ v.constructor.name, v1.constructor.name ]);
     };
 };
 var getPursModule = function (module_) {
@@ -227,6 +231,7 @@ export {
     getPursDef,
     getName,
     indexToSourcePos,
+    positionToSourcePosition,
     parseToJson,
     parseJsonError,
     parseUserImports

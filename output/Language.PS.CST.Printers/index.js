@@ -262,7 +262,7 @@ var $lazy_printExpr = /* #__PURE__ */ $runtime_lazy("printExpr", "Language.PS.CS
             return Dodo.alignCurrentColumn(Dodo_Common.pursCurlies(foldWithSeparator(Dodo_Common.leadingComma)(map(printRecordLabeled(printExprImplementation))(v.value0))));
         };
         if (v instanceof Language_PS_CST_Types_Declaration.ExprTyped) {
-            return Dodo.appendSpace(printExprImplementation(v.value0))(Dodo.appendSpace(Dodo.text("::"))(Language_PS_CST_Printers_TypeLevel.printType(v.value1)));
+            return Dodo.appendSpace(Dodo.text("("))(Dodo.appendSpace(printExprImplementation(v.value0))(Dodo.appendSpace(Dodo.text("::"))(Dodo.appendSpace(Language_PS_CST_Printers_TypeLevel.printType(v.value1))(Dodo.text(")")))));
         };
         if (v instanceof Language_PS_CST_Types_Declaration.ExprInfix) {
             return Dodo.appendSpace(printExprImplementation(v.value0))(Dodo.appendSpace(printExprImplementation(v.value1))(printExprImplementation(v.value2)));
