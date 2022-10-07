@@ -27,6 +27,8 @@ install:
 
 ci: install test end2end docs dist
 
+ci-local: install test end2end-local docs dist
+
 end2end:
     bash end-to-end.sh
 
