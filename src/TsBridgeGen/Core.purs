@@ -134,9 +134,9 @@ getName = case _ of
   DefUnsupportedInstAndExport n _ -> n
   DefUnsupportedExport n _ -> n
 
-indexToSourcePos :: Int -> String -> Maybe SourcePosition
-indexToSourcePos i _ | i < 0 = Nothing
-indexToSourcePos pos str = go 0 0 (Str.split (Pattern "\n") str)
+indexToSourcePos :: String -> Int -> Maybe SourcePosition
+indexToSourcePos _ i | i < 0 = Nothing
+indexToSourcePos str pos = go 0 0 (Str.split (Pattern "\n") str)
   where
   go :: Int -> Int -> Array String -> _
   go line idx xs = case uncons xs of

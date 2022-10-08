@@ -56,6 +56,7 @@ in  upstream
       , "typedenv"
       , "typelevel"
       , "typelevel-prelude"
+      , "profunctor-lenses"
       ]
     , repo = "https://github.com/thought2/purescript-typescript-bridge.git"
     , version = "main"

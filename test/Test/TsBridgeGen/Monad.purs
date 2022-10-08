@@ -50,13 +50,12 @@ derive newtype instance MonadAsk (AppEnv TestM) TestM
 instance MonadLog AppLog TestM where
   log l = TestM do
     tell emptyTestMAccum { logs = pure l }
-  getLogs = undefined
+  censorLogs = undefined
 
 instance MonadMultipleErrors AppError TestM where
   pushError l = TestM do
     tell emptyTestMAccum { errors = pure l }
-    
--- getLogs = undefined
+  censorErrors = undefined
 
 instance MonadApp TestM
 

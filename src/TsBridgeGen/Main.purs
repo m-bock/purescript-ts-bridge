@@ -9,15 +9,13 @@ import Data.Array as Array
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Either.Nested (type (\/))
-import Data.FoldableWithIndex (traverseWithIndex_)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap)
 import Data.Set (Set)
 import Data.String (Pattern(..))
 import Data.String as Str
-import Data.Traversable (for, for_, traverse)
-import Data.TraversableWithIndex (traverseWithIndex)
+import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import Data.Typelevel.Undefined (undefined)
 import Dodo (Doc)
 import Dodo as Dodo
 import Effect (Effect)
@@ -25,11 +23,10 @@ import Effect.Aff (Aff, Error, launchAff_, throwError, try)
 import Effect.Aff.Class (liftAff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Effect.Class.Console as E
 import Node.ChildProcess (Exit(..), defaultSpawnOptions)
 import Node.Encoding (Encoding(..))
-import Node.FS.Aff as FS
-import Node.FS.Perms as FS
+import Node.FS.Aff (mkdir', readTextFile, writeTextFile) as FS
+import Node.FS.Perms (all, mkPerms) as FS
 import Node.Glob.Basic as Glob
 import Node.Path (FilePath)
 import Node.Process as Process
@@ -38,7 +35,7 @@ import PureScript.CST as CST
 import Sunde as Sun
 import Tidy as Tidy
 import Tidy.Doc (FormatDoc(..))
-import TsBridgeGen (AppEffects(..), AppError(..), AppLog(..), Glob(..))
+import TsBridgeGen (AppEffects(..), AppLog(..), Glob(..))
 import TsBridgeGen.Cli (app, parseStrToData)
 import TsBridgeGen.Config (AppConfig(..), getConfig, runInitM)
 import TsBridgeGen.Monad (AppEnv(..), AppM, MonadAppAccum, runAppM)
@@ -111,6 +108,7 @@ handleErrors config@(AppConfig { debug }) errorCount = case _ of
     quitWithError "\nNot all of the replacements succeeded."
   Right (Right x) -> pure x
 
+printDoc :: forall a79. Doc a79 -> String
 printDoc = Dodo.print Dodo.plainText Dodo.twoSpaces
 
 quitWithError :: forall a. String -> Aff a
@@ -204,9 +202,9 @@ printAppError config@(AppConfig { debug }) x =
       Dodo.lines $ map Dodo.text $ Str.split (Pattern "\n") $ printJsonDecodeError je
     ErrUnknown ->
       Dodo.text "An unknown error occured. Try DEBUG=true" --
-    AtFileSection fp s e -> Dodo.lines
+    AtFileSection { path, section } e -> Dodo.lines
       [ printAppError config e
-      , Dodo.text ("in file " <> fp <> " at section: " <> s)
+      , Dodo.text ("in file " <> path <> " at section: " <> unwrap section)
       ]
 
 showDoc :: forall a b. Show a => a -> Doc b

@@ -17,39 +17,39 @@ spec :: Spec Unit
 spec = describe "TsBridge.Core" do
   describe "indexToSourcePos" do
     it "works for index -1" do
-      indexToSourcePos (-1) "foo\nbar"
+      indexToSourcePos "foo\nbar" (-1)
         # shouldEqual
         $ Nothing
     it "works for index 0" do
-      indexToSourcePos 0 "foo\nbar"
+      indexToSourcePos "foo\nbar" 0
         # shouldEqual
         $ (Just $ SourcePosition { line: 0, column: 0 })
     it "works for index 1" do
-      indexToSourcePos 1 "foo\nbar"
+      indexToSourcePos "foo\nbar" 1
         # shouldEqual
         $ (Just $ SourcePosition { line: 0, column: 1 })
-    it "works for index 1" do
-      indexToSourcePos 2 "foo\nbar"
+    it "works for index 2" do
+      indexToSourcePos "foo\nbar" 2
         # shouldEqual
         $ (Just $ SourcePosition { line: 0, column: 2 })
     it "works for index 3" do
-      indexToSourcePos 3 "foo\nbar"
+      indexToSourcePos "foo\nbar" 3
         # shouldEqual
         $ (Just $ SourcePosition { line: 1, column: 0 })
     it "works for index 4" do
-      indexToSourcePos 4 "foo\nbar"
+      indexToSourcePos "foo\nbar" 4
         # shouldEqual
         $ (Just $ SourcePosition { line: 1, column: 1 })
     it "works for index 5" do
-      indexToSourcePos 5 "foo\nbar"
+      indexToSourcePos "foo\nbar" 5
         # shouldEqual
         $ (Just $ SourcePosition { line: 1, column: 2 })
     it "works for index 6" do
-      indexToSourcePos 6 "foo\nbar"
+      indexToSourcePos "foo\nbar" 6
         # shouldEqual
         $ Nothing
     it "works for index 7" do
-      indexToSourcePos 7 "foo\nbar"
+      indexToSourcePos "foo\nbar" 7
         # shouldEqual
         $ Nothing
   describe "SourcePosition" do

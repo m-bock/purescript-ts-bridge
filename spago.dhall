@@ -33,6 +33,7 @@
   , "parsing"
   , "partial"
   , "prelude"
+  , "profunctor-lenses"
   , "ps-cst"
   , "quickcheck"
   , "quickcheck-laws"

@@ -10,7 +10,8 @@ module TsBridgeGen.Monad
   , class MonadAppEffects
   , class MonadLog
   , class MonadMultipleErrors
-  , getLogs
+  , censorLogs
+  , censorErrors
   , log
   , pushError
   , runAppM
@@ -22,29 +23,19 @@ import Control.Monad.Error.Class (class MonadError, class MonadThrow, try)
 import Control.Monad.Except (class MonadTrans, ExceptT, lift, runExceptT)
 import Control.Monad.Reader (class MonadAsk, ReaderT, ask, runReaderT)
 import Control.Monad.Rec.Class (class MonadRec)
-import Control.Monad.Writer (class MonadWriter, WriterT(..), Writer, listen, listens, runWriterT, tell)
-import Data.Argonaut (printJsonDecodeError)
-import Data.Either (Either(..))
-import Data.Either.Nested (type (\/))
+import Control.Monad.Writer (class MonadWriter, WriterT(..), censor, runWriterT, tell)
+import Data.Either (Either)
+import Data.Lens (over)
+import Data.Lens.Record (prop)
 import Data.Set (Set)
-import Data.String (Pattern(..))
-import Data.String as Str
-import Data.Tuple (Tuple(..), fst, snd)
-import Data.Typelevel.Undefined (undefined)
-import Dodo (Doc, indent, lines, text)
-import Dodo as Dodo
-import Effect (Effect)
-import Effect.Aff (Aff, Error, launchAff_)
+import Data.Tuple (Tuple)
+import Effect.Aff (Aff, Error)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Class.Console (error)
+import Effect.Class (class MonadEffect)
 import Node.Path (FilePath)
-import Node.Process (exit)
-import PureScript.CST (RecoveredParserResult(..), parseExpr)
-import Tidy (defaultFormatOptions, formatExpr)
-import Tidy.Doc (FormatDoc(..))
-import TsBridgeGen.Config (AppConfig(..))
-import TsBridgeGen.Types (AppError(..), AppLog(..), Glob, SourcePosition(..))
+import TsBridgeGen.Config (AppConfig)
+import TsBridgeGen.Types (AppError, AppLog, Glob, SourcePosition(..))
+import Type.Proxy (Proxy(..))
 
 class
   ( MonadError AppError m
@@ -56,15 +47,16 @@ class
   ) <=
   MonadApp m
 
-instance MonadAppEffects AppM where
-  askAppEffects = do
-    (AppEnv { capabilities }) <- ask
-    pure capabilities
+class Monad m <= MonadLog l m where
+  log :: l -> m Unit
+  censorLogs :: forall a. (Array l -> Array l) -> m a -> m a
 
-instance MonadAppConfig AppM where
-  askAppConfig = do
-    (AppEnv { config }) <- ask
-    pure config
+class Monad m <= MonadMultipleErrors e m where
+  pushError :: e -> m Unit
+  censorErrors :: forall a. (Array e -> Array e) -> m a -> m a
+
+class MonadAppConfig m where
+  askAppConfig :: m AppConfig
 
 class MonadAppEffects m where
   askAppEffects :: m (AppEffects m)
@@ -77,36 +69,17 @@ instance (Monoid w, Monad m, MonadAppConfig m) => MonadAppConfig (WriterT w m) w
 
 -- instance (Monoid w, Monad m, MonadApp m) => MonadApp (WriterT w m)
 
-derive newtype instance MonadWriter AppMAccum AppM
-
 instance (Monoid w, MonadApp m) => MonadApp (WriterT w m)
 
 instance (Monoid w, MonadLog l m) => MonadLog l (WriterT w m)
   where
   log = log >>> lift
-  getLogs (WriterT ma) = WriterT do
-    logs <- getLogs ma
-    Tuple _ w <- ma
-    pure (Tuple logs w)
+  censorLogs f (WriterT ma) = WriterT $ censorLogs f ma
 
 instance (Monoid w, MonadMultipleErrors e m) => MonadMultipleErrors e (WriterT w m)
   where
   pushError = pushError >>> lift
-
-class MonadAppConfig m where
-  askAppConfig :: m AppConfig
-
-instance MonadApp AppM
-
-newtype AppM a = AppM
-  ( ExceptT AppError
-      ( ReaderT (AppEnv AppM)
-          ( WriterT AppMAccum
-              Aff
-          )
-      )
-      a
-  )
+  censorErrors f (WriterT ma) = WriterT $ censorErrors f ma
 
 type AppMAccum =
   { errors :: Array AppError
@@ -116,17 +89,6 @@ type AppMAccum =
 newtype AppEnv m = AppEnv
   { config :: AppConfig
   , capabilities :: AppEffects m
-  }
-
-liftAppEffects :: forall t m. Monad m => MonadTrans t => AppEffects m -> AppEffects (t m)
-liftAppEffects (AppEffects r) = AppEffects
-  { mkdirRec: \x1 -> r.mkdirRec x1 # lift
-  , readTextFile: \x1 -> r.readTextFile x1 # lift
-  , writeTextFile: \x1 x2 -> r.writeTextFile x1 x2 # lift
-  , expandGlobsCwd: \x1 -> r.expandGlobsCwd x1 # lift
-  , runPrettier: \x1 -> r.runPrettier x1 # lift
-  , spagoLsDepsTransitive: lift r.spagoLsDepsTransitive
-  , spagoSources: lift r.spagoSources
   }
 
 newtype AppEffects m = AppEffects
@@ -151,6 +113,58 @@ runAppM env (AppM ma) = ma
   # flip runReaderT env
   # runWriterT
 
+liftAppEffects :: forall t m. Monad m => MonadTrans t => AppEffects m -> AppEffects (t m)
+liftAppEffects (AppEffects r) = AppEffects
+  { mkdirRec: \x1 -> r.mkdirRec x1 # lift
+  , readTextFile: \x1 -> r.readTextFile x1 # lift
+  , writeTextFile: \x1 x2 -> r.writeTextFile x1 x2 # lift
+  , expandGlobsCwd: \x1 -> r.expandGlobsCwd x1 # lift
+  , runPrettier: \x1 -> r.runPrettier x1 # lift
+  , spagoLsDepsTransitive: lift r.spagoLsDepsTransitive
+  , spagoSources: lift r.spagoSources
+  }
+
+emptyAppMAccum :: AppMAccum
+emptyAppMAccum = mempty
+
+printPos :: FilePath -> SourcePosition -> String
+printPos fp (SourcePosition { line, column }) = fp
+  <> ":"
+  <> show (line + 1)
+  <> ":"
+  <> show (column + 1)
+
+newtype AppM a = AppM
+  ( ExceptT AppError
+      ( ReaderT (AppEnv AppM)
+          ( WriterT AppMAccum
+              Aff
+          )
+      )
+      a
+  )
+
+instance MonadAppEffects AppM where
+  askAppEffects = do
+    (AppEnv { capabilities }) <- ask
+    pure capabilities
+
+instance MonadAppConfig AppM where
+  askAppConfig = do
+    (AppEnv { config }) <- ask
+    pure config
+
+instance MonadLog AppLog AppM where
+  log l = AppM $ tell $ emptyAppMAccum { logs = pure l }
+  censorLogs f (AppM ma) = ma # censor (over (prop (Proxy :: _ "logs")) f) # AppM
+
+instance MonadMultipleErrors AppError AppM where
+  pushError error = AppM $ tell $ emptyAppMAccum { errors = pure error }
+  censorErrors f (AppM ma) = ma # censor (over (prop (Proxy :: _ "errors")) f) # AppM
+
+instance MonadApp AppM
+
+derive newtype instance MonadWriter AppMAccum AppM
 derive newtype instance MonadAff AppM
 derive newtype instance MonadEffect AppM
 derive newtype instance Bind AppM
@@ -162,46 +176,3 @@ derive newtype instance MonadThrow AppError AppM
 derive newtype instance Functor AppM
 derive newtype instance MonadAsk (AppEnv AppM) AppM
 derive newtype instance MonadRec AppM
-
-instance MonadLog AppLog AppM where
-  log l = AppM $ tell $ emptyAppMAccum { logs = pure l }
-  getLogs (AppM ma) = ma # listens _.logs <#> snd # AppM
-
-emptyAppMAccum :: AppMAccum
-emptyAppMAccum = mempty
-
-instance MonadMultipleErrors AppError AppM where
-  pushError error = AppM $ tell $ emptyAppMAccum { errors = pure error }
-
---  getErrors (AppM ma) = ma # listens _.errors # AppM
-
-printPos :: FilePath -> SourcePosition -> String
-printPos fp (SourcePosition { line, column }) = fp
-  <> ":"
-  <> show (line + 1)
-  <> ":"
-  <> show (column + 1)
-
-class Monad m <= MonadLog l m where
-  log :: l -> m Unit
-  getLogs :: forall a. m a -> m (Array l)
-
-class Monad m <= MonadMultipleErrors e m where
-  pushError :: e -> m Unit
-
---getErrors :: forall a. m a -> m (Tuple a (Array e))
-
--- instance
---   ( Monoid w
---   , MonadMultipleErrors e m
---   ) =>
---   MonadMultipleErrors e (WriterT w m) where
---   pushError = pushError >>> lift
---   getErrors (WriterT ma) = WriterT do
---     Tuple a w <- getErrors ma
---     pure undefined -- $ Tuple (Tuple a w) w
-
--- instance (Monoid w, MonadLog l m) => MonadLog l (WriterT w m) where
---   log = log >>> lift
---   getLogs (WriterT ma) = undefined -- getLogs ma # WriterT
-

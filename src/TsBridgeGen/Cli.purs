@@ -8,43 +8,43 @@ module TsBridgeGen.Cli
 
 import Prelude
 
-import Control.Monad.Error.Class (class MonadError, catchError, liftEither, try)
-import Control.Monad.Reader (ask, lift)
+import Control.Monad.Error.Class (catchError, liftEither, try)
+import Control.Monad.Reader (lift)
 import Control.Monad.Rec.Class (class MonadRec)
-import Data.Argonaut (class DecodeJson, JsonDecodeError(..), decodeJson, printJsonDecodeError)
+import Data.Argonaut (class DecodeJson, decodeJson)
 import Data.Array as A
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..), either, hush)
-import Data.Either.Nested (type (\/), (\/))
+import Data.Either (Either, either, hush)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Newtype (unwrap)
 import Data.Set as Set
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
-import Data.Traversable (and, for, for_, or)
+import Data.String.Regex as Regex
+import Data.String.Regex.Flags (global)
+import Data.String.Regex.Unsafe (unsafeRegex)
+import Data.Traversable (and, for, or)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
-import Debug (spy)
-import Dodo (Doc, indent, lines, text, twoSpaces)
+import Dodo (twoSpaces)
 import Dodo as Dodo
 import Effect (Effect)
-import Effect.Aff (Error, throwError)
-import Effect.Class.Console as E
-import Effect.Console (error)
+import Effect.Aff (throwError)
 import Effect.Unsafe (unsafePerformEffect)
 import Node.Path (FilePath, dirname)
 import Node.Path as Path
-import Node.Process (exit)
-import Parsing (Position(..), fail, position)
+import Parsing (fail, position)
 import Parsing.String (anyTill, string) as P
 import Parsing.String.Replace (replaceT) as P
-import PureScript.CST (RecoveredParserResult(..), parseExpr, parseModule)
+import PureScript.CST (RecoveredParserResult(..), parseModule)
+import PureScript.CST.Types (SourcePos)
 import Safe.Coerce (coerce)
-import Tidy (defaultFormatOptions, formatExpr, formatModule)
+import Tidy (defaultFormatOptions, formatModule)
 import Tidy.Doc (FormatDoc(..))
-import TsBridgeGen (class MonadAppEffects, AppEffects(..), AppError(..), AppLog(..), AppM, ErrorParseToJson(..), Import(..), ModuleName(..), Name(..), PursModule(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), askAppEffects, genInstances, genTsProgram, getLogs, getName, getPursModule, indexToSourcePos, parseCstModule, parseToJson, parseUserImports, positionToSourcePosition, printImports, printPursSnippets, pushError, runImportWriterT)
+import TsBridgeGen (AppEffects(..), ErrorParseToJson(..), FileSection(..), Import(..), ModuleName(..), Name(..), PursModule(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), genInstances, genTsProgram, getName, getPursModule, indexToSourcePos, parseCstModule, parseToJson, parseUserImports, positionToSourcePosition, printImports, printPursSnippets, pushError, runImportWriterT)
 import TsBridgeGen.Config (AppConfig(..))
 import TsBridgeGen.Core (ReplaceTsProgramOpts)
-import TsBridgeGen.Monad (class MonadApp, AppEnv(..), askAppConfig, askAppEffects, log)
+import TsBridgeGen.Monad (class MonadApp, askAppConfig, askAppEffects, log)
 import TsBridgeGen.Types (AppError(..), AppLog(..), Glob(..), ModuleGlob(..), PursModule)
 
 -------------------------------------------------------------------------------
@@ -128,11 +128,11 @@ patchClassFile
   -> m String
 patchClassFile path defs file = do
   file' /\ { imports } <- file
-    # replaceComment path "instances" replaceInstances
+    # replaceComment path (FileSection "instances") replaceInstances
     # runImportWriterT
 
   file'
-    # replaceComment path "imports" (replaceImports imports)
+    # replaceComment path (FileSection "imports") (replaceImports imports)
     <#> (\str -> tidyPurs str # fromMaybe str)
   where
   replaceInstances opts _ = do
@@ -168,11 +168,11 @@ patchModulesFile
   -> m String
 patchModulesFile path defs file = do
   file' /\ { imports } <- file
-    # replaceComment path "ts-program" replaceTsProgram
+    # replaceComment path (FileSection "ts-program") replaceTsProgram
     # runImportWriterT
 
   file'
-    # replaceComment path "imports" (replaceImports imports)
+    # replaceComment path (FileSection "imports") (replaceImports imports)
     <#> (\str -> tidyPurs str # fromMaybe str)
   where
   replaceTsProgram (opts :: ReplaceTsProgramOpts) _ = do
@@ -212,11 +212,11 @@ replaceComment
   => MonadApp m
   => DecodeJson a
   => FilePath
-  -> String
+  -> FileSection
   -> (a -> String -> m String)
   -> String
   -> m String
-replaceComment path id f i = P.replaceT i do
+replaceComment path fs@(FileSection id) f i = P.replaceT i do
   genStartOpen <- P.string ("{-GEN:" <> id <> "\n")
 
   posJson <- position <#> positionToSourcePosition
@@ -231,23 +231,41 @@ replaceComment path id f i = P.replaceT i do
       \e -> do
         let
           p = fromMaybe mempty case e of
-            ErrParseToJson (UnexpectedTokenAtPos _ idx) -> indexToSourcePos idx jsonStr
-            ErrParseToJson (UnexpectedEndOfInput) -> indexToSourcePos (Str.length jsonStr) jsonStr
+            ErrParseToJson (UnexpectedTokenAtPos _ idx) -> indexToSourcePos jsonStr idx
+            ErrParseToJson (UnexpectedEndOfInput) -> indexToSourcePos jsonStr (Str.length jsonStr)
             _ -> Nothing
 
-        pushError $ AtFileSection path id e
+        pushError $ AtFileSection
+          { path
+          , section: fs
+          , filePos: Nothing
+          , localPos: mempty
+          }
+          e
         throwError e
 
   let
     getData json = (json # decodeJson # lmap ErrParseToData # liftEither) `catchError`
       \e -> do
-        pushError $ AtFileSection path id e
+        pushError $ AtFileSection
+          { path
+          , section: fs
+          , filePos: Nothing
+          , localPos: mempty
+          }
+          e
         throwError e
 
   let
     getContent data_ = f data_ content `catchError`
       \appError -> do
-        pushError $ AtFileSection path id appError
+        pushError $ AtFileSection
+          { path
+          , section: fs
+          , filePos: Nothing
+          , localPos: mempty
+          }
+          appError
         throwError appError
 
   let
@@ -318,11 +336,6 @@ app = do
 
   pure unit
 
-app' :: forall m. MonadApp m => m { logs :: Array AppLog }
-app' = do
-  logs :: Array AppLog <- getLogs app
-  pure { logs }
-
 readAsset :: forall m. MonadApp m => String -> m String
 readAsset path = do
   AppConfig { assetsDir } <- askAppConfig
@@ -362,3 +375,9 @@ printDhallType = case _ of
   DhallTypeApp t1 t2 -> printDhallType t1 <> " " <> printDhallType t2
   DhallTypeId s -> s
 
+sourcePosOfSection :: String -> FileSection -> Maybe SourcePosition
+sourcePosOfSection txt fs =
+  Regex.search regex txt
+    >>= indexToSourcePos txt
+  where
+  regex = unsafeRegex ("{-GEN:" <> unwrap fs <> "\n") global

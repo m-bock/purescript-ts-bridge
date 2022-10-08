@@ -4,6 +4,8 @@ import Prelude
 
 import Data.Argonaut (class DecodeJson, JsonDecodeError)
 import Data.Generic.Rep (class Generic)
+import Data.Maybe (Maybe)
+import Data.Newtype (class Newtype)
 import Data.Show.Generic (genericShow)
 import Data.Typelevel.Undefined (undefined)
 import Node.Path (FilePath)
@@ -23,7 +25,17 @@ data AppError
   | ErrParseToJson ErrorParseToJson
   | ErrParseToData JsonDecodeError
   | ErrUnknown
-  | AtFileSection FilePath String AppError
+  | AtFileSection
+      { path :: FilePath
+      , section :: FileSection
+      , filePos :: Maybe SourcePosition
+      , localPos :: SourcePosition
+      }
+      AppError
+
+newtype FileSection = FileSection String
+
+derive instance Newtype FileSection _
 
 data AppLog = LogLiteral String
 
@@ -84,6 +96,7 @@ derive instance Generic AppLog _
 derive instance Generic AppWarning _
 derive instance Generic ErrorParseToJson _
 derive instance Generic SourcePosition _
+derive instance Generic FileSection _
 
 derive instance Eq PursModule
 derive instance Eq ModuleName
@@ -114,11 +127,16 @@ instance Show AppLog where
 instance Show AppWarning where
   show = genericShow
 
+instance Show FileSection where
+  show = genericShow
+
 derive instance Generic AppError _
 
 derive instance Eq SourcePosition
 
 derive instance Eq AppError
+
+derive instance Eq FileSection
 
 derive instance Eq ErrorParseToJson
 

@@ -121,7 +121,7 @@ You can either follow the instructions below or check out the [sample project](h
 - [ ] Manage exports
 - [x] Write full end to end test
 
-# Bugs
+Bugs
 - [ ] Check globbing e.g. [ "Sample" ]
 - [ ] Add .gitignore to ts-bridge
 
@@ -145,3 +145,7 @@ Module prinitng
 CI
 
 - [ ] Improve CI pipeline
+
+Code Quality
+- Remove `ErrLiteral` and `LogLiteral`
+- Remove warnings
