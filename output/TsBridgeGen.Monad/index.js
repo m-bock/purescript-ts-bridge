@@ -10,30 +10,35 @@ import * as Control_Monad_Writer_Class from "../Control.Monad.Writer.Class/index
 import * as Control_Monad_Writer_Trans from "../Control.Monad.Writer.Trans/index.js";
 import * as Data_Function from "../Data.Function/index.js";
 import * as Data_Functor from "../Data.Functor/index.js";
+import * as Data_Lens_Record from "../Data.Lens.Record/index.js";
+import * as Data_Lens_Setter from "../Data.Lens.Setter/index.js";
 import * as Data_Monoid from "../Data.Monoid/index.js";
+import * as Data_Profunctor_Strong from "../Data.Profunctor.Strong/index.js";
 import * as Data_Show from "../Data.Show/index.js";
-import * as Data_Tuple from "../Data.Tuple/index.js";
 import * as Effect_Aff from "../Effect.Aff/index.js";
 import * as Effect_Aff_Class from "../Effect.Aff.Class/index.js";
-var monoidRecord = /* #__PURE__ */ Data_Monoid.monoidRecord()(/* #__PURE__ */ Data_Monoid.monoidRecordCons({
+import * as Type_Proxy from "../Type.Proxy/index.js";
+var errorsIsSymbol = {
     reflectSymbol: function () {
         return "errors";
     }
-})(Data_Monoid.monoidArray)()(/* #__PURE__ */ Data_Monoid.monoidRecordCons({
+};
+var logsIsSymbol = {
     reflectSymbol: function () {
         return "logs";
     }
-})(Data_Monoid.monoidArray)()(Data_Monoid.monoidRecordNil)));
+};
+var monoidRecord = /* #__PURE__ */ Data_Monoid.monoidRecord()(/* #__PURE__ */ Data_Monoid.monoidRecordCons(errorsIsSymbol)(Data_Monoid.monoidArray)()(/* #__PURE__ */ Data_Monoid.monoidRecordCons(logsIsSymbol)(Data_Monoid.monoidArray)()(Data_Monoid.monoidRecordNil)));
 var monadWriterExceptT = /* #__PURE__ */ Control_Monad_Except_Trans.monadWriterExceptT(/* #__PURE__ */ Control_Monad_Reader_Trans.monadWriterReaderT(/* #__PURE__ */ Control_Monad_Writer_Trans.monadWriterWriterT(monoidRecord)(Effect_Aff.monadAff)));
 var monadWriterT = /* #__PURE__ */ Control_Monad_Writer_Trans.monadWriterT(monoidRecord)(Effect_Aff.monadAff);
 var monadReaderT = /* #__PURE__ */ Control_Monad_Reader_Trans.monadReaderT(monadWriterT);
-var functorExceptT = /* #__PURE__ */ Control_Monad_Except_Trans.functorExceptT(/* #__PURE__ */ Control_Monad_Reader_Trans.functorReaderT(/* #__PURE__ */ Control_Monad_Writer_Trans.functorWriterT(Effect_Aff.functorAff)));
 var $$try = /* #__PURE__ */ Control_Monad_Error_Class["try"](/* #__PURE__ */ Control_Monad_Reader_Trans.monadErrorReaderT(/* #__PURE__ */ Control_Monad_Writer_Trans.monadErrorWriterT(monoidRecord)(Effect_Aff.monadErrorAff)));
 var show = /* #__PURE__ */ Data_Show.show(Data_Show.showInt);
 var tell = /* #__PURE__ */ Control_Monad_Writer_Class.tell(/* #__PURE__ */ Control_Monad_Except_Trans.monadTellExceptT(/* #__PURE__ */ Control_Monad_Reader_Trans.monadTellReaderT(/* #__PURE__ */ Control_Monad_Writer_Trans.monadTellWriterT(monoidRecord)(Effect_Aff.monadAff))));
 var pure = /* #__PURE__ */ Control_Applicative.pure(Control_Applicative.applicativeArray);
-var mapFlipped = /* #__PURE__ */ Data_Functor.mapFlipped(functorExceptT);
-var listens = /* #__PURE__ */ Control_Monad_Writer_Class.listens(monadWriterExceptT);
+var censor = /* #__PURE__ */ Control_Monad_Writer_Class.censor(monadWriterExceptT);
+var prop = /* #__PURE__ */ Data_Lens_Record.prop(logsIsSymbol)()();
+var prop1 = /* #__PURE__ */ Data_Lens_Record.prop(errorsIsSymbol)()();
 var AppEffects = function (x) {
     return x;
 };
@@ -51,7 +56,7 @@ var monadAskAppEnvAppMAppM = /* #__PURE__ */ Control_Monad_Except_Trans.monadAsk
 var ask = /* #__PURE__ */ Control_Monad_Reader_Class.ask(monadAskAppEnvAppMAppM);
 var monadAppM = /* #__PURE__ */ Control_Monad_Except_Trans.monadExceptT(monadReaderT);
 var monadAffAppM = /* #__PURE__ */ Effect_Aff_Class.monadAffExceptT(/* #__PURE__ */ Effect_Aff_Class.monadAffReader(/* #__PURE__ */ Effect_Aff_Class.monadAffWriter(Effect_Aff_Class.monadAffAff)(monoidRecord)));
-var functorAppM = functorExceptT;
+var functorAppM = /* #__PURE__ */ Control_Monad_Except_Trans.functorExceptT(/* #__PURE__ */ Control_Monad_Reader_Trans.functorReaderT(/* #__PURE__ */ Control_Monad_Writer_Trans.functorWriterT(Effect_Aff.functorAff)));
 var bindAppM = /* #__PURE__ */ Control_Monad_Except_Trans.bindExceptT(monadReaderT);
 var bind = /* #__PURE__ */ Control_Bind.bind(bindAppM);
 var applyAppM = /* #__PURE__ */ Control_Monad_Except_Trans.applyExceptT(monadReaderT);
@@ -74,26 +79,6 @@ var runAppM = function (env) {
 };
 var pushError = function (dict) {
     return dict.pushError;
-};
-var monadMultipleErrorsWriter = function (dictMonoid) {
-    var lift = Control_Monad_Trans_Class.lift(Control_Monad_Writer_Trans.monadTransWriterT(dictMonoid));
-    var monadWriterT1 = Control_Monad_Writer_Trans.monadWriterT(dictMonoid);
-    return function (dictMonadMultipleErrors) {
-        var Monad0 = dictMonadMultipleErrors.Monad0();
-        var monadWriterT2 = monadWriterT1(Monad0);
-        return {
-            pushError: (function () {
-                var $186 = lift(Monad0);
-                var $187 = pushError(dictMonadMultipleErrors);
-                return function ($188) {
-                    return $186($187($188));
-                };
-            })(),
-            Monad0: function () {
-                return monadWriterT2;
-            }
-        };
-    };
 };
 var printPos = function (fp) {
     return function (v) {
@@ -131,39 +116,6 @@ var liftAppEffects = function (dictMonad) {
         };
     };
 };
-var getLogs = function (dict) {
-    return dict.getLogs;
-};
-var monadLogWriterT = function (dictMonoid) {
-    var lift = Control_Monad_Trans_Class.lift(Control_Monad_Writer_Trans.monadTransWriterT(dictMonoid));
-    var monadWriterT1 = Control_Monad_Writer_Trans.monadWriterT(dictMonoid);
-    return function (dictMonadLog) {
-        var Monad0 = dictMonadLog.Monad0();
-        var bind1 = Control_Bind.bind(Monad0.Bind1());
-        var getLogs1 = getLogs(dictMonadLog);
-        var pure2 = Control_Applicative.pure(Monad0.Applicative0());
-        var monadWriterT2 = monadWriterT1(Monad0);
-        return {
-            log: (function () {
-                var $189 = lift(Monad0);
-                var $190 = log(dictMonadLog);
-                return function ($191) {
-                    return $189($190($191));
-                };
-            })(),
-            getLogs: function (v) {
-                return bind1(getLogs1(v))(function (logs) {
-                    return bind1(v)(function (v1) {
-                        return pure2(new Data_Tuple.Tuple(logs, v1.value1));
-                    });
-                });
-            },
-            Monad0: function () {
-                return monadWriterT2;
-            }
-        };
-    };
-};
 var emptyAppMAccum = /* #__PURE__ */ Data_Monoid.mempty(monoidRecord);
 var monadLogAppLogAppM = {
     log: function (l) {
@@ -172,10 +124,10 @@ var monadLogAppLogAppM = {
             errors: emptyAppMAccum.errors
         });
     },
-    getLogs: function (v) {
-        return mapFlipped(listens(function (v1) {
-            return v1.logs;
-        })(v))(Data_Tuple.snd);
+    censorLogs: function (f) {
+        return function (v) {
+            return censor(Data_Lens_Setter.over(prop(Type_Proxy["Proxy"].value)(Data_Profunctor_Strong.strongFn))(f))(v);
+        };
     },
     Monad0: function () {
         return monadAppM;
@@ -187,6 +139,11 @@ var monadMultipleErrorsAppErr = {
             errors: pure(error),
             logs: emptyAppMAccum.logs
         });
+    },
+    censorErrors: function (f) {
+        return function (v) {
+            return censor(Data_Lens_Setter.over(prop1(Type_Proxy["Proxy"].value)(Data_Profunctor_Strong.strongFn))(f))(v);
+        };
     },
     Monad0: function () {
         return monadAppM;
@@ -211,6 +168,64 @@ var monadAppAppM = {
     MonadAppConfig5: function () {
         return monadAppConfigAppM;
     }
+};
+var censorLogs = function (dict) {
+    return dict.censorLogs;
+};
+var monadLogWriterT = function (dictMonoid) {
+    var lift = Control_Monad_Trans_Class.lift(Control_Monad_Writer_Trans.monadTransWriterT(dictMonoid));
+    var monadWriterT1 = Control_Monad_Writer_Trans.monadWriterT(dictMonoid);
+    return function (dictMonadLog) {
+        var Monad0 = dictMonadLog.Monad0();
+        var censorLogs1 = censorLogs(dictMonadLog);
+        var monadWriterT2 = monadWriterT1(Monad0);
+        return {
+            log: (function () {
+                var $192 = lift(Monad0);
+                var $193 = log(dictMonadLog);
+                return function ($194) {
+                    return $192($193($194));
+                };
+            })(),
+            censorLogs: function (f) {
+                return function (v) {
+                    return censorLogs1(f)(v);
+                };
+            },
+            Monad0: function () {
+                return monadWriterT2;
+            }
+        };
+    };
+};
+var censorErrors = function (dict) {
+    return dict.censorErrors;
+};
+var monadMultipleErrorsWriter = function (dictMonoid) {
+    var lift = Control_Monad_Trans_Class.lift(Control_Monad_Writer_Trans.monadTransWriterT(dictMonoid));
+    var monadWriterT1 = Control_Monad_Writer_Trans.monadWriterT(dictMonoid);
+    return function (dictMonadMultipleErrors) {
+        var Monad0 = dictMonadMultipleErrors.Monad0();
+        var censorErrors1 = censorErrors(dictMonadMultipleErrors);
+        var monadWriterT2 = monadWriterT1(Monad0);
+        return {
+            pushError: (function () {
+                var $195 = lift(Monad0);
+                var $196 = pushError(dictMonadMultipleErrors);
+                return function ($197) {
+                    return $195($196($197));
+                };
+            })(),
+            censorErrors: function (f) {
+                return function (v) {
+                    return censorErrors1(f)(v);
+                };
+            },
+            Monad0: function () {
+                return monadWriterT2;
+            }
+        };
+    };
 };
 var askAppEffects = function (dict) {
     return dict.askAppEffects;
@@ -286,17 +301,20 @@ export {
     AppEnv,
     askAppConfig,
     askAppEffects,
-    getLogs,
+    censorLogs,
+    censorErrors,
     log,
     pushError,
     runAppM,
-    monadAppEffectsAppM,
-    monadAppConfigAppM,
     monadAppEffectsWriterT,
     monadAppConfigWriterT,
     monadAppWriterT,
     monadLogWriterT,
     monadMultipleErrorsWriter,
+    monadAppEffectsAppM,
+    monadAppConfigAppM,
+    monadLogAppLogAppM,
+    monadMultipleErrorsAppErr,
     monadAppAppM,
     monadAffAppM,
     monadEffectAppM,
@@ -308,7 +326,5 @@ export {
     monadThrowAppErrorAppM,
     functorAppM,
     monadAskAppEnvAppMAppM,
-    monadRecAppM,
-    monadLogAppLogAppM,
-    monadMultipleErrorsAppErr
+    monadRecAppM
 };

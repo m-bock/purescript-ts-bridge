@@ -12,6 +12,7 @@ import * as Data_Foldable from "../Data.Foldable/index.js";
 import * as Data_Function from "../Data.Function/index.js";
 import * as Data_Functor from "../Data.Functor/index.js";
 import * as Data_Maybe from "../Data.Maybe/index.js";
+import * as Data_Newtype from "../Data.Newtype/index.js";
 import * as Data_Show from "../Data.Show/index.js";
 import * as Data_String_Common from "../Data.String.Common/index.js";
 import * as Data_Traversable from "../Data.Traversable/index.js";
@@ -45,6 +46,7 @@ var error = /* #__PURE__ */ Effect_Class_Console.error(Effect_Aff.monadEffectAff
 var liftEffect = /* #__PURE__ */ Effect_Class.liftEffect(Effect_Aff.monadEffectAff);
 var lines = /* #__PURE__ */ Dodo.lines(Data_Foldable.foldableArray);
 var mapFlipped = /* #__PURE__ */ Data_Functor.mapFlipped(Data_Functor.functorArray);
+var unwrap = /* #__PURE__ */ Data_Newtype.unwrap();
 var show = /* #__PURE__ */ Data_Show.show(Data_Show.showInt);
 var traverse = /* #__PURE__ */ Data_Traversable.traverse(Data_Traversable.traversableArray)(Data_Either.applicativeEither);
 var liftEither = /* #__PURE__ */ Control_Monad_Error_Class.liftEither(TsBridgeGen_Monad.monadThrowAppErrorAppM);
@@ -75,17 +77,17 @@ var spawn = function (cmd) {
     };
 };
 var spagoSources = /* #__PURE__ */ Data_Functor.mapFlipped(TsBridgeGen_Monad.functorAppM)(/* #__PURE__ */ spawn("spago")([ "sources" ]))(/* #__PURE__ */ (function () {
-    var $109 = map(TsBridgeGen_Types.Glob);
-    var $110 = Data_String_Common.split("\x0a");
-    return function ($111) {
-        return $109($110((function (v) {
+    var $111 = map(TsBridgeGen_Types.Glob);
+    var $112 = Data_String_Common.split("\x0a");
+    return function ($113) {
+        return $111($112((function (v) {
             return v.stdout;
-        })($111)));
+        })($113)));
     };
 })());
 var showDoc = function (dictShow) {
-    var $112 = Data_Show.show(dictShow);
-    return function ($113) {
+    var $114 = Data_Show.show(dictShow);
+    return function ($115) {
         return (function (v) {
             if (v instanceof PureScript_CST.ParseSucceeded) {
                 return (function (v1) {
@@ -93,7 +95,7 @@ var showDoc = function (dictShow) {
                 })(Tidy.formatExpr(defaultFormatOptions)(v.value0));
             };
             return Dodo.text("<invalid>");
-        })(PureScript_CST.parseExpr($112($113)));
+        })(PureScript_CST.parseExpr($114($115)));
     };
 };
 var showDoc1 = /* #__PURE__ */ showDoc(TsBridgeGen_Types.showAppLog);
@@ -148,9 +150,9 @@ var printAppError = function (v) {
             return Dodo.text("An unknown error occured. Try DEBUG=true");
         };
         if (x instanceof TsBridgeGen_Types.AtFileSection) {
-            return lines([ printAppError(v)(x.value2), Dodo.text("in file " + (x.value0 + (" at section: " + x.value1))) ]);
+            return lines([ printAppError(v)(x.value1), Dodo.text("in file " + (x.value0.path + (" at section: " + unwrap(x.value0.section)))) ]);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Main (line 184, column 8 - line 210, column 8): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Main (line 182, column 8 - line 208, column 8): " + [ x.constructor.name ]);
     };
 };
 var printOneOfManyErrors = function (config) {
@@ -169,15 +171,15 @@ var parseLinesStrToData = function (dictDecodeJson) {
     };
 };
 var spagoLsDepsTransitive = /* #__PURE__ */ bind(/* #__PURE__ */ spawn("spago")([ "ls", "deps", "--transitive", "--json" ]))(/* #__PURE__ */ (function () {
-    var $114 = parseLinesStrToData(Data_Argonaut_Decode_Class.decodeRecord(Data_Argonaut_Decode_Class.gDecodeJsonCons(Data_Argonaut_Decode_Class.decodeFieldId(Data_Argonaut_Decode_Class.decodeJsonString))(Data_Argonaut_Decode_Class.gDecodeJsonNil)({
+    var $116 = parseLinesStrToData(Data_Argonaut_Decode_Class.decodeRecord(Data_Argonaut_Decode_Class.gDecodeJsonCons(Data_Argonaut_Decode_Class.decodeFieldId(Data_Argonaut_Decode_Class.decodeJsonString))(Data_Argonaut_Decode_Class.gDecodeJsonNil)({
         reflectSymbol: function () {
             return "packageName";
         }
     })()())());
-    return function ($115) {
-        return liftEither($114((function (v) {
+    return function ($117) {
+        return liftEither($116((function (v) {
             return v.stdout;
-        })($115)));
+        })($117)));
     };
 })());
 var liftAffWithErr = function (mkError) {
@@ -220,7 +222,7 @@ var handleErrors = function (v) {
             if (v1 instanceof Data_Either.Right && v1.value0 instanceof Data_Either.Right) {
                 return pure1(v1.value0.value0);
             };
-            throw new Error("Failed pattern match at TsBridgeGen.Main (line 102, column 56 - line 112, column 28): " + [ v1.constructor.name ]);
+            throw new Error("Failed pattern match at TsBridgeGen.Main (line 99, column 56 - line 109, column 28): " + [ v1.constructor.name ]);
         };
     };
 };

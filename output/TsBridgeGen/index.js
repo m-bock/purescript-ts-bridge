@@ -22,7 +22,8 @@ export {
     AppEnv,
     askAppConfig,
     askAppEffects,
-    getLogs,
+    censorErrors,
+    censorLogs,
     log,
     pushError,
     runAppM
@@ -62,6 +63,7 @@ export {
     Other,
     UnexpectedEndOfInput,
     UnexpectedTokenAtPos,
+    FileSection,
     Glob,
     ImportAuto,
     ImportUser,

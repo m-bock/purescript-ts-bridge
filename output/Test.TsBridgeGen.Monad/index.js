@@ -141,7 +141,7 @@ var monadLogAppLogTestM = {
             errors: emptyTestMAccum.errors
         });
     },
-    getLogs: Data_Typelevel_Undefined["undefined"],
+    censorLogs: Data_Typelevel_Undefined["undefined"],
     Monad0: function () {
         return monadTestM;
     }
@@ -153,6 +153,7 @@ var monadMultipleErrorsAppErr = {
             logs: emptyTestMAccum.logs
         });
     },
+    censorErrors: Data_Typelevel_Undefined["undefined"],
     Monad0: function () {
         return monadTestM;
     }

@@ -3,12 +3,14 @@ import * as Data_Argonaut_Decode_Class from "../Data.Argonaut.Decode.Class/index
 import * as Data_Argonaut_Decode_Error from "../Data.Argonaut.Decode.Error/index.js";
 import * as Data_Eq from "../Data.Eq/index.js";
 import * as Data_Generic_Rep from "../Data.Generic.Rep/index.js";
+import * as Data_Maybe from "../Data.Maybe/index.js";
 import * as Data_Ord from "../Data.Ord/index.js";
 import * as Data_Ordering from "../Data.Ordering/index.js";
 import * as Data_Show from "../Data.Show/index.js";
 import * as Data_Show_Generic from "../Data.Show.Generic/index.js";
 import * as Test_QuickCheck_Arbitrary from "../Test.QuickCheck.Arbitrary/index.js";
 import * as TypedEnv from "../TypedEnv/index.js";
+var showRecord = /* #__PURE__ */ Data_Show.showRecord()();
 var columnIsSymbol = {
     reflectSymbol: function () {
         return "column";
@@ -183,6 +185,9 @@ var ImportUser = /* #__PURE__ */ (function () {
 var Glob = function (x) {
     return x;
 };
+var FileSection = function (x) {
+    return x;
+};
 var UnexpectedTokenAtPos = /* #__PURE__ */ (function () {
     function UnexpectedTokenAtPos(value0, value1) {
         this.value0 = value0;
@@ -317,16 +322,13 @@ var ErrUnknown = /* #__PURE__ */ (function () {
     return ErrUnknown;
 })();
 var AtFileSection = /* #__PURE__ */ (function () {
-    function AtFileSection(value0, value1, value2) {
+    function AtFileSection(value0, value1) {
         this.value0 = value0;
         this.value1 = value1;
-        this.value2 = value2;
     };
     AtFileSection.create = function (value0) {
         return function (value1) {
-            return function (value2) {
-                return new AtFileSection(value0, value1, value2);
-            };
+            return new AtFileSection(value0, value1);
         };
     };
     return AtFileSection;
@@ -347,6 +349,11 @@ var semigroupSourcePosition = {
         };
     }
 };
+var newtypeFileSection_ = {
+    Coercible0: function () {
+        return undefined;
+    }
+};
 var monoidSourcePosition = {
     mempty: {
         line: 0,
@@ -365,7 +372,7 @@ var genericSourcePosition_ = {
     }
 };
 var showSourcePosition = {
-    show: /* #__PURE__ */ Data_Show_Generic.genericShow(genericSourcePosition_)(/* #__PURE__ */ Data_Show_Generic.genericShowConstructor(/* #__PURE__ */ Data_Show_Generic.genericShowArgsArgument(/* #__PURE__ */ Data_Show.showRecord()()(/* #__PURE__ */ Data_Show.showRecordFieldsCons(columnIsSymbol)(/* #__PURE__ */ Data_Show.showRecordFieldsConsNil(lineIsSymbol)(Data_Show.showInt))(Data_Show.showInt))))({
+    show: /* #__PURE__ */ Data_Show_Generic.genericShow(genericSourcePosition_)(/* #__PURE__ */ Data_Show_Generic.genericShowConstructor(/* #__PURE__ */ Data_Show_Generic.genericShowArgsArgument(/* #__PURE__ */ showRecord(/* #__PURE__ */ Data_Show.showRecordFieldsCons(columnIsSymbol)(/* #__PURE__ */ Data_Show.showRecordFieldsConsNil(lineIsSymbol)(Data_Show.showInt))(Data_Show.showInt))))({
         reflectSymbol: function () {
             return "SourcePosition";
         }
@@ -399,7 +406,7 @@ var genericPursDef_ = {
         if (x instanceof Data_Generic_Rep.Inr && (x.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0 instanceof Data_Generic_Rep.Inr && x.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr)))) {
             return new DefUnsupportedExport(x.value0.value0.value0.value0.value0.value0, x.value0.value0.value0.value0.value0.value1);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 79, column 1 - line 79, column 34): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 91, column 1 - line 91, column 34): " + [ x.constructor.name ]);
     },
     from: function (x) {
         if (x instanceof DefData) {
@@ -420,7 +427,7 @@ var genericPursDef_ = {
         if (x instanceof DefUnsupportedExport) {
             return new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Product(x.value0, x.value1))))));
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 79, column 1 - line 79, column 34): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 91, column 1 - line 91, column 34): " + [ x.constructor.name ]);
     }
 };
 var genericName_ = {
@@ -490,6 +497,38 @@ var showPursModule = {
         }
     }))
 };
+var genericFileSection_ = {
+    to: function (x) {
+        return x;
+    },
+    from: function (x) {
+        return x;
+    }
+};
+var showFileSection = {
+    show: /* #__PURE__ */ Data_Show_Generic.genericShow(genericFileSection_)(/* #__PURE__ */ genericShowConstructor({
+        reflectSymbol: function () {
+            return "FileSection";
+        }
+    }))
+};
+var genericShowArgsProduct1 = /* #__PURE__ */ Data_Show_Generic.genericShowArgsProduct(/* #__PURE__ */ Data_Show_Generic.genericShowArgsArgument(/* #__PURE__ */ showRecord(/* #__PURE__ */ Data_Show.showRecordFieldsCons({
+    reflectSymbol: function () {
+        return "filePos";
+    }
+})(/* #__PURE__ */ Data_Show.showRecordFieldsCons({
+    reflectSymbol: function () {
+        return "localPos";
+    }
+})(/* #__PURE__ */ Data_Show.showRecordFieldsCons({
+    reflectSymbol: function () {
+        return "path";
+    }
+})(/* #__PURE__ */ Data_Show.showRecordFieldsConsNil({
+    reflectSymbol: function () {
+        return "section";
+    }
+})(showFileSection))(Data_Show.showString))(showSourcePosition))(/* #__PURE__ */ Data_Maybe.showMaybe(showSourcePosition)))));
 var genericErrorParseToJson_ = {
     to: function (x) {
         if (x instanceof Data_Generic_Rep.Inl) {
@@ -501,7 +540,7 @@ var genericErrorParseToJson_ = {
         if (x instanceof Data_Generic_Rep.Inr && x.value0 instanceof Data_Generic_Rep.Inr) {
             return new Other(x.value0.value0);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 85, column 1 - line 85, column 43): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 97, column 1 - line 97, column 43): " + [ x.constructor.name ]);
     },
     from: function (x) {
         if (x instanceof UnexpectedTokenAtPos) {
@@ -513,7 +552,7 @@ var genericErrorParseToJson_ = {
         if (x instanceof Other) {
             return new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(x.value0));
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 85, column 1 - line 85, column 43): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 97, column 1 - line 97, column 43): " + [ x.constructor.name ]);
     }
 };
 var showErrorParseToJson = {
@@ -599,9 +638,9 @@ var genericAppError_ = {
             return ErrUnknown.value;
         };
         if (x instanceof Data_Generic_Rep.Inr && (x.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr && (x.value0.value0.value0.value0.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr && x.value0.value0.value0.value0.value0.value0.value0.value0.value0 instanceof Data_Generic_Rep.Inr))))))))) {
-            return new AtFileSection(x.value0.value0.value0.value0.value0.value0.value0.value0.value0.value0.value0, x.value0.value0.value0.value0.value0.value0.value0.value0.value0.value0.value1.value0, x.value0.value0.value0.value0.value0.value0.value0.value0.value0.value0.value1.value1);
+            return new AtFileSection(x.value0.value0.value0.value0.value0.value0.value0.value0.value0.value0.value0, x.value0.value0.value0.value0.value0.value0.value0.value0.value0.value0.value1);
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 117, column 1 - line 117, column 35): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 133, column 1 - line 133, column 35): " + [ x.constructor.name ]);
     },
     from: function (x) {
         if (x instanceof ErrSpawn) {
@@ -635,15 +674,15 @@ var genericAppError_ = {
             return new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inl(Data_Generic_Rep.NoArguments.value))))))))));
         };
         if (x instanceof AtFileSection) {
-            return new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Product(x.value0, new Data_Generic_Rep.Product(x.value1, x.value2))))))))))));
+            return new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Inr(new Data_Generic_Rep.Product(x.value0, x.value1)))))))))));
         };
-        throw new Error("Failed pattern match at TsBridgeGen.Types (line 117, column 1 - line 117, column 35): " + [ x.constructor.name ]);
+        throw new Error("Failed pattern match at TsBridgeGen.Types (line 133, column 1 - line 133, column 35): " + [ x.constructor.name ]);
     }
 };
 var genericShow = /* #__PURE__ */ Data_Show_Generic.genericShow(genericAppError_);
 var showAppError = {
     show: function (x) {
-        return genericShow(genericShowSum(genericShowSum1(genericShowSum2(genericShowSum3(genericShowSum4(genericShowSum5(genericShowSum6(genericShowSum9(genericShowSum7(genericShowSum8(Data_Show_Generic.genericShowConstructor(genericShowArgsProduct(genericShowArgsProduct(Data_Show_Generic.genericShowArgsArgument(showAppError))))(AtFileSectionIsSymbol))))))))))))(x);
+        return genericShow(genericShowSum(genericShowSum1(genericShowSum2(genericShowSum3(genericShowSum4(genericShowSum5(genericShowSum6(genericShowSum9(genericShowSum7(genericShowSum8(Data_Show_Generic.genericShowConstructor(genericShowArgsProduct1(Data_Show_Generic.genericShowArgsArgument(showAppError)))(AtFileSectionIsSymbol))))))))))))(x);
     }
 };
 var eqSourcePosition = {
@@ -653,6 +692,8 @@ var eqSourcePosition = {
         };
     }
 };
+var eq5 = /* #__PURE__ */ Data_Eq.eq(/* #__PURE__ */ Data_Maybe.eqMaybe(eqSourcePosition));
+var eq6 = /* #__PURE__ */ Data_Eq.eq(eqSourcePosition);
 var eqName = {
     eq: function (x) {
         return function (y) {
@@ -660,33 +701,33 @@ var eqName = {
         };
     }
 };
-var eq5 = /* #__PURE__ */ Data_Eq.eq(eqName);
+var eq7 = /* #__PURE__ */ Data_Eq.eq(eqName);
 var eqPursDef = {
     eq: function (x) {
         return function (y) {
             if (x instanceof DefData && y instanceof DefData) {
-                return eq5(x.value0)(y.value0);
+                return eq7(x.value0)(y.value0);
             };
             if (x instanceof DefNewtype && y instanceof DefNewtype) {
-                return eq5(x.value0)(y.value0);
+                return eq7(x.value0)(y.value0);
             };
             if (x instanceof DefType && y instanceof DefType) {
-                return eq5(x.value0)(y.value0);
+                return eq7(x.value0)(y.value0);
             };
             if (x instanceof DefValue && y instanceof DefValue) {
-                return eq5(x.value0)(y.value0);
+                return eq7(x.value0)(y.value0);
             };
             if (x instanceof DefUnsupportedInstAndExport && y instanceof DefUnsupportedInstAndExport) {
-                return eq5(x.value0)(y.value0) && x.value1 === y.value1;
+                return eq7(x.value0)(y.value0) && x.value1 === y.value1;
             };
             if (x instanceof DefUnsupportedExport && y instanceof DefUnsupportedExport) {
-                return eq5(x.value0)(y.value0) && x.value1 === y.value1;
+                return eq7(x.value0)(y.value0) && x.value1 === y.value1;
             };
             return false;
         };
     }
 };
-var eq6 = /* #__PURE__ */ Data_Eq.eq(/* #__PURE__ */ Data_Eq.eqArray(eqPursDef));
+var eq8 = /* #__PURE__ */ Data_Eq.eq(/* #__PURE__ */ Data_Eq.eqArray(eqPursDef));
 var ordName = {
     compare: function (x) {
         return function (y) {
@@ -705,11 +746,11 @@ var eqModuleName = {
         };
     }
 };
-var eq7 = /* #__PURE__ */ Data_Eq.eq(eqModuleName);
+var eq9 = /* #__PURE__ */ Data_Eq.eq(eqModuleName);
 var eqPursModule = {
     eq: function (x) {
         return function (y) {
-            return eq7(x.value0)(y.value0) && eq6(x.value1)(y.value1);
+            return eq9(x.value0)(y.value0) && eq8(x.value1)(y.value1);
         };
     }
 };
@@ -728,7 +769,7 @@ var eqImport = {
     eq: function (x) {
         return function (y) {
             if (x instanceof ImportAuto && y instanceof ImportAuto) {
-                return eq5(x.value0.as)(y.value0.as) && eq7(x.value0.from)(y.value0.from);
+                return eq7(x.value0.as)(y.value0.as) && eq9(x.value0.from)(y.value0.from);
             };
             if (x instanceof ImportUser && y instanceof ImportUser) {
                 return x.value0 === y.value0;
@@ -766,6 +807,14 @@ var ordImport = {
         return eqImport;
     }
 };
+var eqFileSection = {
+    eq: function (x) {
+        return function (y) {
+            return x === y;
+        };
+    }
+};
+var eq10 = /* #__PURE__ */ Data_Eq.eq(eqFileSection);
 var eqErrorParseToJson = {
     eq: function (x) {
         return function (y) {
@@ -782,7 +831,7 @@ var eqErrorParseToJson = {
         };
     }
 };
-var eq8 = /* #__PURE__ */ Data_Eq.eq(eqErrorParseToJson);
+var eq11 = /* #__PURE__ */ Data_Eq.eq(eqErrorParseToJson);
 var eqAppLog = {
     eq: function (x) {
         return function (y) {
@@ -815,7 +864,7 @@ var eqAppError = {
                 return x.value0 === y.value0;
             };
             if (x instanceof ErrParseToJson && y instanceof ErrParseToJson) {
-                return eq8(x.value0)(y.value0);
+                return eq11(x.value0)(y.value0);
             };
             if (x instanceof ErrParseToData && y instanceof ErrParseToData) {
                 return eq4(x.value0)(y.value0);
@@ -824,7 +873,7 @@ var eqAppError = {
                 return true;
             };
             if (x instanceof AtFileSection && y instanceof AtFileSection) {
-                return x.value0 === y.value0 && x.value1 === y.value1 && Data_Eq.eq(eqAppError)(x.value2)(y.value2);
+                return eq5(x.value0.filePos)(y.value0.filePos) && eq6(x.value0.localPos)(y.value0.localPos) && x.value0.path === y.value0.path && eq10(x.value0.section)(y.value0.section) && Data_Eq.eq(eqAppError)(x.value1)(y.value1);
             };
             return false;
         };
@@ -847,6 +896,7 @@ export {
     ErrParseToData,
     ErrUnknown,
     AtFileSection,
+    FileSection,
     LogLiteral,
     SourcePosition,
     WarnLiteral,
@@ -866,6 +916,7 @@ export {
     UnexpectedTokenAtPos,
     UnexpectedEndOfInput,
     Other,
+    newtypeFileSection_,
     monoidSourcePosition,
     semigroupSourcePosition,
     arbitrarySourcePosition,
@@ -877,6 +928,7 @@ export {
     genericAppWarning_,
     genericErrorParseToJson_,
     genericSourcePosition_,
+    genericFileSection_,
     eqPursModule,
     eqModuleName,
     eqPursDef,
@@ -892,9 +944,11 @@ export {
     showModuleName,
     showAppLog,
     showAppWarning,
+    showFileSection,
     genericAppError_,
     eqSourcePosition,
     eqAppError,
+    eqFileSection,
     eqErrorParseToJson,
     showAppError,
     showErrorParseToJson,

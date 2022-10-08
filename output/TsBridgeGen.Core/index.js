@@ -106,7 +106,7 @@ var parseCstModule = function (mod) {
 };
 var indexToSourcePos = function (v) {
     return function (v1) {
-        if (v < 0) {
+        if (v1 < 0) {
             return Data_Maybe.Nothing.value;
         };
         var go = function ($copy_line) {
@@ -120,12 +120,12 @@ var indexToSourcePos = function (v) {
                         var v2 = Data_Array.uncons(xs);
                         if (v2 instanceof Data_Maybe.Just) {
                             var len = Data_String_CodePoints.length(v2.value0.head);
-                            var $59 = v < (idx + len | 0);
+                            var $59 = v1 < (idx + len | 0);
                             if ($59) {
                                 $tco_done = true;
                                 return new Data_Maybe.Just({
                                     line: line,
-                                    column: v - idx | 0
+                                    column: v1 - idx | 0
                                 });
                             };
                             $tco_var_line = line + 1 | 0;
@@ -146,7 +146,7 @@ var indexToSourcePos = function (v) {
                 };
             };
         };
-        return go(0)(0)(Data_String_Common.split("\x0a")(v1));
+        return go(0)(0)(Data_String_Common.split("\x0a")(v));
     };
 };
 var getPursDef = function (v) {

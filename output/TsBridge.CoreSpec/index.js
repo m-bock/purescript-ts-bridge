@@ -19,33 +19,33 @@ var liftEffect = /* #__PURE__ */ Effect_Class.liftEffect(Effect_Aff.monadEffectA
 var checkSemigroup = /* #__PURE__ */ Test_QuickCheck_Laws_Data_Semigroup.checkSemigroup(TsBridgeGen_Types.semigroupSourcePosition)(TsBridgeGen_Types.arbitrarySourcePosition)(TsBridgeGen_Types.eqSourcePosition);
 var checkMonoid = /* #__PURE__ */ Test_QuickCheck_Laws_Data_Monoid.checkMonoid(TsBridgeGen_Types.monoidSourcePosition)(TsBridgeGen_Types.arbitrarySourcePosition)(TsBridgeGen_Types.eqSourcePosition);
 var spec = /* #__PURE__ */ (function () {
-    return describe("TsBridge.Core")(discard(describe("indexToSourcePos")(discard(it("works for index -1")(shouldEqual(TsBridgeGen_Core.indexToSourcePos(-1 | 0)("foo\x0abar"))(Data_Maybe.Nothing.value)))(function () {
-        return discard(it("works for index 0")(shouldEqual(TsBridgeGen_Core.indexToSourcePos(0)("foo\x0abar"))(new Data_Maybe.Just({
+    return describe("TsBridge.Core")(discard(describe("indexToSourcePos")(discard(it("works for index -1")(shouldEqual(TsBridgeGen_Core.indexToSourcePos("foo\x0abar")(-1 | 0))(Data_Maybe.Nothing.value)))(function () {
+        return discard(it("works for index 0")(shouldEqual(TsBridgeGen_Core.indexToSourcePos("foo\x0abar")(0))(new Data_Maybe.Just({
             line: 0,
             column: 0
         }))))(function () {
-            return discard(it("works for index 1")(shouldEqual(TsBridgeGen_Core.indexToSourcePos(1)("foo\x0abar"))(new Data_Maybe.Just({
+            return discard(it("works for index 1")(shouldEqual(TsBridgeGen_Core.indexToSourcePos("foo\x0abar")(1))(new Data_Maybe.Just({
                 line: 0,
                 column: 1
             }))))(function () {
-                return discard(it("works for index 1")(shouldEqual(TsBridgeGen_Core.indexToSourcePos(2)("foo\x0abar"))(new Data_Maybe.Just({
+                return discard(it("works for index 2")(shouldEqual(TsBridgeGen_Core.indexToSourcePos("foo\x0abar")(2))(new Data_Maybe.Just({
                     line: 0,
                     column: 2
                 }))))(function () {
-                    return discard(it("works for index 3")(shouldEqual(TsBridgeGen_Core.indexToSourcePos(3)("foo\x0abar"))(new Data_Maybe.Just({
+                    return discard(it("works for index 3")(shouldEqual(TsBridgeGen_Core.indexToSourcePos("foo\x0abar")(3))(new Data_Maybe.Just({
                         line: 1,
                         column: 0
                     }))))(function () {
-                        return discard(it("works for index 4")(shouldEqual(TsBridgeGen_Core.indexToSourcePos(4)("foo\x0abar"))(new Data_Maybe.Just({
+                        return discard(it("works for index 4")(shouldEqual(TsBridgeGen_Core.indexToSourcePos("foo\x0abar")(4))(new Data_Maybe.Just({
                             line: 1,
                             column: 1
                         }))))(function () {
-                            return discard(it("works for index 5")(shouldEqual(TsBridgeGen_Core.indexToSourcePos(5)("foo\x0abar"))(new Data_Maybe.Just({
+                            return discard(it("works for index 5")(shouldEqual(TsBridgeGen_Core.indexToSourcePos("foo\x0abar")(5))(new Data_Maybe.Just({
                                 line: 1,
                                 column: 2
                             }))))(function () {
-                                return discard(it("works for index 6")(shouldEqual(TsBridgeGen_Core.indexToSourcePos(6)("foo\x0abar"))(Data_Maybe.Nothing.value)))(function () {
-                                    return it("works for index 7")(shouldEqual(TsBridgeGen_Core.indexToSourcePos(7)("foo\x0abar"))(Data_Maybe.Nothing.value));
+                                return discard(it("works for index 6")(shouldEqual(TsBridgeGen_Core.indexToSourcePos("foo\x0abar")(6))(Data_Maybe.Nothing.value)))(function () {
+                                    return it("works for index 7")(shouldEqual(TsBridgeGen_Core.indexToSourcePos("foo\x0abar")(7))(Data_Maybe.Nothing.value));
                                 });
                             });
                         });
