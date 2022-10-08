@@ -7,8 +7,9 @@ import Control.Monad.Error.Class (throwError)
 import Data.Argonaut (Json, jsonParser)
 import Data.Array (catMaybes, elem, uncons, (:))
 import Data.Array as A
+import Data.Array.NonEmpty as NEA
 import Data.Bifunctor (lmap)
-import Data.Either (Either, either)
+import Data.Either (Either(..), either)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Set (Set)
 import Data.Set as Set
@@ -56,21 +57,29 @@ exportToName = case _ of
   _ -> ""
 
 allVarsNotHigherKinded :: forall a. Array a -> Array (CST.DataCtor Void) -> Boolean
-allVarsNotHigherKinded = undefined
+allVarsNotHigherKinded _ _  = true
 
-isSimpleType :: CST.Type Void -> Boolean
+isSimpleType :: CST.Type Void -> Either String Unit
 isSimpleType = case _ of
-  CST.TypeApp (CST.TypeVar _) _ -> false
-  CST.TypeRow _ -> undefined
+  CST.TypeApp (CST.TypeVar _) _ -> Left "Higher kinded type"
+  CST.TypeRow _ -> Left "Row type"
   CST.TypeRecord _ -> undefined
-  CST.TypeForall _ _ _ _ -> false
+  CST.TypeForall _ _ _ _ -> Left "Existential type"
   CST.TypeKinded _ _ _ -> undefined
-  CST.TypeApp _ _ -> undefined
+  CST.TypeApp t ts -> traverse isSimpleType (t `NEA.cons` ts) <#> const unit
   CST.TypeOp _ _ -> undefined
   CST.TypeArrow _ _ _ -> undefined
-  CST.TypeConstrained _ _ _ -> false
+  CST.TypeConstrained _ _ _ -> Left "Constrained type"
   CST.TypeParens _ -> undefined
-  _ -> false
+  CST.TypeVar _ -> undefined
+  CST.TypeConstructor _  -> undefined
+  CST.TypeWildcard _ -> Right unit
+  CST.TypeHole _ -> Left "type hole"
+  CST.TypeString _ _ -> Left "TL string"
+  CST.TypeInt _ _ _ -> Left "TL int"
+  CST.TypeOpName _ -> undefined
+  CST.TypeArrowName _ -> undefined
+  CST.TypeError _ -> Right unit
 
 getPursDef :: CST.Declaration Void -> Maybe PursDef
 getPursDef = case _ of
