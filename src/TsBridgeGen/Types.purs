@@ -7,6 +7,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
 import Data.Show.Generic (genericShow)
+import Data.Tuple (Tuple)
 import Data.Typelevel.Undefined (undefined)
 import Node.Path (FilePath)
 import Prim.TypeError (class Warn, Text)
@@ -34,8 +35,6 @@ data AppError
       AppError
 
 newtype FileSection = FileSection String
-
-derive instance Newtype FileSection _
 
 data AppLog = LogLiteral String
 
@@ -76,12 +75,16 @@ data Import
   | ImportUser String
 
 data PursDef
-  = DefData Name
+  = DefData Name (Array Name)
   | DefNewtype Name
   | DefType Name
   | DefValue Name
-  | DefUnsupportedInstAndExport Name String
-  | DefUnsupportedExport Name String
+  | DefUnsupported Name String
+
+type Unsupported =
+  { instance_ :: Maybe (Tuple Name String)
+  , export :: Maybe (Tuple Name String)
+  }
 
 data ErrorParseToJson
   = UnexpectedTokenAtPos String Int
@@ -152,3 +155,7 @@ instance Show SourcePosition where
 derive newtype instance DecodeJson Glob
 
 derive newtype instance DecodeJson ModuleGlob
+
+derive instance Newtype Name _
+
+derive instance Newtype FileSection _

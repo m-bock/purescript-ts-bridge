@@ -53,8 +53,8 @@ spec = do
 
       patchClassFile
         "Module.purs"
-        [ PursModule (ModuleName "Module1") [ DefData (Name "Foo1") ]
-        , PursModule (ModuleName "Module2") [ DefData (Name "Foo2") ]
+        [ PursModule (ModuleName "Module1") [ DefData (Name "Foo1") [] ]
+        , PursModule (ModuleName "Module2") [ DefData (Name "Foo2") [] ]
         ]
         ( Str.joinWith "\n"
             [ "module MyApp.TsBridgeClass where"
@@ -119,8 +119,8 @@ spec = do
 
       patchModulesFile
         "Module.purs"
-        [ PursModule (ModuleName "Module1") [ DefData (Name "Foo1") ]
-        , PursModule (ModuleName "Module2") [ DefData (Name "Foo2") ]
+        [ PursModule (ModuleName "Module1") [ DefData (Name "Foo1") [] ]
+        , PursModule (ModuleName "Module2") [ DefData (Name "Foo2") [] ]
         ]
         ( Str.joinWith "\n"
             [ "module MyApp.TsModules where"
@@ -181,7 +181,7 @@ spec = do
         # parseDecl
         # recResToMaybe
         >>= getPursDef
-        # shouldEqual (Just $ DefData (Name "Foo"))
+        # shouldEqual (Just $ DefData (Name "Foo") [])
 
   describe "Value" do
     it "parses correctly" do
@@ -189,7 +189,7 @@ spec = do
         # parseDecl
         # recResToMaybe
         >>= getPursDef
-        # shouldEqual (Just (DefUnsupportedExport (Name "x") "value")) -- (Just $ DefValue (Name "x"))
+        # shouldEqual (Just (DefUnsupported (Name "x") "value")) -- (Just $ DefValue (Name "x"))
 
   describe "Type Alias" do
     it "parses correctly" do
@@ -197,7 +197,7 @@ spec = do
         # parseDecl
         # recResToMaybe
         >>= getPursDef
-        # shouldEqual (Just (DefUnsupportedExport (Name "Foo") "type alias")) -- (Just $ DefType (Name "Foo"))
+        # shouldEqual (Just (DefUnsupported (Name "Foo") "type alias")) -- (Just $ DefType (Name "Foo"))
 
   describe "Newtype" do
     it "parses correctly" do
@@ -205,12 +205,12 @@ spec = do
         # parseDecl
         # recResToMaybe
         >>= getPursDef
-        # shouldEqual (Just (DefUnsupportedInstAndExport (Name "Foo") "newtype")) --  (Just $ DefNewtype (Name "Foo"))
+        # shouldEqual (Just (DefUnsupported (Name "Foo") "newtype")) --  (Just $ DefNewtype (Name "Foo"))
 
   describe "Data type" do
     it "prints correctly" do
       [ PursModule (ModuleName "My")
-          [ DefData (Name "Foo") ]
+          [ DefData (Name "Foo") [] ]
       ]
         # genInstances
         # runImportWriterM

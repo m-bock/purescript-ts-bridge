@@ -5,11 +5,13 @@ import Prelude
 import Control.Monad.Writer (Writer, WriterT, runWriter, runWriterT, tell)
 import Data.Array.NonEmpty ((:))
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Traversable (sequence, traverse)
+import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested (type (/\))
 import Debug (spy)
 import Dodo as Dodo
@@ -36,7 +38,7 @@ genInstances modules = sequence do
   (PursModule mn@(ModuleName mn') defs) <- modules
   pursDef <- defs
   case pursDef of
-    DefData n@(Name n') ->
+    DefData n@(Name n') args ->
       pure do
         tell
           { imports: Set.singleton $ ImportAuto
@@ -49,19 +51,19 @@ genInstances modules = sequence do
             ( (ExprIdent $ nonQualifiedName (Ident "defaultOpaqueType"))
                 `ExprApp` (ExprString mn')
                 `ExprApp` (ExprString n')
-                `ExprApp` (ExprArray [])
-                `ExprApp` (ExprArray [])
+                `ExprApp` (ExprArray $ (ExprString <<< Str.toUpper <<< unwrap) <$> args)
+                `ExprApp`
+                  ( ExprArray $
+                      ( \arg -> (ExprIdent $ nonQualifiedName $ Ident "toTsBridge")
+                          `ExprApp` (ExprIdent $ nonQualifiedName $ Ident $ Str.toUpper $ unwrap arg)
+                      ) <$> args
+                  )
             )
 
-    DefType _ -> []
+    DefUnsupported (Name n) reason ->
+      [ pure $ CodeSnipComments [ "`" <> n <> "` is unsupported: " <> reason ] ]
 
-    DefValue _ -> []
-
-    DefUnsupportedInstAndExport (Name n) reason -> [ pure $ CodeSnipComments [ "`" <> n <> "` is unsupported: " <> reason ] ]
-
-    DefUnsupportedExport _ _ -> []
-
-    DefNewtype n@(Name n') ->
+    _ ->
       []
 
 -- pure do
@@ -147,7 +149,7 @@ genTsDef (ModuleName mn) = case _ of
               (qualifiedName (mkModuleName $ pure mn) $ Ident n)
         )
 
-  DefData (Name n) ->
+  DefData (Name n) _ ->
     ExprIdent (nonQualifiedName $ Ident "tsOpaqueType")
       `ExprApp` (ExprIdent $ nonQualifiedName $ Ident "Mp")
       `ExprApp` ExprString n
@@ -164,8 +166,7 @@ genTsDef (ModuleName mn) = case _ of
               (qualifiedName (mkModuleName $ pure mn) (ProperName n))
         )
 
-  DefUnsupportedInstAndExport name reason -> unsupported name reason
-  DefUnsupportedExport name reason -> unsupported name reason
+  DefUnsupported name reason -> unsupported name reason
 
 unsupported :: Name -> String -> Expr
 unsupported (Name n) reason = ExprIdent (nonQualifiedName $ Ident "tsUnsupported")

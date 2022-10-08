@@ -6,6 +6,8 @@ module MyTsBridgeClass where
 
 import Data.Either (Either)
 import TsBridge (class Mapping, TsBridgeM, TsType, defaultOpaqueType, defaultProxy, tsOpaqueType)
+import TsBridge.ABC (A(..), B(..), C(..), D(..), E(..), F(..), G(..), H(..), I(..), J(..), K(..), L(..), M(..), N(..), O(..), P(..), Q(..), R(..), S(..), T(..), U(..), V(..), W(..), X(..), Y(..), Z(..))
+
 import Type.Proxy (Proxy(..))
 
 {-GEN:END-}

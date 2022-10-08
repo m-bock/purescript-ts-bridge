@@ -14,7 +14,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.String (Pattern(..))
 import Data.String as Str
-import Data.Traversable (sequence)
+import Data.Traversable (sequence, traverse)
 import Data.Tuple (Tuple(..), snd)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
@@ -22,7 +22,7 @@ import Parsing (ParserT, Position(..), runParser)
 import Parsing.String (anyTill, eof, string) as P
 import Parsing.String.Basic (intDecimal) as P
 import PureScript.CST (RecoveredParserResult(..), parseImportDecl, parseModule) as CST
-import PureScript.CST.Types (Declaration(..), Export(..), Foreign(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Proper(..), Separated(..), Wrapped(..)) as CST
+import PureScript.CST.Types (Declaration(..), Export(..), Foreign(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Proper(..), QualifiedName(..), Separated(..), Type(..), TypeVarBinding(..), Wrapped(..)) as CST
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import TsBridgeGen.Types (AppError(..), ErrorParseToJson(..), Glob(..), ModuleGlob(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), SourcePosition(..))
@@ -58,14 +58,24 @@ getPursDef :: CST.Declaration Void -> Maybe PursDef
 getPursDef = case _ of
   CST.DeclData
     { name: CST.Name { name: CST.Proper name }
-    , vars: []
+    , vars
     }
-    _ -> Just $ DefData (Name name)
-  --Just $ DefUnsupportedExport (Name name) "data type" 
-
-  CST.DeclData
-    { name: CST.Name { name: CST.Proper name } }
-    _ -> Just $ DefUnsupportedInstAndExport (Name name) "data type with arguments"
+    _ -> case vars # traverse f <#> DefData (Name name) of
+    Nothing -> Just $ DefUnsupported (Name name) "data type with unsupported type arguments"
+    Just x -> Just x
+    where
+    f = case _ of
+      CST.TypeVarName (CST.Name { name: CST.Ident s }) | Str.length s == 1 -> Just $ Name s
+      CST.TypeVarKinded
+        ( CST.Wrapped
+            { value: CST.Labeled
+                { label:
+                    CST.Name { name: CST.Ident s }
+                , value: CST.TypeConstructor (CST.QualifiedName { name: CST.Proper "Type" })
+                }
+            }
+        ) | Str.length s == 1 -> Just $ Name s
+      _ -> Nothing
 
   -- CST.DeclSignature (CST.Labeled { label, value }) ->
   --   let
@@ -80,7 +90,7 @@ getPursDef = case _ of
     ( CST.Labeled
         { label: CST.Name { name: CST.Ident n }
         }
-    ) -> Just $ DefUnsupportedExport (Name n) "value"
+    ) -> Just $ DefUnsupported (Name n) "value"
 
   CST.DeclNewtype
     { name: CST.Name { name: CST.Proper n }
@@ -88,7 +98,7 @@ getPursDef = case _ of
     }
     _
     _
-    _ -> Just $ DefUnsupportedInstAndExport (Name n) "newtype"
+    _ -> Just $ DefUnsupported (Name n) "newtype"
   --Just $ DefNewtype (Name n)
 
   CST.DeclType
@@ -96,13 +106,13 @@ getPursDef = case _ of
     , vars: []
     }
     _
-    _ -> Just $ DefUnsupportedExport (Name name) "type alias" -- Just $ DefType (Name name)
+    _ -> Just $ DefUnsupported (Name name) "type alias" -- Just $ DefType (Name name)
 
   CST.DeclType
     { name: CST.Name { name: CST.Proper name }
     }
     _
-    _ -> Just $ DefUnsupportedExport (Name name) "type alias with arguments"
+    _ -> Just $ DefUnsupported (Name name) "type alias with arguments"
 
   CST.DeclForeign _ _
     ( CST.ForeignValue
@@ -111,7 +121,7 @@ getPursDef = case _ of
             }
         )
     ) ->
-    Just $ DefUnsupportedExport (Name n) "foreign import"
+    Just $ DefUnsupported (Name n) "foreign import"
 
   CST.DeclForeign _ _
     ( CST.ForeignData _
@@ -120,19 +130,17 @@ getPursDef = case _ of
             }
         )
     ) ->
-    Just $ DefUnsupportedInstAndExport (Name n) "foreign import"
+    Just $ DefUnsupported (Name n) "foreign import"
 
   _ -> Nothing
 
 getName :: PursDef -> Name
 getName = case _ of
-  DefData n -> n
-  DefData n -> n
+  DefData n _ -> n
   DefNewtype n -> n
   DefType n -> n
   DefValue n -> n
-  DefUnsupportedInstAndExport n _ -> n
-  DefUnsupportedExport n _ -> n
+  DefUnsupported n _ -> n
 
 indexToSourcePos :: String -> Int -> Maybe SourcePosition
 indexToSourcePos _ i | i < 0 = Nothing

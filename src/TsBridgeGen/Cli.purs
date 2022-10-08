@@ -24,6 +24,7 @@ import Data.String.Regex as Regex
 import Data.String.Regex.Flags (global)
 import Data.String.Regex.Unsafe (unsafeRegex)
 import Data.Traversable (and, for, or)
+import Data.Tuple (fst)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
 import Dodo (twoSpaces)
