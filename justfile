@@ -11,7 +11,7 @@ run args='':
     mkdir -p tmp
     export ASSETS_DIR=assets; \
     spago --quiet --no-psa run --main TsBridgeGen.Main --node-args \
-    "{{args}} --modules-file tmp/MyTsBridgeModules.purs --class-file tmp/MyTsBridgeClass.purs"
+    "{{args}}"
 
 test:
     spago test
