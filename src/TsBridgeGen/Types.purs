@@ -79,7 +79,12 @@ data PursDef
   | DefNewtype Name
   | DefType Name
   | DefValue Name
-  | DefUnsupported Name String
+  | DefUnsupported Name UnsupportedScope String
+
+data UnsupportedScope
+  = JustExport
+  -- | JustInstance
+  | BothExportAndInstance
 
 type Unsupported =
   { instance_ :: Maybe (Tuple Name String)
@@ -100,10 +105,13 @@ derive instance Generic AppWarning _
 derive instance Generic ErrorParseToJson _
 derive instance Generic SourcePosition _
 derive instance Generic FileSection _
+derive instance Generic UnsupportedScope _
 
 derive instance Eq PursModule
 derive instance Eq ModuleName
 derive instance Eq PursDef
+derive instance Eq UnsupportedScope
+
 derive instance Eq Name
 derive instance Eq Import
 derive instance Eq AppLog
@@ -111,6 +119,9 @@ derive instance Eq AppLog
 derive instance Ord ModuleName
 derive instance Ord Name
 derive instance Ord Import
+
+instance Show UnsupportedScope where
+  show = genericShow
 
 instance Show PursDef where
   show = genericShow

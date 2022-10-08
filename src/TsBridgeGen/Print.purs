@@ -3,7 +3,7 @@ module TsBridgeGen.Print where
 import Prelude
 
 import Control.Monad.Writer (Writer, WriterT, runWriter, runWriterT, tell)
-import Data.Array.NonEmpty ((:))
+import Data.Array.NonEmpty (cons', foldr1, (:))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Set (Set)
@@ -13,13 +13,14 @@ import Data.String as Str
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested (type (/\))
+import Data.Typelevel.Undefined (undefined)
 import Debug (spy)
 import Dodo as Dodo
-import Language.PS.CST (Declaration(..), Expr(..), Guarded(..), Ident(..), InstanceBinding(..), PSType(..), ProperName(..), ProperNameType_TypeConstructor, QualifiedName, mkModuleName, nonQualifiedName, printDeclaration, qualifiedName)
-import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..))
+import Language.PS.CST (Declaration(..), Expr(..), Guarded(..), Ident(..), InstanceBinding(..), PSConstraint(..), PSType(..), ProperName(..), ProperNameType_TypeConstructor, QualifiedName, mkModuleName, nonQualifiedName, printDeclaration, qualifiedName)
+import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), UnsupportedScope(..))
 
 data PursCodeSnippet
-  = CodeSnipDecls (Array Declaration)
+  = CodeSnipDecls (Array String)
   | CodeSnipComments (Array String)
 
 type ImportWriterM a = Writer Accum a
@@ -32,6 +33,21 @@ runImportWriterM ma = runWriter ma
 
 runImportWriterT :: forall m a. ImportWriterT m a -> m (a /\ { imports :: Set Import })
 runImportWriterT ma = runWriterT ma
+
+str :: String -> String
+str s = "\"" <> s <> "\""
+
+parens :: String -> String
+parens s = "(" <> s <> ")"
+
+instConstraints :: Array String -> String
+instConstraints [] = ""
+instConstraints xs = "(" <> Str.joinWith "," xs <> (items [")", "=>"])
+
+array :: Array String -> String
+array ss = "[" <> Str.joinWith "," ss <> "]"
+
+items = Str.joinWith " "
 
 genInstances :: forall m. Monad m => Array PursModule -> ImportWriterT m (Array PursCodeSnippet)
 genInstances modules = sequence do
@@ -46,22 +62,32 @@ genInstances modules = sequence do
               , as: Name ("Auto." <> mn')
               }
           }
-        pure $ CodeSnipDecls $ pure $
-          genTsBridgeInstance mn n
-            ( (ExprIdent $ nonQualifiedName (Ident "defaultOpaqueType"))
-                `ExprApp` (ExprString mn')
-                `ExprApp` (ExprString n')
-                `ExprApp` (ExprArray $ (ExprString <<< Str.toUpper <<< unwrap) <$> args)
-                `ExprApp`
-                  ( ExprArray $
-                      ( \arg -> (ExprIdent $ nonQualifiedName $ Ident "toTsBridge")
-                          `ExprApp` (ExprIdent $ nonQualifiedName $ Ident $ Str.toUpper $ unwrap arg)
-                      ) <$> args
-                  )
-            )
+        pure $ CodeSnipDecls
+          [ items
+              [ "instance"
+              , instConstraints $ ((\x -> items ["ToTsBridge", x]) <<< unwrap <$> args)
+              , "ToTsBridge"
+              , parens $ items (["Auto." <> mn' <> "." <> n'] <> (unwrap <$> args) ) 
+              , "where"
+              , "toTsBridge"
+              , "="
+              , "defaultOpaqueType"
+              , str mn'
+              , str n'
+              , array $ (str <<< unwrap) <$> args
+              , array $
+                  ( ( \x -> items
+                        [ "toTsBridge"
+                        , parens $ items [ "Proxy", "::", "_", x ]
+                        ]
+                    ) <<< unwrap
+                  ) <$> args
+              ]
+          ]
 
-    DefUnsupported (Name n) reason ->
-      [ pure $ CodeSnipComments [ "`" <> n <> "` is unsupported: " <> reason ] ]
+
+    DefUnsupported (Name n) BothExportAndInstance reason ->
+      [ pure $ CodeSnipComments [ "auto generated instance for `" <> n <> "` is not supported: " <> reason ] ]
 
     _ ->
       []
@@ -111,7 +137,7 @@ genTsProgram' modules = do
           }
       }
 
-  pure [ CodeSnipDecls [ signature, valueDef ] ]
+  pure [ CodeSnipDecls [ "signature", "valueDef" ] ]
 
 genTsModuleFile :: forall m. Monad m => PursModule -> ImportWriterT m Expr
 genTsModuleFile (PursModule mn defs) = do
@@ -137,7 +163,9 @@ genTsDef (ModuleName mn) = case _ of
       `ExprApp`
         ( ExprIdent (nonQualifiedName $ Ident "toTsBridge")
             `ExprApp` genProxy
-              (qualifiedName (mkModuleName $ pure mn) (ProperName n))
+              ( TypeConstructor
+                  (qualifiedName (mkModuleName $ pure mn) (ProperName n))
+              )
         )
 
   DefValue (Name n) ->
@@ -154,7 +182,7 @@ genTsDef (ModuleName mn) = case _ of
       `ExprApp` (ExprIdent $ nonQualifiedName $ Ident "Mp")
       `ExprApp` ExprString n
       `ExprApp`
-        ( genProxy (qualifiedName (mkModuleName $ "Auto" : pure mn) (ProperName n))
+        ( genProxy (TypeConstructor (qualifiedName (mkModuleName $ "Auto" : pure mn) (ProperName n)))
         )
 
   DefNewtype (Name n) ->
@@ -163,30 +191,32 @@ genTsDef (ModuleName mn) = case _ of
       `ExprApp`
         ( ExprIdent (nonQualifiedName $ Ident "toTsBridge")
             `ExprApp` genProxy
-              (qualifiedName (mkModuleName $ pure mn) (ProperName n))
+              (TypeConstructor (qualifiedName (mkModuleName $ pure mn) (ProperName n)))
         )
 
-  DefUnsupported name reason -> unsupported name reason
+  DefUnsupported name JustExport reason -> unsupported name reason
+
+  DefUnsupported name BothExportAndInstance reason -> unsupported name reason
 
 unsupported :: Name -> String -> Expr
 unsupported (Name n) reason = ExprIdent (nonQualifiedName $ Ident "tsUnsupported")
   `ExprApp` ExprString n
   `ExprApp` ExprString reason
 
-genProxy :: QualifiedName (ProperName ProperNameType_TypeConstructor) -> Expr
 genProxy qn = ExprTyped
   (ExprConstructor $ nonQualifiedName $ ProperName "Proxy")
-  (TypeWildcard `TypeApp` TypeConstructor qn)
+  (TypeWildcard `TypeApp` qn)
 
 printPursSnippets :: Array PursCodeSnippet -> String
-printPursSnippets = Str.joinWith "\n\n" <<< map case _ of
-  CodeSnipDecls ds -> ds
-    <#> printDeclaration
-      >>> Dodo.print Dodo.plainText
-        { pageWidth: 300, ribbonRatio: 1.0, indentUnit: "  ", indentWidth: 2 }
-    # Str.joinWith "\n"
-    # instName.replace
-  CodeSnipComments cs -> cs <#> ("-- " <> _) # Str.joinWith "\n"
+printPursSnippets =
+  Str.joinWith "\n\n" <<< map case _ of
+    CodeSnipDecls ds -> ds
+      -- <#> printDeclaration
+      --   >>> Dodo.print Dodo.plainText
+      --     { pageWidth: 300, ribbonRatio: 1.0, indentUnit: "  ", indentWidth: 2 }
+      # Str.joinWith "\n"
+      # instName.replace
+    CodeSnipComments cs -> cs <#> ("-- " <> _) # Str.joinWith "\n"
 
 printImports :: Set Import -> String
 printImports x = x
@@ -208,8 +238,8 @@ instName = { name, replace }
     Str.replaceAll (Pattern (" " <> name <> " ::")) (Replacement "")
       >>> Str.replaceAll (Pattern (" " <> name <> "\n  ::")) (Replacement "")
 
-genTsBridgeInstance :: ModuleName -> Name -> Expr -> Declaration
-genTsBridgeInstance (ModuleName mn) (Name n) expr = DeclInstanceChain
+genTsBridgeInstance :: ModuleName -> Name -> Array Name -> Expr -> Declaration
+genTsBridgeInstance (ModuleName mn) (Name n) args expr = DeclInstanceChain
   { comments: Nothing
   , instances: pure { head, body }
   }
@@ -217,12 +247,16 @@ genTsBridgeInstance (ModuleName mn) (Name n) expr = DeclInstanceChain
 
   head =
     { instName: Ident instName.name
-    , instConstraints: []
+    , instConstraints: (spy "args" args) <#> \(Name n) -> PSConstraint
+        { className: nonQualifiedName $ ProperName "ToTsBridge"
+        , args: [ TypeVar $ Ident n ]
+        }
     , instClass: nonQualifiedName
         (ProperName "ToTsBridge")
-    , instTypes: pure $ TypeConstructor $ qualifiedName
-        (mkModuleName $ pure ("Auto." <> mn))
-        (ProperName n)
+    , instTypes: pure $ foldr1 TypeApp $
+        cons'
+          (TypeConstructor $ qualifiedName (mkModuleName $ pure ("Auto." <> mn)) (ProperName n))
+          (TypeVar <<< Ident <<< unwrap <$> args)
     }
 
   body = pure $ InstanceBindingName

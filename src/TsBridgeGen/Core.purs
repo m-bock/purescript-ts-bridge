@@ -22,10 +22,11 @@ import Parsing (ParserT, Position(..), runParser)
 import Parsing.String (anyTill, eof, string) as P
 import Parsing.String.Basic (intDecimal) as P
 import PureScript.CST (RecoveredParserResult(..), parseImportDecl, parseModule) as CST
-import PureScript.CST.Types (Declaration(..), Export(..), Foreign(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Proper(..), QualifiedName(..), Separated(..), Type(..), TypeVarBinding(..), Wrapped(..)) as CST
+import PureScript.CST.Types (DataCtor, Declaration(..), Export(..), Foreign(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Proper(..), QualifiedName(..), Separated(..), Type(..), TypeVarBinding(..), Wrapped(..)) as CST
+import PureScript.CST.Types (Separated(..))
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-import TsBridgeGen.Types (AppError(..), ErrorParseToJson(..), Glob(..), ModuleGlob(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), SourcePosition(..))
+import TsBridgeGen.Types (AppError(..), ErrorParseToJson(..), Glob(..), ModuleGlob(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), SourcePosition(..), UnsupportedScope(..))
 
 parseCstModule :: String -> Either AppError (CST.Module Void)
 parseCstModule mod = case CST.parseModule mod of
@@ -54,17 +55,35 @@ exportToName = case _ of
   CST.ExportType (CST.Name { name: CST.Proper n }) _ -> n
   _ -> ""
 
+allVarsNotHigherKinded :: forall a. Array a -> Array (CST.DataCtor Void) -> Boolean
+allVarsNotHigherKinded = undefined
+
+isSimpleType :: CST.Type Void -> Boolean
+isSimpleType = case _ of
+  CST.TypeApp (CST.TypeVar _) _ -> false
+  CST.TypeRow _ -> undefined
+  CST.TypeRecord _ -> undefined
+  CST.TypeForall _ _ _ _ -> false
+  CST.TypeKinded _ _ _ -> undefined
+  CST.TypeApp _ _ -> undefined
+  CST.TypeOp _ _ -> undefined
+  CST.TypeArrow _ _ _ -> undefined
+  CST.TypeConstrained _ _ _ -> false
+  CST.TypeParens _ -> undefined
+  _ -> false
+
 getPursDef :: CST.Declaration Void -> Maybe PursDef
 getPursDef = case _ of
   CST.DeclData
     { name: CST.Name { name: CST.Proper name }
     , vars
     }
-    _ -> case vars # traverse f <#> DefData (Name name) of
-    Nothing -> Just $ DefUnsupported (Name name) "data type with unsupported type arguments"
+    (Just (Tuple _ (Separated {head, tail}))) | allVarsNotHigherKinded vars (head : map snd tail) -> case vars # traverse getTypeVar <#> DefData (Name name) of
+    Nothing -> Just $ DefUnsupported (Name name) BothExportAndInstance "data type with unsupported type arguments"
     Just x -> Just x
     where
-    f = case _ of
+
+    getTypeVar = case _ of
       CST.TypeVarName (CST.Name { name: CST.Ident s }) | Str.length s == 1 -> Just $ Name s
       CST.TypeVarKinded
         ( CST.Wrapped
@@ -90,7 +109,7 @@ getPursDef = case _ of
     ( CST.Labeled
         { label: CST.Name { name: CST.Ident n }
         }
-    ) -> Just $ DefUnsupported (Name n) "value"
+    ) ->  Just $ DefUnsupported (Name n) JustExport "value" -- Just $ DefValue (Name n)
 
   CST.DeclNewtype
     { name: CST.Name { name: CST.Proper n }
@@ -98,7 +117,7 @@ getPursDef = case _ of
     }
     _
     _
-    _ -> Just $ DefUnsupported (Name n) "newtype"
+    _ -> Just $ DefUnsupported (Name n) BothExportAndInstance "newtype" -- Just $ DefNewtype (Name n)
   --Just $ DefNewtype (Name n)
 
   CST.DeclType
@@ -106,31 +125,31 @@ getPursDef = case _ of
     , vars: []
     }
     _
-    _ -> Just $ DefUnsupported (Name name) "type alias" -- Just $ DefType (Name name)
+    _ -> Just $ DefUnsupported (Name name) JustExport "type alias"  -- Just $ DefType (Name name) -- Just $ DefType (Name name)
 
   CST.DeclType
     { name: CST.Name { name: CST.Proper name }
     }
     _
-    _ -> Just $ DefUnsupported (Name name) "type alias with arguments"
+    _ -> Just $ DefUnsupported (Name name) JustExport "type alias with arguments"
 
   CST.DeclForeign _ _
     ( CST.ForeignValue
         ( CST.Labeled
-            { label: CST.Name { name: CST.Ident n }
+            { label: CST.Name { name: CST.Ident name }
             }
         )
     ) ->
-    Just $ DefUnsupported (Name n) "foreign import"
+    Just $ DefUnsupported (Name name) JustExport "foreign"
 
   CST.DeclForeign _ _
     ( CST.ForeignData _
         ( CST.Labeled
-            { label: CST.Name { name: CST.Proper n }
+            { label: CST.Name { name: CST.Proper name}
             }
         )
     ) ->
-    Just $ DefUnsupported (Name n) "foreign import"
+    Just $ DefUnsupported (Name name) JustExport "foreign"
 
   _ -> Nothing
 
@@ -140,7 +159,7 @@ getName = case _ of
   DefNewtype n -> n
   DefType n -> n
   DefValue n -> n
-  DefUnsupported n _ -> n
+  DefUnsupported n _ _ -> n
 
 indexToSourcePos :: String -> Int -> Maybe SourcePosition
 indexToSourcePos _ i | i < 0 = Nothing
