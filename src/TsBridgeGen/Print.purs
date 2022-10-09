@@ -3,6 +3,7 @@ module TsBridgeGen.Print where
 import Prelude
 
 import Control.Monad.Writer (Writer, WriterT, runWriter, runWriterT, tell)
+import Data.Array as A
 import Data.Array.NonEmpty (cons', foldr1, (:))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
@@ -42,55 +43,61 @@ parens s = "(" <> s <> ")"
 
 instConstraints :: Array String -> String
 instConstraints [] = ""
-instConstraints xs = "(" <> Str.joinWith "," xs <> (items [")", "=>"])
+instConstraints xs = "(" <> Str.joinWith "," xs <> (items [ ")", "=>" ])
 
 array :: Array String -> String
 array ss = "[" <> Str.joinWith "," ss <> "]"
 
 items = Str.joinWith " "
 
+itemsWithParens xs | Just { head, tail: [] } <- A.uncons xs = head
+itemsWithParens xs = parens $ items xs
+
 genInstances :: forall m. Monad m => Array PursModule -> ImportWriterT m (Array PursCodeSnippet)
 genInstances modules = sequence do
   (PursModule mn@(ModuleName mn') defs) <- modules
   pursDef <- defs
   case pursDef of
-    DefData n@(Name n') args ->
-      pure do
-        tell
-          { imports: Set.singleton $ ImportAuto
-              { from: mn
-              , as: Name ("Auto." <> mn')
-              }
-          }
-        pure $ CodeSnipDecls
-          [ items
-              [ "instance"
-              , instConstraints $ ((\x -> items ["ToTsBridge", x]) <<< unwrap <$> args)
-              , "ToTsBridge"
-              , parens $ items (["Auto." <> mn' <> "." <> n'] <> (unwrap <$> args) ) 
-              , "where"
-              , "toTsBridge"
-              , "="
-              , "defaultOpaqueType"
-              , str mn'
-              , str n'
-              , array $ (str <<< unwrap) <$> args
-              , array $
-                  ( ( \x -> items
-                        [ "toTsBridge"
-                        , parens $ items [ "Proxy", "::", "_", x ]
-                        ]
-                    ) <<< unwrap
-                  ) <$> args
-              ]
-          ]
+    DefData n@(Name n') args -> [ genInstance "defaultOpaqueType" mn n args ]
 
+    DefNewtype n@(Name n') args -> [ genInstance "defaultNewtype" mn n args ]
 
     DefUnsupported (Name n) BothExportAndInstance reason ->
       [ pure $ CodeSnipComments [ "auto generated instance for `" <> n <> "` is not supported: " <> reason ] ]
 
     _ ->
       []
+
+genInstance :: forall m. Monad m => String -> ModuleName -> Name -> Array Name -> ImportWriterT m PursCodeSnippet
+genInstance fn mn@(ModuleName mn') (Name n') args =  do
+  tell
+    { imports: Set.singleton $ ImportAuto
+        { from: mn
+        , as: Name ("Auto." <> mn')
+        }
+    }
+  pure $ CodeSnipDecls
+    [ items
+        [ "instance"
+        , instConstraints $ ((\x -> items [ "ToTsBridge", x ]) <<< unwrap <$> args)
+        , "ToTsBridge"
+        , itemsWithParens ([ "Auto." <> mn' <> "." <> n' ] <> (unwrap <$> args))
+        , "where"
+        , "toTsBridge"
+        , "="
+        , "defaultOpaqueType"
+        , str mn'
+        , str n'
+        , array $ (Str.toUpper <<< str <<< unwrap) <$> args
+        , array $
+            ( ( \x -> items
+                  [ "toTsBridge"
+                  , parens $ items [ "Proxy", "::", "_", x ]
+                  ]
+              ) <<< unwrap
+            ) <$> args
+        ]
+    ]
 
 -- pure do
 --   tell
@@ -185,7 +192,7 @@ genTsDef (ModuleName mn) = case _ of
         ( genProxy (TypeConstructor (qualifiedName (mkModuleName $ "Auto" : pure mn) (ProperName n)))
         )
 
-  DefNewtype (Name n) ->
+  DefNewtype (Name n) _ ->
     ExprIdent (nonQualifiedName $ Ident "tsNewtype")
       `ExprApp` ExprString n
       `ExprApp`

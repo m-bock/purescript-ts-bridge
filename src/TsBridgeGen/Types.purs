@@ -76,7 +76,7 @@ data Import
 
 data PursDef
   = DefData Name (Array Name)
-  | DefNewtype Name
+  | DefNewtype Name (Array Name)
   | DefType Name
   | DefValue Name
   | DefUnsupported Name UnsupportedScope String
