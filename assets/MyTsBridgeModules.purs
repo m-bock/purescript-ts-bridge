@@ -8,7 +8,8 @@ import Prelude
 
 import Effect (Effect)
 import MyTsBridgeClass (MappingToTsBridge(..))
-import TsBridge (TsProgram, mergeTsPrograms, mkTypeGenCli, tsModuleFile, tsOpaqueType, tsProgram, tsTypeAlias, tsUnsupported)
+import Prelude
+import TsBridge (TsProgram, mergeTsPrograms, mkTypeGenCli, tsModuleFile, tsOpaqueType, tsProgram, tsTypeAlias, tsUnsupported, tsValue)
 import Type.Proxy (Proxy(..))
 
 {-GEN:END-}
@@ -20,7 +21,7 @@ additionalTsProgram :: TsProgram
 additionalTsProgram =
   tsProgram
     [ tsModuleFile "SampleApp.Types/index"
-        [ -- tsTypeAlias "Bar" (Proxy :: _ (AppState))
+        [
         ]
 
     ]

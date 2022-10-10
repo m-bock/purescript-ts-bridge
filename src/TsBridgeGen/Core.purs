@@ -3,6 +3,7 @@ module TsBridgeGen.Core where
 import Prelude
 
 import Control.Alt ((<|>))
+import Control.Apply (lift2)
 import Control.Monad.Error.Class (throwError)
 import Data.Argonaut (Json, jsonParser)
 import Data.Array (catMaybes, elem, uncons, (:))
@@ -10,10 +11,14 @@ import Data.Array as A
 import Data.Array.NonEmpty as NEA
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either, note)
+import Data.Foldable (foldM)
+import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
+import Data.Semigroup.Foldable (foldl1)
 import Data.Set (Set)
 import Data.Set as Set
+import Data.Show.Generic (genericShow)
 import Data.String (Pattern(..))
 import Data.String as Str
 import Data.Traversable (sequence, traverse, traverse_)
@@ -24,11 +29,11 @@ import Parsing (ParserT, Position(..), runParser)
 import Parsing.String (anyTill, eof, string) as P
 import Parsing.String.Basic (intDecimal) as P
 import PureScript.CST (RecoveredParserResult(..), parseImportDecl, parseModule) as CST
-import PureScript.CST.Types (DataCtor, Declaration(..), Export(..), Foreign(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Proper(..), QualifiedName(..), Row(..), Separated(..), Type(..), TypeVarBinding(..), Wrapped(..)) as CST
+import PureScript.CST.Types (DataCtor, Declaration(..), Export(..), Foreign(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Operator(..), Proper(..), QualifiedName(..), Row(..), Separated(..), Type(..), TypeVarBinding(..), Wrapped(..)) as CST
 import PureScript.CST.Types (Separated(..))
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-import TsBridgeGen.Types (AppError(..), ErrorParseToJson(..), Glob(..), ModuleGlob(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), SourcePosition(..), UnsupportedScope(..))
+import TsBridgeGen.Types (AppError(..), ErrorParseToJson(..), Glob(..), ModuleGlob(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), SourcePosition(..), TypeAnn(..), UnsupportedScope(..))
 
 parseCstModule :: String -> Either AppError (CST.Module Void)
 parseCstModule mod = case CST.parseModule mod of
@@ -63,32 +68,76 @@ isSimpleADT xs = xs >>= (unwrap >>> _.fields) # traverse_ isSimpleType
 isSimpleType :: CST.Type Void -> Either String Unit
 isSimpleType = case _ of
   CST.TypeApp (CST.TypeVar _) _ -> Left "Higher kinded type"
-  CST.TypeApp t ts -> traverse_ isSimpleType (t `NEA.cons` ts)
   CST.TypeInt _ _ _ -> Left "TL int"
   CST.TypeVar _ -> pure unit
   CST.TypeHole _ -> Left "type hole"
   CST.TypeRow _ -> Left "Row type"
   CST.TypeForall _ _ _ _ -> Left "Existential type"
   CST.TypeString _ _ -> Left "TL string"
-  CST.TypeParens (CST.Wrapped { value }) -> isSimpleType value
   CST.TypeError _ -> Right unit
-  CST.TypeRecord (CST.Wrapped { value }) -> isSimpleRow value
   CST.TypeKinded _ _ _ -> Left "Kinded" -- ??
-  CST.TypeArrow t1 _ t2 -> do
-    isSimpleType t1
-    isSimpleType t2
-  CST.TypeArrowName _ -> pure unit
+  CST.TypeArrowName _ -> Left "arrow name" -- pure unit
+  CST.TypeOpName (CST.QualifiedName {name: CST.Operator "~>"}) -> Left "Natural transformation"
   CST.TypeOpName _ -> pure unit
   CST.TypeConstructor _ -> pure unit
   CST.TypeWildcard _ -> Right unit
   CST.TypeConstrained _ _ _ -> Left "Constrained type"
+  CST.TypeApp t ts -> traverse_ isSimpleType (t `NEA.cons` ts)
+  CST.TypeParens (CST.Wrapped { value }) -> isSimpleType value
+  CST.TypeRecord (CST.Wrapped { value }) -> isSimpleRow value
   CST.TypeOp t ts -> traverse_ isSimpleType (t `NEA.cons` (snd <$> ts))
-
+  CST.TypeArrow t1 _ t2 -> do
+    isSimpleType t1
+    isSimpleType t2
   where
   isSimpleRow (CST.Row { labels, tail: Nothing }) = case labels of
     Just (CST.Separated { head, tail }) -> traverse_ isSimpleType $ _.value <<< unwrap <$> (head : map snd tail)
     Nothing -> pure unit
   isSimpleRow (CST.Row {}) = Left "Open Record"
+
+data UnsupportedTypeErr
+  = ErrRowKind
+  | ErrForall
+  | ErrTLString
+  | ErrKinded
+  | ErrUnsupported
+  | ErrConstrained
+  | ErrOpenRow
+
+derive instance Generic UnsupportedTypeErr _
+
+instance Show UnsupportedTypeErr where
+  show = genericShow
+
+typeToTypeAnn :: CST.Type Void -> Either UnsupportedTypeErr TypeAnn
+typeToTypeAnn = case _ of
+  CST.TypeInt _ _ _ -> blank
+  CST.TypeVar (CST.Name { name: CST.Ident n }) -> pure $ TypeAnnId (Just $ Name n)
+  CST.TypeHole _ -> blank
+  CST.TypeRow _ -> throwError ErrRowKind
+  CST.TypeForall _ _ _ _ -> throwError ErrForall
+  CST.TypeString _ _ -> throwError ErrTLString
+  CST.TypeError _ -> blank
+  CST.TypeKinded _ _ _ -> throwError ErrKinded
+  CST.TypeArrowName _ -> throwError ErrUnsupported
+  CST.TypeOpName _ -> throwError ErrUnsupported
+  CST.TypeConstructor _ -> blank
+  CST.TypeWildcard _ -> blank
+  CST.TypeConstrained _ _ _ -> throwError ErrConstrained
+  CST.TypeArrow t1 _ t2 -> throwError ErrUnsupported
+  CST.TypeRecord (CST.Wrapped { value }) -> throwError ErrUnsupported -- typeToTypeAnnRow value
+  CST.TypeParens (CST.Wrapped { value }) -> typeToTypeAnn value
+  CST.TypeApp t ts -> traverse typeToTypeAnn (t `NEA.cons` ts)
+    <#> foldl1 TypeAnnApp
+  CST.TypeOp t ts -> traverse typeToTypeAnn (t `NEA.cons` (snd <$> ts))
+    <#> foldl1 TypeAnnApp
+  where
+  blank = pure $ TypeAnnId Nothing
+
+-- typeToTypeAnnRow (CST.Row { labels, tail: Nothing }) = case labels of
+--   Just (CST.Separated { head, tail }) -> traverse_ isSimpleType $ _.value <<< unwrap <$> (head : map snd tail)
+--   Nothing -> pure unit
+-- isSimpletypeToTypeAnnRowRow (CST.Row {}) = throwError ErrOpenRow
 
 getPursDef :: CST.Declaration Void -> Maybe PursDef
 getPursDef = case _ of
@@ -96,27 +145,13 @@ getPursDef = case _ of
     { name: CST.Name { name: CST.Proper name }
     , vars
     }
-    (Just (Tuple _ (Separated { head, tail }))) -> Just case isSimpleADT (head : map snd tail) of
-    Left e -> DefUnsupported (Name name) BothExportAndInstance e
-    Right unit -> vars
-      # traverse getTypeVar
-      <#> DefData (Name name)
-      # fromMaybe (DefUnsupported (Name name) BothExportAndInstance "data type with unsupported type arguments")
-
-    where
-
-    getTypeVar = case _ of
-      CST.TypeVarName (CST.Name { name: CST.Ident s })  -> Just $ Name s
-      CST.TypeVarKinded
-        ( CST.Wrapped
-            { value: CST.Labeled
-                { label:
-                    CST.Name { name: CST.Ident s }
-                , value: CST.TypeConstructor (CST.QualifiedName { name: CST.Proper "Type" })
-                }
-            }
-        )  -> Just $ Name s
-      _ -> Nothing
+    (Just (Tuple _ (Separated { head, tail }))) -> Just
+    case isSimpleADT (head : map snd tail) of
+      Left e -> DefUnsupported (Name name) BothExportAndInstance e
+      Right _ -> vars
+        # traverse getTypeVar
+        <#> DefData (Name name)
+        # fromMaybe (DefUnsupported (Name name) BothExportAndInstance "data type with unsupported type arguments")
 
   -- CST.DeclSignature (CST.Labeled { label, value }) ->
   --   let
@@ -130,17 +165,24 @@ getPursDef = case _ of
   CST.DeclSignature
     ( CST.Labeled
         { label: CST.Name { name: CST.Ident n }
+        , value
         }
-    ) -> Just $ DefUnsupported (Name n) JustExport "value" -- Just $ DefValue (Name n)
+    ) -> Just $ case typeToTypeAnn value of
+    Left e -> DefUnsupported (Name n) JustExport ("unsupported value: " <> show e)
+    Right typeAnn -> DefValue (Name n) (Just $ typeAnn)
 
   CST.DeclNewtype
     { name: CST.Name { name: CST.Proper n }
-    , vars: []
+    , vars
     }
     _
     _
-    _ -> Just $ DefUnsupported (Name n) BothExportAndInstance "newtype" -- Just $ DefNewtype (Name n)
-  --Just $ DefNewtype (Name n)
+    value -> Just $ case isSimpleType value of
+    Left e -> DefUnsupported (Name n) JustExport ("unsupported newtype: " <> e)
+    Right _ -> vars
+      # traverse getTypeVar
+      <#> DefNewtype (Name n)
+      # fromMaybe (DefUnsupported (Name n) BothExportAndInstance "data type with unsupported type arguments")
 
   CST.DeclType
     { name: CST.Name { name: CST.Proper name }
@@ -175,12 +217,25 @@ getPursDef = case _ of
 
   _ -> Nothing
 
+getTypeVar = case _ of
+  CST.TypeVarName (CST.Name { name: CST.Ident s }) -> Just $ Name s
+  CST.TypeVarKinded
+    ( CST.Wrapped
+        { value: CST.Labeled
+            { label:
+                CST.Name { name: CST.Ident s }
+            , value: CST.TypeConstructor (CST.QualifiedName { name: CST.Proper "Type" })
+            }
+        }
+    ) -> Just $ Name s
+  _ -> Nothing
+
 getName :: PursDef -> Name
 getName = case _ of
   DefData n _ -> n
   DefNewtype n _ -> n
   DefType n -> n
-  DefValue n -> n
+  DefValue n _ -> n
   DefUnsupported n _ _ -> n
 
 indexToSourcePos :: String -> Int -> Maybe SourcePosition

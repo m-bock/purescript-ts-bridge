@@ -78,8 +78,14 @@ data PursDef
   = DefData Name (Array Name)
   | DefNewtype Name (Array Name)
   | DefType Name
-  | DefValue Name
+  | DefValue Name (Maybe TypeAnn)
   | DefUnsupported Name UnsupportedScope String
+
+data TypeAnn
+  = TypeAnnId (Maybe Name)
+  | TypeAnnApp TypeAnn TypeAnn
+  | TypeAnnFn TypeAnn TypeAnn
+  | TypeAnnRecord (Array (Tuple Name TypeAnn))
 
 data UnsupportedScope
   = JustExport
@@ -106,10 +112,13 @@ derive instance Generic ErrorParseToJson _
 derive instance Generic SourcePosition _
 derive instance Generic FileSection _
 derive instance Generic UnsupportedScope _
+derive instance Generic TypeAnn _
+
 
 derive instance Eq PursModule
 derive instance Eq ModuleName
 derive instance Eq PursDef
+derive instance Eq TypeAnn
 derive instance Eq UnsupportedScope
 
 derive instance Eq Name
@@ -122,6 +131,9 @@ derive instance Ord Import
 
 instance Show UnsupportedScope where
   show = genericShow
+
+instance Show TypeAnn where
+  show x = genericShow x
 
 instance Show PursDef where
   show = genericShow

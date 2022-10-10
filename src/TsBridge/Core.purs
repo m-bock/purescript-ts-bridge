@@ -62,7 +62,7 @@ tsModuleFile n xs =
   let
     (xs' /\ TsBridgeAccum { typeDefs, imports }) = runTsBridgeM $ join <$> sequence xs
   in
-    {-typeDefs <>-} [ TsModuleFile (dtsFilePath n) (TsModule imports xs') ]
+    typeDefs <> [ TsModuleFile (dtsFilePath n) (TsModule imports xs') ]
 
 -- | Sort an array based on its `Ord` instance.
 -- |
@@ -131,8 +131,8 @@ tsValue mp n x = do
 -- |
 -- | This implementation runs in `O(n^2)` time, where `n` is the length of the
 -- | input array.
-tsUnsupported :: String -> String -> TsBridgeM (Array TsDeclaration)
-tsUnsupported x reason = pure
+tsUnsupported :: forall a. String -> String -> a -> TsBridgeM (Array TsDeclaration)
+tsUnsupported x reason _ = pure
   [ TsDeclComments [ "`" <> x <> "` is unsupported: " <> reason ]
   ]
 

@@ -16,11 +16,16 @@ import Data.Tuple (Tuple, fst)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
 import Debug (spy)
-import PureScript.CST (RecoveredParserResult(..), parseDecl)
+import Dodo (twoSpaces)
+import Dodo as Dodo
+import PureScript.CST (RecoveredParserResult(..), parseDecl, parseModule, parsePartialModule)
+import PureScript.CST.Types (Declaration)
 import Test.Spec (Spec, describe, it)
 import Test.TsBridgeGen.Monad (TestMResult(..), defaultTestCapabilities, defaultTestConfig, runTestM, runTestM_)
 import Test.Util (shouldEqual)
-import TsBridgeGen (class MonadApp, class MonadLog, AppEffects(..), AppEnv(..), AppError, AppLog, AppWarning, ModuleName(..), Name(..), PursDef(..), PursModule(..), UnsupportedScope(..), genInstances, getPursDef, printPursSnippets, runImportWriterM, runImportWriterT)
+import Tidy (defaultFormatOptions, formatDecl, formatModule)
+import Tidy.Doc (FormatDoc(..))
+import TsBridgeGen (class MonadApp, class MonadLog, AppEffects(..), AppEnv(..), AppError, AppLog, AppWarning, ModuleName(..), Name(..), PursDef(..), PursModule(..), TypeAnn(..), UnsupportedScope(..), genInstances, getPursDef, printPursSnippets, runImportWriterM, runImportWriterT)
 import TsBridgeGen.Cli (patchClassFile, patchModulesFile)
 import TsBridgeGen.Config (AppConfig(..))
 
@@ -80,7 +85,7 @@ spec = do
         <#> (Str.split $ Pattern "\n")
         # shouldEqual
         $
-          ( TestMResult Map.empty {logs: [], errors: []}
+          ( TestMResult Map.empty { logs: [], errors: [] }
               ( Right
                   [ "module MyApp.TsBridgeClass where"
                   , ""
@@ -144,7 +149,7 @@ spec = do
         <#> (Str.split $ Pattern "\n")
         # shouldEqual
         $
-          ( TestMResult Map.empty  {logs: [], errors: []}
+          ( TestMResult Map.empty { logs: [], errors: [] }
               ( Right
                   [ "module MyApp.TsModules where"
                   , ""
@@ -189,7 +194,7 @@ spec = do
         # parseDecl
         # recResToMaybe
         >>= getPursDef
-        # shouldEqual (Just (DefUnsupported (Name "x") JustExport "value")) -- (Just $ DefValue (Name "x"))
+        # shouldEqual (Just $ DefValue (Name "x") (Just (TypeAnnId Nothing)))
 
   describe "Type Alias" do
     it "parses correctly" do
@@ -205,7 +210,7 @@ spec = do
         # parseDecl
         # recResToMaybe
         >>= getPursDef
-        # shouldEqual (Just (DefUnsupported (Name "Foo") JustExport "newtype")) --  (Just $ DefNewtype (Name "Foo"))
+        # shouldEqual (Just $ DefNewtype (Name "Foo") [])
 
   describe "Data type" do
     it "prints correctly" do
@@ -216,11 +221,32 @@ spec = do
         # runImportWriterM
         # fst
         # printPursSnippets
-        # Str.split (Pattern "\n")
-        # shouldEqual $
+        # tidyPursDecl
+        <#> Str.split (Pattern "\n")
+        # shouldEqual $ Just
         [ "instance ToTsBridge Auto.My.Foo where"
         , "  toTsBridge = defaultOpaqueType \"My\" \"Foo\" [] []"
         ]
+
+tidyPursDecl :: String -> Maybe String
+tidyPursDecl str = str # parseDecl >>> case _ of
+  ParseSucceeded d ->
+    d
+      # formatDecl defaultFormatOptions
+          >>> (\(FormatDoc { doc }) -> doc)
+          >>> Dodo.print Dodo.plainText Dodo.twoSpaces
+      # Just
+  _ -> Nothing
+
+tidyPurs :: String -> Maybe String
+tidyPurs str = str # parseModule >>> case _ of
+  ParseSucceeded m ->
+    formatModule defaultFormatOptions m
+      # (\(FormatDoc { doc }) -> doc)
+      # Dodo.print Dodo.plainText
+          twoSpaces
+      # Just
+  _ -> Nothing
 
 --   describe "Program Printing" do
 --     let

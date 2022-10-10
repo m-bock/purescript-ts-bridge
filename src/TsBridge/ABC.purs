@@ -52,3 +52,4 @@ data Y = Y
 
 data Z = Z
 
+data Var (s :: Symbol) = Var
