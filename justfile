@@ -7,11 +7,9 @@ dist: build
     mkdir dist
     cp -r output assets package.json bin -t dist
 
-run args='':
-    mkdir -p tmp
-    export ASSETS_DIR=assets; \
-    spago --quiet --no-psa run --main TsBridgeGen.Main --node-args \
-    "{{args}}"
+run: build
+    cd ../purescript-typescript-bridge.sample-project; \
+    node ../purescript-typescript-bridge/bin/index.js
 
 test:
     spago test

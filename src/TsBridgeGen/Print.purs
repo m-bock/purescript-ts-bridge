@@ -3,16 +3,17 @@ module TsBridgeGen.Print where
 import Prelude
 
 import Control.Monad.Writer (Writer, WriterT, runWriter, runWriterT, tell)
-import Data.Array (catMaybes)
+import Data.Array (catMaybes, (:))
 import Data.Array as A
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap)
 import Data.Set (Set)
 import Data.Set as Set
-import Data.String (Pattern(..), Replacement(..), toLower)
+import Data.String (Pattern(..), Replacement(..), replaceAll, toLower)
 import Data.String as Str
-import Data.Traversable (sequence, traverse)
+import Data.Traversable (fold, sequence, traverse)
 import Data.Tuple.Nested (type (/\))
+import Data.Typelevel.Undefined (undefined)
 import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), TypeAnn, UnsupportedScope(..))
 
 data PursCodeSnippet
@@ -36,9 +37,9 @@ str s = "\"" <> s <> "\""
 parens :: String -> String
 parens s = "(" <> s <> ")"
 
-instConstraints :: Array String -> String
-instConstraints [] = ""
-instConstraints xs = "(" <> Str.joinWith "," xs <> (items [ ")", "=>" ])
+instConstraints :: Array PursTokTree -> Maybe PursTokTree
+instConstraints [] = Nothing
+instConstraints xs = Just $ PursTokItems [ PursTokList xs, PursTokFatArrow ]
 
 array :: Array String -> String
 array ss = "[" <> Str.joinWith ", " ss <> "]"
@@ -50,22 +51,24 @@ itemsWithParens :: Array String -> String
 itemsWithParens xs | Just { head, tail: [] } <- A.uncons xs = head
 itemsWithParens xs = parens $ items xs
 
-genInstances :: forall m. Monad m => Array PursModule -> ImportWriterT m (Array PursCodeSnippet)
-genInstances modules = sequence do
+genInstances :: forall m. Monad m => Array PursModule -> ImportWriterT m PursTokTree
+genInstances modules = PursTokSections <$> sequence do
   (PursModule mn defs) <- modules
   pursDef <- defs
+
   case pursDef of
     DefData n args -> [ genInstance "defaultOpaqueType" mn n args ]
 
     DefNewtype n args -> [ genInstance "defaultNewtype" mn n args ]
 
     DefUnsupported (Name n) BothExportAndInstance reason ->
-      [ pure $ CodeSnipComments [ "auto generated instance for `" <> n <> "` is not supported: " <> reason ] ]
+
+      [ pure $ PursTokLineComment ("auto generated instance for `" <> n <> "` is not supported: " <> reason) ]
 
     _ ->
       []
 
-genInstance :: forall m. Monad m => String -> ModuleName -> Name -> Array Name -> ImportWriterT m PursCodeSnippet
+genInstance :: forall m. Monad m => String -> ModuleName -> Name -> Array Name -> ImportWriterT m PursTokTree
 genInstance fn mn@(ModuleName mn') n@(Name n') args = do
   tell
     { imports: Set.singleton $ ImportAuto
@@ -73,25 +76,29 @@ genInstance fn mn@(ModuleName mn') n@(Name n') args = do
         , as: Name ("Auto." <> mn')
         }
     }
-  pure $ CodeSnipDecls
-    [ items
-        [ "instance"
-        , instConstraints $ ((\x -> items [ "ToTsBridge", x ]) <<< unwrap <$> args)
-        , "ToTsBridge"
-        , itemsWithParens ([ genQualNameAuto mn n ] <> (unwrap <$> args))
-        , "where"
-        , "toTsBridge"
-        , "="
-        , fn
-        , str mn'
-        , str n'
-        , array $ (Str.toUpper <<< str <<< unwrap) <$> args
-        , array $
-            ( unwrap >>> \x -> items
-                [ "toTsBridge", genProxy [ x ] ]
-            ) <$> args
-        ]
-    ]
+  pure $
+    PursTokItems
+      ( [ PursTokInstance ]
+          <>
+            ( maybe [] pure $
+                instConstraints ((\x -> PursTokItems [ PursTokName $ Name "ToTsBridge", PursTokName x ]) <$> args)
+            )
+          <>
+            [ PursTokName $ Name "ToTsBridge"
+            , PursTokGroup $ PursTokQualName (mkAuto mn) n : (PursTokName <$> args)
+            , PursTokWhere
+            , PursTokName $ Name "toTsBridge"
+            , PursTokEqual
+            , PursTokQualName nsTsb $ Name fn
+            , PursTokStr mn'
+            , PursTokStr n'
+            , PursTokArray (PursTokStr <<< Str.toUpper <<< unwrap <$> args)
+            , PursTokArray $
+                ( \x -> PursTokItems
+                    [ PursTokName $ Name "toTsBridge", genProxy (PursTokName x) ]
+                ) <$> args
+            ]
+      )
 
 genTypeAnn :: TypeAnn -> Array String
 genTypeAnn _ = []
@@ -99,44 +106,90 @@ genTypeAnn _ = []
 genQualNameAuto :: ModuleName -> Name -> String
 genQualNameAuto (ModuleName mn) (Name n) = "Auto." <> mn <> "." <> n
 
-genProxy :: Array String -> String
-genProxy xs = parens $ items [ "Proxy", "::", "_", itemsWithParens xs ]
-
-genProxy' :: PursTok -> PursTok
-genProxy' t = PursTokItems
+genProxy :: PursTokTree -> PursTokTree
+genProxy t = PursTokGroup
   [ PursTokName $ Name "Proxy"
-  , PursTokDblColn
+  , PursTokDblColon
   , PursTokWildcard
   , t
   ]
 
-data PursTok
+nsTsb :: ModuleName
+nsTsb = ModuleName ("TSB")
+
+data PursTokTree
   = PursTokInt Int
   | PursTokStr String
   | PursTokName Name
+  | PursTokQualName ModuleName Name
   | PursTokDblColon
   | PursTokWildcard
-  | PursTokDblColn
-  | PursTokArray (Array PursTok)
-  | PursTokDecls (Array PursTok)
-  | PursTokItems (Array PursTok)
+  | PursTokLineComment String
+  | PursTokFatArrow
+  | PursTokInstance
+  | PursTokWhere
+  | PursTokEqual
+  | PursTokComma
+  | PursTokList (Array PursTokTree)
+  | PursTokArray (Array PursTokTree)
+  | PursTokDecls (Array PursTokTree)
+  | PursTokSections (Array PursTokTree)
+  | PursTokItems (Array PursTokTree)
+  | PursTokGroup (Array PursTokTree)
 
-genTsProgram :: forall m. Monad m => Array PursModule -> ImportWriterT m String
-genTsProgram = genTsProgram' >>> map printPursSnippets
+printPursTokTree :: PursTokTree -> String
+printPursTokTree = case _ of
+  PursTokInt x -> show x
+  PursTokStr x -> "\"" <> replaceAll (Pattern "\"") (Replacement "\\\"") x <> "\""
+  PursTokName (Name n) -> n
+  PursTokQualName (ModuleName mn) (Name n) -> mn <> "." <> n
+  PursTokDblColon -> "::"
+  PursTokWildcard -> "_"
+  PursTokFatArrow -> "=>"
+  PursTokLineComment x -> "-- " <> x
+  PursTokInstance -> "instance"
+  PursTokWhere -> "where"
+  PursTokEqual -> "="
+  PursTokComma -> ","
+  PursTokArray xs -> fold
+    [ "["
+    , xs <#> printPursTokTree # Str.joinWith ","
+    , "]"
+    ]
+  PursTokDecls xs -> xs <#> printPursTokTree # Str.joinWith "\n"
+  PursTokSections xs -> xs <#> printPursTokTree # Str.joinWith "\n\n"
+  PursTokGroup [ x ] -> printItems [ x ]
+  PursTokGroup xs -> fold [ "(", printItems xs, ")" ]
+  PursTokItems xs -> printItems xs
+  PursTokList [ x ] -> printItems' [ x ]
+  PursTokList xs -> fold [ "(", printItems' xs, ")" ]
 
-genTsProgram' :: forall m. Monad m => Array PursModule -> ImportWriterT m (Array PursCodeSnippet)
-genTsProgram' modules = do
+  where
+  printItems xs = xs <#> printPursTokTree # Str.joinWith " "
+  printItems' xs = xs <#> printPursTokTree # Str.joinWith ","
+
+genTsProgram :: forall m. Monad m => Array PursModule -> ImportWriterT m PursTokTree
+genTsProgram modules = do
   ms <- modules
     # traverse genTsModuleFile
 
   pure
-    [ CodeSnipDecls
-        [ items [ "generatedTsProgram", "::", "TsProgram" ]
-        , items [ "generatedTsProgram", "=", "tsProgram", array ms ]
+    $ PursTokSections
+        [ PursTokDecls
+            [ PursTokItems
+                [ PursTokName $ Name "generatedTsProgram"
+                , PursTokDblColon
+                , PursTokQualName nsTsb $ Name "TsProgram"
+                ]
+            , PursTokItems
+                [ PursTokName $ Name "generatedTsProgram"
+                , PursTokEqual
+                , PursTokItems [ PursTokQualName nsTsb $ Name "tsProgram", PursTokArray ms ]
+                ]
+            ]
         ]
-    ]
 
-genTsModuleFile :: forall m. Monad m => PursModule -> ImportWriterT m String
+genTsModuleFile :: forall m. Monad m => PursModule -> ImportWriterT m PursTokTree
 genTsModuleFile (PursModule mn defs) = do
   let xs = defs <#> genTsDef mn
   let ModuleName mn' = mn
@@ -148,22 +201,40 @@ genTsModuleFile (PursModule mn defs) = do
         }
     }
 
-  pure $ items [ "tsModuleFile", str (mn' <> "/index"), array $ catMaybes xs ]
+  pure $ PursTokItems
+    [ PursTokQualName nsTsb $ Name "tsModuleFile"
+    , PursTokStr (mn' <> "/index")
+    , PursTokArray $ catMaybes xs
+    ]
 
 -- ExprIdent (nonQualifiedName $ Ident "tsModuleFile")
 --   `ExprApp` ExprString (mn' <> "/index")
 --   `ExprApp` ExprArray xs
 
-genVar :: Name -> Array String
-genVar (Name s) = [ "Var", str s ]
+genVar :: Name -> PursTokTree
+genVar (Name s) = PursTokGroup [ PursTokName (Name "Var"), PursTokStr s ]
 
-genTsDef :: ModuleName -> PursDef -> Maybe String
+mkAuto :: ModuleName -> ModuleName
+mkAuto (ModuleName mn) = ModuleName ("Auto." <> mn)
+
+genTsDef :: ModuleName -> PursDef -> Maybe PursTokTree
 genTsDef mn@(ModuleName mn') = case _ of
   DefValue n@(Name n') _ -> Just $
-    items [ "tsValue", "Mp", str n', parens $ items [ genQualNameAuto mn n ] ]
+    PursTokItems
+      [ PursTokName $ Name "tsValue"
+      , PursTokName $ Name "Mp"
+      , PursTokStr n'
+      , PursTokGroup [PursTokQualName (mkAuto mn) n , PursTokDblColon , PursTokWildcard ]
+      -- , parens $ items [ genQualNameAuto mn n ]
+      ]
 
   DefData n@(Name n') args -> Just $
-    items [ "tsOpaqueType", "Mp", str n', genProxy ([ genQualNameAuto mn n ] <> (itemsWithParens <<< genVar <$> args)) ]
+    PursTokItems
+      [ PursTokQualName nsTsb $ Name "tsOpaqueType"
+      , PursTokName $ Name "Mp"
+      , PursTokStr n'
+      , genProxy (PursTokGroup $ PursTokQualName (mkAuto mn) n : (genVar <$> args)) 
+      ]
 
   -- DefNewtype n@(Name n') _ -> Just $
   --   items [ "tsNewtype", "Mp", str n', genProxy [genQualNameAuto mn n]  ]
@@ -206,12 +277,11 @@ genTsDef mn@(ModuleName mn') = case _ of
 --               (TypeConstructor (qualifiedName (mkModuleName $ pure mn) (ProperName n)))
 --         )
 
-unsupported :: ModuleName -> Name -> String -> String
-unsupported (ModuleName mn) (Name n) reason = items
-  [ "tsUnsupported"
-  , str n
-  , str reason
-  , if startsLower n then "unit" else "unit"
+unsupported :: ModuleName -> Name -> String -> PursTokTree
+unsupported (ModuleName mn) (Name n) reason = PursTokItems
+  [ PursTokQualName nsTsb $ Name "tsUnsupported"
+  , PursTokStr n
+  , PursTokStr reason
   ]
   where
   ref = "Auto" <> "." <> mn <> "." <> n

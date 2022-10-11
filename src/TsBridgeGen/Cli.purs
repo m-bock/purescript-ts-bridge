@@ -42,7 +42,7 @@ import PureScript.CST.Types (SourcePos)
 import Safe.Coerce (coerce)
 import Tidy (defaultFormatOptions, formatModule)
 import Tidy.Doc (FormatDoc(..))
-import TsBridgeGen (AppEffects(..), ErrorParseToJson(..), FileSection(..), Import(..), ModuleName(..), Name(..), PursModule(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), genInstances, genTsProgram, getName, getPursModule, indexToSourcePos, parseCstModule, parseToJson, parseUserImports, positionToSourcePosition, printImports, printPursSnippets, pushError, runImportWriterT)
+import TsBridgeGen (AppEffects(..), ErrorParseToJson(..), FileSection(..), Import(..), ModuleName(..), Name(..), PursModule(..), ReplaceImportsOpts, ReplaceInstancesOpts, SourcePosition(..), genInstances, genTsProgram, getName, getPursModule, indexToSourcePos, parseCstModule, parseToJson, parseUserImports, positionToSourcePosition, printImports, printPursSnippets, printPursTokTree, pushError, runImportWriterT)
 import TsBridgeGen.Config (AppConfig(..))
 import TsBridgeGen.Core (ReplaceTsProgramOpts)
 import TsBridgeGen.Monad (class MonadApp, askAppConfig, askAppEffects, log)
@@ -140,7 +140,7 @@ patchClassFile path defs file = do
     instances <- defs
       <#> mapModule opts
       # genInstances
-    pure $ printPursSnippets instances
+    pure $ printPursTokTree instances
 
   replaceImports imports (_ :: ReplaceImportsOpts) oldImports = oldImports
     # parseUserImports
@@ -181,6 +181,7 @@ patchModulesFile path defs file = do
       <#> mapModule opts
       # A.filter (\(PursModule _ defs') -> not $ A.null defs')
       # genTsProgram
+      <#> printPursTokTree
     pure $ tsProgram
 
   replaceImports imports (_ :: ReplaceImportsOpts) oldImports = oldImports

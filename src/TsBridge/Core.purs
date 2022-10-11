@@ -131,8 +131,8 @@ tsValue mp n x = do
 -- |
 -- | This implementation runs in `O(n^2)` time, where `n` is the length of the
 -- | input array.
-tsUnsupported :: forall a. String -> String -> a -> TsBridgeM (Array TsDeclaration)
-tsUnsupported x reason _ = pure
+tsUnsupported :: String -> String -> TsBridgeM (Array TsDeclaration)
+tsUnsupported x reason = pure
   [ TsDeclComments [ "`" <> x <> "` is unsupported: " <> reason ]
   ]
 

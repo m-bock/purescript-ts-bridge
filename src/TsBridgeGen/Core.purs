@@ -3,15 +3,13 @@ module TsBridgeGen.Core where
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Apply (lift2)
 import Control.Monad.Error.Class (throwError)
 import Data.Argonaut (Json, jsonParser)
-import Data.Array (catMaybes, elem, uncons, (:))
+import Data.Array (catMaybes, drop, elem, range, uncons, (:))
 import Data.Array as A
 import Data.Array.NonEmpty as NEA
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..), either, note)
-import Data.Foldable (foldM)
+import Data.Either (Either(..), either)
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
@@ -24,16 +22,13 @@ import Data.String as Str
 import Data.Traversable (sequence, traverse, traverse_)
 import Data.Tuple (Tuple(..), snd)
 import Data.Tuple.Nested ((/\))
-import Data.Typelevel.Undefined (undefined)
 import Parsing (ParserT, Position(..), runParser)
 import Parsing.String (anyTill, eof, string) as P
 import Parsing.String.Basic (intDecimal) as P
 import PureScript.CST (RecoveredParserResult(..), parseImportDecl, parseModule) as CST
 import PureScript.CST.Types (DataCtor, Declaration(..), Export(..), Foreign(..), Ident(..), ImportDecl(..), Labeled(..), Module(..), ModuleBody(..), ModuleHeader(..), ModuleName(..), Name(..), Operator(..), Proper(..), QualifiedName(..), Row(..), Separated(..), Type(..), TypeVarBinding(..), Wrapped(..)) as CST
 import PureScript.CST.Types (Separated(..))
-import Test.Spec (Spec, describe, it)
-import Test.Spec.Assertions (shouldEqual)
-import TsBridgeGen.Types (AppError(..), ErrorParseToJson(..), Glob(..), ModuleGlob(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), SourcePosition(..), TypeAnn(..), UnsupportedScope(..))
+import TsBridgeGen.Types (AppError(..), ErrorParseToJson(..), ModuleGlob, ModuleName(..), Name(..), PursDef(..), PursModule(..), SourcePosition(..), TypeAnn(..), UnsupportedScope(..))
 
 parseCstModule :: String -> Either AppError (CST.Module Void)
 parseCstModule mod = case CST.parseModule mod of
@@ -77,7 +72,7 @@ isSimpleType = case _ of
   CST.TypeError _ -> Right unit
   CST.TypeKinded _ _ _ -> Left "Kinded" -- ??
   CST.TypeArrowName _ -> Left "arrow name" -- pure unit
-  CST.TypeOpName (CST.QualifiedName {name: CST.Operator "~>"}) -> Left "Natural transformation"
+  CST.TypeOpName (CST.QualifiedName { name: CST.Operator "~>" }) -> Left "Natural transformation"
   CST.TypeOpName _ -> pure unit
   CST.TypeConstructor _ -> pure unit
   CST.TypeWildcard _ -> Right unit
@@ -100,7 +95,7 @@ data UnsupportedTypeErr
   | ErrForall
   | ErrTLString
   | ErrKinded
-  | ErrUnsupported
+  | ErrUnsupported String
   | ErrConstrained
   | ErrOpenRow
 
@@ -108,6 +103,21 @@ derive instance Generic UnsupportedTypeErr _
 
 instance Show UnsupportedTypeErr where
   show = genericShow
+
+countTypeArgs :: CST.Type Void -> Either UnsupportedTypeErr Int
+countTypeArgs = go 0
+  where
+  go i = case _ of
+    CST.TypeArrow
+      ( CST.TypeConstructor
+          (CST.QualifiedName { module: Nothing, name: CST.Proper "Type" })
+      )
+      _
+      t -> go (i + 1) t
+    CST.TypeConstructor
+          (CST.QualifiedName { module: Nothing, name: CST.Proper "Type" }) -> pure i
+    _ -> throwError $ ErrUnsupported "kind"
+
 
 typeToTypeAnn :: CST.Type Void -> Either UnsupportedTypeErr TypeAnn
 typeToTypeAnn = case _ of
@@ -119,13 +129,13 @@ typeToTypeAnn = case _ of
   CST.TypeString _ _ -> throwError ErrTLString
   CST.TypeError _ -> blank
   CST.TypeKinded _ _ _ -> throwError ErrKinded
-  CST.TypeArrowName _ -> throwError ErrUnsupported
-  CST.TypeOpName _ -> throwError ErrUnsupported
+  CST.TypeArrowName _ -> throwError $ ErrUnsupported "TypeArrowName"
+  CST.TypeOpName _ -> throwError $ ErrUnsupported "TypeOpName"
   CST.TypeConstructor _ -> blank
   CST.TypeWildcard _ -> blank
   CST.TypeConstrained _ _ _ -> throwError ErrConstrained
-  CST.TypeArrow t1 _ t2 -> throwError ErrUnsupported
-  CST.TypeRecord (CST.Wrapped { value }) -> throwError ErrUnsupported -- typeToTypeAnnRow value
+  CST.TypeArrow t1 _ t2 -> TypeAnnApp <$> typeToTypeAnn t1 <*> typeToTypeAnn t2
+  CST.TypeRecord (CST.Wrapped { value }) -> throwError $ ErrUnsupported "TypeRecord" -- typeToTypeAnnRow value
   CST.TypeParens (CST.Wrapped { value }) -> typeToTypeAnn value
   CST.TypeApp t ts -> traverse typeToTypeAnn (t `NEA.cons` ts)
     <#> foldl1 TypeAnnApp
@@ -145,13 +155,17 @@ getPursDef = case _ of
     { name: CST.Name { name: CST.Proper name }
     , vars
     }
-    (Just (Tuple _ (Separated { head, tail }))) -> Just
-    case isSimpleADT (head : map snd tail) of
-      Left e -> DefUnsupported (Name name) BothExportAndInstance e
-      Right _ -> vars
-        # traverse getTypeVar
-        <#> DefData (Name name)
-        # fromMaybe (DefUnsupported (Name name) BothExportAndInstance "data type with unsupported type arguments")
+    ctors -> Just $ f case ctors of
+      Nothing -> []
+      (Just (Tuple _ (Separated { head, tail }))) -> (head : map snd tail)
+    
+      where 
+        f x = case isSimpleADT x of
+          Left e -> DefUnsupported (Name name) BothExportAndInstance e
+          Right _ -> vars
+            # traverse getTypeVar
+            <#> DefData (Name name)
+            # fromMaybe (DefUnsupported (Name name) BothExportAndInstance "data type with unsupported type arguments")
 
   -- CST.DeclSignature (CST.Labeled { label, value }) ->
   --   let
@@ -182,7 +196,7 @@ getPursDef = case _ of
     Right _ -> vars
       # traverse getTypeVar
       <#> DefNewtype (Name n)
-      # fromMaybe (DefUnsupported (Name n) BothExportAndInstance "data type with unsupported type arguments")
+      # fromMaybe (DefUnsupported (Name n) BothExportAndInstance "type with unsupported type arguments")
 
   CST.DeclType
     { name: CST.Name { name: CST.Proper name }
@@ -210,11 +224,15 @@ getPursDef = case _ of
     ( CST.ForeignData _
         ( CST.Labeled
             { label: CST.Name { name: CST.Proper name }
+            , value
             }
         )
     ) ->
-    Just $ DefUnsupported (Name name) JustExport "foreign"
-
+    Just $ case isSimpleType value of
+      Left e -> DefUnsupported (Name name) JustExport ("unsupported foreign data import: " <> e)
+      Right _ -> case countTypeArgs value of
+        Left e -> DefUnsupported (Name name) JustExport ("unsupported foreign data import: " <> show e)
+        Right i -> DefData (Name name) (range 0 i # drop 1 <#> show >>> ("a" <> _) >>> Name)
   _ -> Nothing
 
 getTypeVar = case _ of

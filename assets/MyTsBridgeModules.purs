@@ -9,33 +9,31 @@ import Prelude
 import Effect (Effect)
 import MyTsBridgeClass (MappingToTsBridge(..))
 import Prelude
-import TsBridge (TsProgram, mergeTsPrograms, mkTypeGenCli, tsModuleFile, tsOpaqueType, tsProgram, tsTypeAlias, tsUnsupported, tsValue)
+import TsBridge as TSB
 import Type.Proxy (Proxy(..))
 
 {-GEN:END-}
 
-finalTsProgram :: TsProgram
-finalTsProgram = generatedTsProgram `mergeTsPrograms` additionalTsProgram
+finalTsProgram :: TSB.TsProgram
+finalTsProgram = generatedTsProgram `TSB.mergeTsPrograms` additionalTsProgram
 
-additionalTsProgram :: TsProgram
+additionalTsProgram :: TSB.TsProgram
 additionalTsProgram =
-  tsProgram
-    [ tsModuleFile "SampleApp.Types/index"
+  TSB.tsProgram
+    [ TSB.tsModuleFile "SampleApp.Types/index"
         [
         ]
 
     ]
 
 {-GEN:ts-program
-{ "include": [ "**" ]
-, "exclude": []
-}
+{ "include": ["SampleApp.**.*"], "exclude": [] }
 -}
 
-generatedTsProgram :: TsProgram
-generatedTsProgram = tsProgram []
+generatedTsProgram :: TSB.TsProgram
+generatedTsProgram = TSB.tsProgram []
 
 {-GEN:END-}
 
 main :: Effect Unit
-main = mkTypeGenCli finalTsProgram
+main = TSB.mkTypeGenCli finalTsProgram
