@@ -26,7 +26,7 @@ recResToMaybe = case _ of
 
 spec :: Spec Unit
 spec = 
-  describe "module TsBridgeGenSpec" do
+  describe "TsBridgeGenSpec" do
     describe "patchClassFile" do
       it "patches a class file correctly" do
         let

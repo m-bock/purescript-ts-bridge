@@ -115,9 +115,13 @@ countTypeArgs = go 0
       _
       t -> go (i + 1) t
     CST.TypeConstructor
-          (CST.QualifiedName { module: Nothing, name: CST.Proper "Type" }) -> pure i
+      (CST.QualifiedName { module: Nothing, name: CST.Proper "Type" }) -> pure i
     _ -> throwError $ ErrUnsupported "kind"
 
+typeToTypeAnn' :: CST.Type Void -> Either UnsupportedTypeErr TypeAnn
+typeToTypeAnn' = case _ of
+  CST.TypeForall _ _ _ t -> typeToTypeAnn t
+  x -> typeToTypeAnn x
 
 typeToTypeAnn :: CST.Type Void -> Either UnsupportedTypeErr TypeAnn
 typeToTypeAnn = case _ of
@@ -134,7 +138,7 @@ typeToTypeAnn = case _ of
   CST.TypeConstructor _ -> blank
   CST.TypeWildcard _ -> blank
   CST.TypeConstrained _ _ _ -> throwError ErrConstrained
-  CST.TypeArrow t1 _ t2 -> TypeAnnApp <$> typeToTypeAnn t1 <*> typeToTypeAnn t2
+  CST.TypeArrow t1 _ t2 -> TypeAnnFn <$> typeToTypeAnn t1 <*> typeToTypeAnn t2
   CST.TypeRecord (CST.Wrapped { value }) -> throwError $ ErrUnsupported "TypeRecord" -- typeToTypeAnnRow value
   CST.TypeParens (CST.Wrapped { value }) -> typeToTypeAnn value
   CST.TypeApp t ts -> traverse typeToTypeAnn (t `NEA.cons` ts)
@@ -155,17 +159,18 @@ getPursDef = case _ of
     { name: CST.Name { name: CST.Proper name }
     , vars
     }
-    ctors -> Just $ f case ctors of
+    ctors -> Just $
+    f case ctors of
       Nothing -> []
       (Just (Tuple _ (Separated { head, tail }))) -> (head : map snd tail)
-    
-      where 
-        f x = case isSimpleADT x of
-          Left e -> DefUnsupported (Name name) BothExportAndInstance e
-          Right _ -> vars
-            # traverse getTypeVar
-            <#> DefData (Name name)
-            # fromMaybe (DefUnsupported (Name name) BothExportAndInstance "data type with unsupported type arguments")
+
+    where
+    f x = case isSimpleADT x of
+      Left e -> DefUnsupported (Name name) BothExportAndInstance e
+      Right _ -> vars
+        # traverse getTypeVar
+        <#> DefData (Name name)
+        # fromMaybe (DefUnsupported (Name name) BothExportAndInstance "data type with unsupported type arguments")
 
   -- CST.DeclSignature (CST.Labeled { label, value }) ->
   --   let
@@ -181,9 +186,10 @@ getPursDef = case _ of
         { label: CST.Name { name: CST.Ident n }
         , value
         }
-    ) -> Just $ case typeToTypeAnn value of
-    Left e -> DefUnsupported (Name n) JustExport ("unsupported value: " <> show e)
-    Right typeAnn -> DefValue (Name n) (Just $ typeAnn)
+    ) -> Just $
+    case typeToTypeAnn' value of
+      Left e -> DefUnsupported (Name n) JustExport ("unsupported value: " <> show e)
+      Right typeAnn -> DefValue (Name n) (Just $ typeAnn)
 
   CST.DeclNewtype
     { name: CST.Name { name: CST.Proper n }
@@ -191,12 +197,13 @@ getPursDef = case _ of
     }
     _
     _
-    value -> Just $ case isSimpleType value of
-    Left e -> DefUnsupported (Name n) JustExport ("unsupported newtype: " <> e)
-    Right _ -> vars
-      # traverse getTypeVar
-      <#> DefNewtype (Name n)
-      # fromMaybe (DefUnsupported (Name n) BothExportAndInstance "type with unsupported type arguments")
+    value -> Just $
+    case isSimpleType value of
+      Left e -> DefUnsupported (Name n) JustExport ("unsupported newtype: " <> e)
+      Right _ -> vars
+        # traverse getTypeVar
+        <#> DefNewtype (Name n)
+        # fromMaybe (DefUnsupported (Name n) BothExportAndInstance "type with unsupported type arguments")
 
   CST.DeclType
     { name: CST.Name { name: CST.Proper name }

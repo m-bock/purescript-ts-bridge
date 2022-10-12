@@ -14,7 +14,7 @@ import Data.String as Str
 import Data.Traversable (fold, sequence, traverse)
 import Data.Tuple.Nested (type (/\))
 import Data.Typelevel.Undefined (undefined)
-import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), TypeAnn, UnsupportedScope(..))
+import TsBridgeGen.Types (Import(..), ModuleName(..), Name(..), PursDef(..), PursModule(..), TypeAnn(..), UnsupportedScope(..))
 
 data PursCodeSnippet
   = CodeSnipDecls (Array String)
@@ -57,9 +57,22 @@ genInstances modules = PursTokSections <$> sequence do
   pursDef <- defs
 
   case pursDef of
-    DefData n args -> [ genInstance "defaultOpaqueType" mn n args ]
+    DefData n args ->
+      [ genInstance [ PursTokQualName nsTsb $ Name "defaultOpaqueType" ]
+          mn
+          n
+          args
+      ]
 
-    DefNewtype n args -> [ genInstance "defaultNewtype" mn n args ]
+    DefNewtype n args ->
+      [ genInstance
+          [ PursTokQualName nsTsb $ Name "defaultBrandedType"
+          , PursTokName $ Name "Mp"
+          ]
+          mn
+          n
+          args
+      ]
 
     DefUnsupported (Name n) BothExportAndInstance reason ->
 
@@ -68,8 +81,8 @@ genInstances modules = PursTokSections <$> sequence do
     _ ->
       []
 
-genInstance :: forall m. Monad m => String -> ModuleName -> Name -> Array Name -> ImportWriterT m PursTokTree
-genInstance fn mn@(ModuleName mn') n@(Name n') args = do
+genInstance :: forall m. Monad m => Array PursTokTree -> ModuleName -> Name -> Array Name -> ImportWriterT m PursTokTree
+genInstance initArgs mn@(ModuleName mn') n@(Name n') args = do
   tell
     { imports: Set.singleton $ ImportAuto
         { from: mn
@@ -89,8 +102,10 @@ genInstance fn mn@(ModuleName mn') n@(Name n') args = do
             , PursTokWhere
             , PursTokName $ Name "toTsBridge"
             , PursTokEqual
-            , PursTokQualName nsTsb $ Name fn
-            , PursTokStr mn'
+            ]
+          <> initArgs
+          <>
+            [ PursTokStr mn'
             , PursTokStr n'
             , PursTokArray (PursTokStr <<< Str.toUpper <<< unwrap <$> args)
             , PursTokArray $
@@ -99,9 +114,6 @@ genInstance fn mn@(ModuleName mn') n@(Name n') args = do
                 ) <$> args
             ]
       )
-
-genTypeAnn :: TypeAnn -> Array String
-genTypeAnn _ = []
 
 genQualNameAuto :: ModuleName -> Name -> String
 genQualNameAuto (ModuleName mn) (Name n) = "Auto." <> mn <> "." <> n
@@ -126,6 +138,7 @@ data PursTokTree
   | PursTokWildcard
   | PursTokLineComment String
   | PursTokFatArrow
+  | PursTokArrow
   | PursTokInstance
   | PursTokWhere
   | PursTokEqual
@@ -146,6 +159,7 @@ printPursTokTree = case _ of
   PursTokDblColon -> "::"
   PursTokWildcard -> "_"
   PursTokFatArrow -> "=>"
+  PursTokArrow -> "->"
   PursTokLineComment x -> "-- " <> x
   PursTokInstance -> "instance"
   PursTokWhere -> "where"
@@ -217,15 +231,30 @@ genVar (Name s) = PursTokGroup [ PursTokName (Name "Var"), PursTokStr s ]
 mkAuto :: ModuleName -> ModuleName
 mkAuto (ModuleName mn) = ModuleName ("Auto." <> mn)
 
+genTypeAnn :: TypeAnn -> PursTokTree
+genTypeAnn = go false
+  where
+  go withParens = case _ of
+    TypeAnnId Nothing -> PursTokWildcard
+    TypeAnnId (Just n) -> genVar n
+    TypeAnnApp t1 t2 ->
+      (if withParens then PursTokGroup else PursTokItems)
+        [ go true t1, go true t2 ]
+    TypeAnnFn t1 t2 -> PursTokItems [ go false t1, PursTokArrow, go false t2 ]
+    TypeAnnRecord _ -> undefined
+
 genTsDef :: ModuleName -> PursDef -> Maybe PursTokTree
 genTsDef mn@(ModuleName mn') = case _ of
-  DefValue n@(Name n') _ -> Just $
+  DefValue n@(Name n') ann -> Just $
     PursTokItems
       [ PursTokName $ Name "tsValue"
       , PursTokName $ Name "Mp"
       , PursTokStr n'
-      , PursTokGroup [PursTokQualName (mkAuto mn) n , PursTokDblColon , PursTokWildcard ]
-      -- , parens $ items [ genQualNameAuto mn n ]
+      , PursTokGroup
+          [ PursTokQualName (mkAuto mn) n
+          , PursTokDblColon
+          , fromMaybe PursTokWildcard $ genTypeAnn <$> ann
+          ]
       ]
 
   DefData n@(Name n') args -> Just $
@@ -233,7 +262,7 @@ genTsDef mn@(ModuleName mn') = case _ of
       [ PursTokQualName nsTsb $ Name "tsOpaqueType"
       , PursTokName $ Name "Mp"
       , PursTokStr n'
-      , genProxy (PursTokGroup $ PursTokQualName (mkAuto mn) n : (genVar <$> args)) 
+      , genProxy (PursTokGroup $ PursTokQualName (mkAuto mn) n : (genVar <$> args))
       ]
 
   -- DefNewtype n@(Name n') _ -> Just $

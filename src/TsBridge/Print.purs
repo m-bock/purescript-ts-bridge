@@ -59,6 +59,7 @@ data TsToken
   | TsTokDot
   | TsTokFatArrow
   | TsTokQuestionMark
+  | TsTokAmpersand    
 
   -- Formatting 
   | TsTokWhitespace
@@ -142,6 +143,9 @@ instance Tokenize TsType where
 
     TsTypeArray x ->
       [ TsTokIdentifier "Array" ] <> wrapAngles (tokenize x)
+
+    TsTypeIntersection x y ->
+      tokenize x <> [ TsTokAmpersand ] <> tokenize y
 
     TsTypeRecord xs ->
       wrapBraces $
@@ -306,6 +310,8 @@ printToken = case _ of
     "=>"
   TsTokQuestionMark ->
     "?"
+  TsTokAmpersand ->
+    "&"
 
   TsTokWhitespace ->
     " "

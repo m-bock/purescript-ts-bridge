@@ -2,9 +2,9 @@ module TsBridge.Core
   ( class GenRecord
   , defaultArray
   , defaultBoolean
+  , defaultBrandedType
   , defaultEffect
   , defaultFunction
-  , defaultNewtype
   , defaultNumber
   , defaultOpaqueType
   , defaultPromise
@@ -32,7 +32,7 @@ import Data.Array as A
 import Data.Array as Array
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
-import Data.Newtype (over, over2, unwrap, wrap, un)
+import Data.Newtype (class Newtype, over, over2, un, unwrap, wrap)
 import Data.Set as Set
 import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
@@ -52,6 +52,7 @@ import TsBridge.DTS (TsBridge_DTS_Wrap(..), TsDeclVisibility(..), TsDeclaration(
 import TsBridge.Monad (Scope, TsBridgeAccum(..), TsBridgeM, TsBridge_Monad_Wrap(..), defaultTsBridgeAccum, runTsBridgeM)
 import TsBridge.Print (printTsName)
 import Type.Proxy (Proxy(..))
+import TsBridge.ABC (Var)
 
 -- | Sort an array based on its `Ord` instance.
 -- |
@@ -143,43 +144,20 @@ mergeTsPrograms p1 p2 = p1 --TODO
 -- Util
 -------------------------------------------------------------------------------
 
-opaqueType :: TsFilePath -> TsModuleAlias -> TsName -> OSet TsName -> Array (TsBridgeM TsType) -> TsBridgeM TsType
-opaqueType filePath moduleAlias name targs args' = do
-  args <- sequence args'
-
-  let
-    imports = Set.singleton $
-      TsImport
-        moduleAlias
-        ( filePath
-            # filePathToModulePath
-            # (\(TsModulePath x) -> TsModulePath ("~/" <> x))
-        )
-
-    typeDefs =
-      [ TsModuleFile
-          filePath
-          ( TsModule Set.empty
-              [ mkOpaqueTypeDecl name targs
-              ]
-          )
-      ]
-
-  tell
-    $ TsBridgeAccum
-    $ R.union mempty { typeDefs, imports }
-
-  pure
-    $ TsTypeConstructor (TsQualName (Just moduleAlias) name) (TsTypeArgs args)
-
-mkOpaqueTypeDecl :: TsName -> OSet TsName -> TsDeclaration
-mkOpaqueTypeDecl name args = TsDeclTypeDef name Public (coerce args) $
-  TsTypeRecord
-    (opaqueField : (mapWithIndex mkArgFields $ OSet.toUnfoldable args))
+mkBrandedTypeDecl :: TsName -> OSet TsName -> Maybe TsType -> TsDeclaration
+mkBrandedTypeDecl name args type_ = TsDeclTypeDef name Public (coerce args)
+  $ maybeWithType
+  $
+    TsTypeRecord
+      (opaqueField : (mapWithIndex mkArgFields $ OSet.toUnfoldable args))
 
   where
+  maybeWithType = case type_ of
+    Nothing -> identity
+    Just t -> \x -> TsTypeIntersection x t
+
   opaqueField = TsRecordField
-    (TsName $ "opaque_" <> printTsName name)
+    (TsName $ "brand")
     { optional: false, readonly: true }
     TsTypeUniqueSymbol
 
@@ -195,10 +173,10 @@ filePathToModulePath (TsFilePath x _) = TsModulePath x
 -- Default Implementations
 -------------------------------------------------------------------------------
 
-defaultTypeVar :: String -> TsBridgeM TsType
-defaultTypeVar x = do
+defaultTypeVar :: forall s. IsSymbol s => Var s -> TsBridgeM TsType
+defaultTypeVar _ = do
   let
-    tsName = TsName x
+    tsName = TsName $ reflectSymbol (Proxy :: _ s)
 
     scope =
       { floating: wrap $ OSet.singleton tsName
@@ -371,14 +349,63 @@ instance
 -------------------------------------------------------------------------------
 
 defaultOpaqueType :: forall a. String -> String -> Array String -> Array (TsBridgeM TsType) -> a -> TsBridgeM TsType
-defaultOpaqueType pursModuleName pursTypeName targNames targs _ = opaqueType
+defaultOpaqueType pursModuleName pursTypeName targNames targs _ = brandedType
   (TsFilePath (pursModuleName <> "/index") "d.ts")
   (TsModuleAlias $ dotsToLodashes pursModuleName)
   (TsName pursTypeName)
   (OSet.fromFoldable $ TsName <$> targNames)
   targs
+  Nothing
 
-defaultNewtype = undefined
+defaultBrandedType
+  :: forall mp a t
+   . Newtype a t
+  => Mapping mp t (TsBridgeM TsType)
+  => mp
+  -> String
+  -> String
+  -> Array String
+  -> Array (TsBridgeM TsType)
+  -> a
+  -> TsBridgeM TsType
+defaultBrandedType mp pursModuleName pursTypeName targNames targs t = do
+  x <- mapping mp $ unwrap t
+  brandedType
+    (TsFilePath (pursModuleName <> "/index") "d.ts")
+    (TsModuleAlias $ dotsToLodashes pursModuleName)
+    (TsName pursTypeName)
+    (OSet.fromFoldable $ TsName <$> targNames)
+    targs
+    (Just x)
+
+brandedType :: TsFilePath -> TsModuleAlias -> TsName -> OSet TsName -> Array (TsBridgeM TsType) -> Maybe TsType -> TsBridgeM TsType
+brandedType filePath moduleAlias name targs args' type_ = do
+  args <- sequence args'
+
+  let
+    imports = Set.singleton $
+      TsImport
+        moduleAlias
+        ( filePath
+            # filePathToModulePath
+            # (\(TsModulePath x) -> TsModulePath ("~/" <> x))
+        )
+
+    typeDefs =
+      [ TsModuleFile
+          filePath
+          ( TsModule Set.empty
+              [ mkBrandedTypeDecl name targs type_
+              ]
+          )
+      ]
+
+  tell
+    $ TsBridgeAccum
+    $ R.union mempty { typeDefs, imports }
+
+  pure
+    $ TsTypeConstructor (TsQualName (Just moduleAlias) name) (TsTypeArgs args)
 
 dotsToLodashes :: String -> String
 dotsToLodashes = Str.replaceAll (Pattern ".") (Replacement "_")

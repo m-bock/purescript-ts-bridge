@@ -120,6 +120,7 @@ You can either follow the instructions below or check out the [sample project](h
 - [x] Use error counter (read/write) and reflect in exit code
 - [ ] Manage exports
 - [x] Write full end to end test
+- [ ] Implement `mergeTsPrograms`
 
 Bugs
 - [x] Check globbing e.g. [ "Sample" ]
