@@ -1,9 +1,0 @@
-{
-  "compilerOptions": {
-    "paths": {
-      "~/*": ["./generated-ts-types/*"]
-    },
-    "strict": true,
-    "skipLibCheck": false
-  }
-}

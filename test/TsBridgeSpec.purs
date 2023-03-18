@@ -18,7 +18,7 @@ import Test.Spec (Spec, describe, it)
 import Test.Util (shouldEqual)
 import TsBridge (class GenRecord, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsModuleFile, tsProgram, tsTypeAlias, tsValue)
 import TsBridge as TSB
-import TsBridge.ABC (A, B, C)
+import TsBridge.TypeVars (A, B, C)
 import TsBridge.Core (tsOpaqueType)
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)

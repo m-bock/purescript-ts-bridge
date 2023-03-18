@@ -13,6 +13,6 @@ import Test.Spec.Runner (runSpec)
 main :: Effect Unit
 main = launchAff_ do
   specs <- discover $ Str.joinWith "|"
-    [ """(TsBridge(Gen)?.*Spec)"""
+    [ """(TsBridge.*Spec)"""
     ]
   runSpec [ consoleReporter ] specs

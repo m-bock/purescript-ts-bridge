@@ -1,4 +1,4 @@
-module TsBridge.ABC where
+module TsBridge.TypeVars where
 
 data A = A
 
