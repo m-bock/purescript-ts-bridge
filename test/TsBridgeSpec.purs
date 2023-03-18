@@ -12,11 +12,9 @@ import Data.String (Pattern(..))
 import Data.String as String
 import Data.Tuple (fst)
 import Data.Tuple.Nested (type (/\), (/\))
-import Heterogeneous.Mapping (class Mapping)
-import Prim.RowList (class RowToList)
 import Test.Spec (Spec, describe, it)
 import Test.Util (shouldEqual)
-import TsBridge (class DefaultRecord, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsModuleFile, tsProgram, tsTypeAlias, tsValue)
+import TsBridge (class ToTsBridgeBy, class DefaultRecord, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsModuleFile, tsProgram, tsTypeAlias, tsValue)
 import TsBridge as TSB
 import TsBridge.TypeVars (A, B, C)
 import TsBridge.Core (tsOpaqueType)
@@ -28,7 +26,7 @@ class ToTsBridge a where
   toTsBridge :: a -> TsBridgeM TsType
 
 instance ToTsBridge a => ToTsBridge (Proxy a) where
-  toTsBridge = TSB.defaultProxy Mp
+  toTsBridge = TSB.defaultProxy Tok
 
 instance ToTsBridge Number where
   toTsBridge = TSB.defaultNumber
@@ -40,13 +38,13 @@ instance ToTsBridge Boolean where
   toTsBridge = TSB.defaultBoolean
 
 instance ToTsBridge a => ToTsBridge (Array a) where
-  toTsBridge = TSB.defaultArray Mp
+  toTsBridge = TSB.defaultArray Tok
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
-  toTsBridge = TSB.defaultFunction Mp
+  toTsBridge = TSB.defaultFunction Tok
 
-instance (DefaultRecord MappingToTsBridge r) => ToTsBridge (Record r) where
-  toTsBridge = TSB.defaultRecord Mp
+instance (DefaultRecord Tok r) => ToTsBridge (Record r) where
+  toTsBridge = TSB.defaultRecord Tok
 
 instance ToTsBridge a => ToTsBridge (Maybe a) where
   toTsBridge = TSB.defaultOpaqueType "Data.Maybe" "Maybe" [ "A" ]
@@ -67,10 +65,10 @@ instance ToTsBridge C where
 
 --
 
-data MappingToTsBridge = Mp
+data Tok = Tok
 
-instance ToTsBridge a => Mapping MappingToTsBridge a (TsBridgeM TsType) where
-  mapping _ = toTsBridge
+instance ToTsBridge a => ToTsBridgeBy Tok a where
+  toTsBridgeBy _ = toTsBridge
 
 --
 
@@ -82,9 +80,9 @@ spec = do
         it "generates a type alias and adds the type module" do
           tsProgram
             [ tsModuleFile "types"
-                [ tsTypeAlias Mp "Foo" (Proxy :: _ (Either String Boolean)) ]
+                [ tsTypeAlias Tok "Foo" (Proxy :: _ (Either String Boolean)) ]
             , tsModuleFile "Data.Either/index"
-                [ tsOpaqueType Mp "Either" (Proxy :: _ (Either String Boolean)) ]
+                [ tsOpaqueType Tok "Either" (Proxy :: _ (Either String Boolean)) ]
             ]
             # printTsProgram
             # shouldEqual
@@ -105,33 +103,33 @@ spec = do
       describe "tsTypeAlias" do
         describe "Number" do
           testDeclPrint
-            (tsTypeAlias Mp "Foo" (Proxy :: _ Number))
+            (tsTypeAlias Tok "Foo" (Proxy :: _ Number))
             [ "export type Foo = number" ]
 
         describe "Type Variable" do
           testDeclPrint
-            (tsTypeAlias Mp "Foo" (Proxy :: _ A))
+            (tsTypeAlias Tok "Foo" (Proxy :: _ A))
             [ "export type Foo<A> = A" ]
 
         describe "Type Variables" do
           testDeclPrint
-            (tsTypeAlias Mp "Foo" (Proxy :: _ { c :: C, sub :: { a :: A, b :: B } }))
+            (tsTypeAlias Tok "Foo" (Proxy :: _ { c :: C, sub :: { a :: A, b :: B } }))
             [ "export type Foo<C, A, B> = { readonly c: C; readonly sub: { readonly a: A; readonly b: B; }; }" ]
 
         describe "" do
           testDeclPrint
-            (tsTypeAlias Mp "Foo" (Proxy :: _ (A -> B -> C)))
+            (tsTypeAlias Tok "Foo" (Proxy :: _ (A -> B -> C)))
             [ "export type Foo = <A>(_: A) => <B, C>(_: B) => C" ]
 
         describe "" do
           testDeclPrint
-            (tsTypeAlias Mp "Foo" (Proxy :: _ (A -> A -> A)))
+            (tsTypeAlias Tok "Foo" (Proxy :: _ (A -> A -> A)))
             [ "export type Foo = <A>(_: A) => (_: A) => A" ]
 
       describe "tsValue" do
         describe "Number" do
           testDeclPrint
-            (tsValue Mp "foo" 13.0)
+            (tsValue Tok "foo" 13.0)
             [ "export const foo : number" ]
 
     describe "Type Printing" do

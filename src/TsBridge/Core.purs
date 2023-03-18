@@ -1,6 +1,8 @@
 module TsBridge.Core
   ( class DefaultRecord
   , class DefaultRecordRL
+  , class ToTsBridgeBy
+  , toTsBridgeBy
   , defaultArray
   , defaultBoolean
   , defaultBrandedType
@@ -45,15 +47,16 @@ import Data.Traversable (sequence)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
 import Effect (Effect)
-import Heterogeneous.Mapping (class Mapping, mapping)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
 import TsBridge.DTS (TsBridge_DTS_Wrap(..), TsDeclVisibility(..), TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsImport(..), TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsProgram(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..), dtsFilePath, mapQuantifier)
 import TsBridge.Monad (Scope, TsBridgeAccum(..), TsBridgeM, TsBridge_Monad_Wrap(..), defaultTsBridgeAccum, runTsBridgeM)
-import TsBridge.Print (printTsName)
-import Type.Proxy (Proxy(..))
 import TsBridge.TypeVars (Var)
+import Type.Proxy (Proxy(..))
+
+class ToTsBridgeBy tok a where
+  toTsBridgeBy :: tok -> a -> TsBridgeM TsType
 
 tsModuleFile :: String -> Array (TsBridgeM (Array TsDeclaration)) -> Array TsModuleFile
 tsModuleFile n xs =
@@ -78,16 +81,16 @@ mergeModule (TsModule is1 ds1) (TsModule is2 ds2) =
 tsProgram :: Array (Array TsModuleFile) -> TsProgram
 tsProgram xs = mergeModules $ join xs
 
-tsTypeAlias :: forall mp a. Mapping mp a (TsBridgeM TsType) => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
+tsTypeAlias :: forall mp a. ToTsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
 tsTypeAlias mp n x = ado
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope) t
   in [ TsDeclTypeDef (TsName n) Public (coerce scope.floating) x ]
   where
-  t = mapping mp x
+  t = toTsBridgeBy mp x
 
-tsOpaqueType :: forall mp a. Mapping mp a (TsBridgeM TsType) => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
+tsOpaqueType :: forall mp a. ToTsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
 tsOpaqueType mp n x = do
-  _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ mapping mp x
+  _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ toTsBridgeBy mp x
   case uncons modules of
     Just { head: (TsModuleFile _ (TsModule imports decls)), tail: [] } -> do
       tell $ TsBridgeAccum
@@ -98,9 +101,9 @@ tsOpaqueType mp n x = do
       pure decls
     _ -> pure []
 
-tsValue :: forall mp a. Mapping mp a (TsBridgeM TsType) => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
+tsValue :: forall mp a. ToTsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
 tsValue mp n x = do
-  t <- mapping mp x
+  t <- toTsBridgeBy mp x
   pure [ TsDeclValueDef (TsName n) Public t ]
 
 tsUnsupported :: String -> String -> TsBridgeM (Array TsDeclaration)
@@ -158,8 +161,8 @@ defaultTypeVar _ = do
     $ over TsBridgeAccum _ { scope = scope } defaultTsBridgeAccum
   pure $ TsTypeVar tsName
 
-defaultProxy :: forall f a. Mapping f a (TsBridgeM TsType) => f -> Proxy a -> TsBridgeM TsType
-defaultProxy mp _ = mapping mp (undefined :: a)
+defaultProxy :: forall f a. ToTsBridgeBy f a  => f -> Proxy a -> TsBridgeM TsType
+defaultProxy mp _ = toTsBridgeBy mp (undefined :: a)
 
 defaultNumber :: Number -> TsBridgeM TsType
 defaultNumber _ = pure TsTypeNumber
@@ -175,12 +178,12 @@ defaultUnit _ = pure TsTypeVoid
 
 defaultEffect
   :: forall a f
-   . Mapping f (Proxy a) (TsBridgeM TsType)
+   . ToTsBridgeBy f (Proxy a)
   => f
   -> Effect a
   -> TsBridgeM TsType
 defaultEffect f _ = do
-  x <- (mapping f (Proxy :: _ a))
+  x <- (toTsBridgeBy f (Proxy :: _ a))
   pure $ TsTypeFunction
     (TsTypeArgsQuant $ coerce $ Oset.singleton $ TsName "A")
     []
@@ -188,34 +191,34 @@ defaultEffect f _ = do
 
 defaultArray
   :: forall a f
-   . Mapping f (Proxy a) (TsBridgeM TsType)
+   . ToTsBridgeBy f (Proxy a)
   => f
   -> Array a
   -> TsBridgeM TsType
-defaultArray f _ = TsTypeArray <$> mapping f (Proxy :: _ a)
+defaultArray f _ = TsTypeArray <$> toTsBridgeBy f (Proxy :: _ a)
 
 defaultPromise
   :: forall a f
-   . Mapping f (Proxy a) (TsBridgeM TsType)
+   . ToTsBridgeBy f (Proxy a)
   => f
   -> Promise a
   -> TsBridgeM TsType
 defaultPromise f _ = do
-  x <- mapping f (Proxy :: _ a)
+  x <- toTsBridgeBy f (Proxy :: _ a)
   pure $ TsTypeConstructor
     (TsQualName Nothing (TsName "Promise"))
     (TsTypeArgs [ x ])
 
 defaultFunction
   :: forall f a b
-   . Mapping f (Proxy a) (TsBridgeM TsType)
-  => Mapping f (Proxy b) (TsBridgeM TsType)
+   . ToTsBridgeBy f (Proxy a)
+  => ToTsBridgeBy f (Proxy b)
   => f
   -> (a -> b)
   -> TsBridgeM TsType
 defaultFunction f _ = censor mapAccum ado
-  arg /\ TsBridgeAccum { scope: scopeArg } <- listen $ mapping f (Proxy :: _ a)
-  ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ mapping f (Proxy :: _ b)
+  arg /\ TsBridgeAccum { scope: scopeArg } <- listen $ toTsBridgeBy f (Proxy :: _ a)
+  ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ toTsBridgeBy f (Proxy :: _ b)
   let
     newFixed = (over2 wrap OSet.intersect scopeArg.fixed scopeRet.fixed)
       <> scopeArg.floating
@@ -261,14 +264,14 @@ instance DefaultRecordRL mp Nil where
   defaultRecordRL _ _ = pure []
 
 instance
-  ( Mapping mp (Proxy t) (TsBridgeM TsType)
+  ( ToTsBridgeBy mp (Proxy t)
   , DefaultRecordRL mp rl
   , IsSymbol s
   ) =>
   DefaultRecordRL mp (Cons s t rl) where
   defaultRecordRL mp _ = do
     let
-      mkX = mapping mp (Proxy :: _ t)
+      mkX = toTsBridgeBy mp (Proxy :: _ t)
       mkXs = defaultRecordRL mp (Proxy :: _ rl)
       str = reflectSymbol (Proxy :: _ s)
     x <- mkX
@@ -293,7 +296,7 @@ defaultOpaqueType pursModuleName pursTypeName targNames targs _ = brandedType
 defaultBrandedType
   :: forall mp a t
    . Newtype a t
-  => Mapping mp t (TsBridgeM TsType)
+  => ToTsBridgeBy mp t
   => mp
   -> String
   -> String
@@ -302,7 +305,7 @@ defaultBrandedType
   -> a
   -> TsBridgeM TsType
 defaultBrandedType mp pursModuleName pursTypeName targNames targs t = do
-  x <- mapping mp $ unwrap t
+  x <- toTsBridgeBy mp $ unwrap t
   brandedType
     (TsFilePath (pursModuleName <> "/index") "d.ts")
     (TsModuleAlias $ dotsToLodashes pursModuleName)
