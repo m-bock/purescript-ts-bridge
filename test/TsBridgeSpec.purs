@@ -16,7 +16,7 @@ import Heterogeneous.Mapping (class Mapping)
 import Prim.RowList (class RowToList)
 import Test.Spec (Spec, describe, it)
 import Test.Util (shouldEqual)
-import TsBridge (class GenRecord, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsModuleFile, tsProgram, tsTypeAlias, tsValue)
+import TsBridge (class DefaultRecord, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsModuleFile, tsProgram, tsTypeAlias, tsValue)
 import TsBridge as TSB
 import TsBridge.TypeVars (A, B, C)
 import TsBridge.Core (tsOpaqueType)
@@ -45,7 +45,7 @@ instance ToTsBridge a => ToTsBridge (Array a) where
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
   toTsBridge = TSB.defaultFunction Mp
 
-instance (GenRecord MappingToTsBridge rl, RowToList r rl) => ToTsBridge (Record r) where
+instance (DefaultRecord MappingToTsBridge r) => ToTsBridge (Record r) where
   toTsBridge = TSB.defaultRecord Mp
 
 instance ToTsBridge a => ToTsBridge (Maybe a) where

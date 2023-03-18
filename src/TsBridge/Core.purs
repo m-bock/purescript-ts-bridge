@@ -1,5 +1,6 @@
 module TsBridge.Core
-  ( class GenRecord
+  ( class DefaultRecord
+  , class DefaultRecordRL
   , defaultArray
   , defaultBoolean
   , defaultBrandedType
@@ -13,7 +14,7 @@ module TsBridge.Core
   , defaultString
   , defaultTypeVar
   , defaultUnit
-  , genRecord
+  , defaultRecordRL
   , mergeTsPrograms
   , tsModuleFile
   , tsOpaqueType
@@ -231,15 +232,6 @@ defaultFunction f _ = censor mapAccum ado
   where
   mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
 
-defaultRecord
-  :: forall mp r rl
-   . GenRecord mp rl
-  => RowToList r rl
-  => mp
-  -> { | r }
-  -> TsBridgeM TsType
-defaultRecord mp _ = TsTypeRecord <$> genRecord mp (Proxy :: _ rl)
-
 fixScope :: Scope -> Scope
 fixScope { fixed, floating } =
   { floating: mempty
@@ -247,26 +239,37 @@ fixScope { fixed, floating } =
   }
 
 -------------------------------------------------------------------------------
--- Class / GenRecord
+-- Class / DefaultRecord
 -------------------------------------------------------------------------------
 
-class GenRecord :: Type -> RowList Type -> Constraint
-class GenRecord mp rl where
-  genRecord :: mp -> Proxy rl -> TsBridgeM (Array TsRecordField)
+class DefaultRecord :: Type -> Row Type -> Constraint
+class DefaultRecord mp r where
+  defaultRecord :: mp -> Record r -> TsBridgeM TsType
 
-instance GenRecord mp Nil where
-  genRecord _ _ = pure []
+instance (RowToList r rl, DefaultRecordRL mp rl) => DefaultRecord mp r where
+  defaultRecord mp _ = TsTypeRecord <$> defaultRecordRL mp (Proxy :: _ rl)
+
+-------------------------------------------------------------------------------
+-- Class / DefaultRecordRL
+-------------------------------------------------------------------------------
+
+class DefaultRecordRL :: Type -> RowList Type -> Constraint
+class DefaultRecordRL mp rl where
+  defaultRecordRL :: mp -> Proxy rl -> TsBridgeM (Array TsRecordField)
+
+instance DefaultRecordRL mp Nil where
+  defaultRecordRL _ _ = pure []
 
 instance
   ( Mapping mp (Proxy t) (TsBridgeM TsType)
-  , GenRecord mp rl
+  , DefaultRecordRL mp rl
   , IsSymbol s
   ) =>
-  GenRecord mp (Cons s t rl) where
-  genRecord mp _ = do
+  DefaultRecordRL mp (Cons s t rl) where
+  defaultRecordRL mp _ = do
     let
       mkX = mapping mp (Proxy :: _ t)
-      mkXs = genRecord mp (Proxy :: _ rl)
+      mkXs = defaultRecordRL mp (Proxy :: _ rl)
       str = reflectSymbol (Proxy :: _ s)
     x <- mkX
     xs <- mkXs
