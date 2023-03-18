@@ -17,6 +17,7 @@ import Node.FS.Perms (all, mkPerms)
 import Node.Path (dirname)
 import Options.Applicative (help, helper, info, long, metavar, strOption, (<**>))
 import Options.Applicative as O
+import Options.Applicative.Types (optional)
 import Sunde as Sun
 import TsBridge.DTS (TsProgram)
 import TsBridge.Print (printTsProgram)
@@ -26,6 +27,7 @@ import TsBridge.Print (printTsProgram)
 -------------------------------------------------------------------------------
 type TsBridgeCliOpts =
   { outputDir :: String
+  , prettier :: Maybe String
   }
 
 -------------------------------------------------------------------------------
@@ -40,7 +42,14 @@ parserTsBridgeCliOpts = ado
           , metavar "OUTPUT_DIR"
           , help "Dictionary the CLI will write the output d.ts files to."
           ]
-  in { outputDir }
+  prettier <- optional
+    $ strOption
+    $ fold
+        [ long "prettier"
+        , metavar "PRETTIER"
+        , help "Path to prettier to format generated code. If omitted, code is not formatted."
+        ]
+  in { outputDir, prettier }
 
 parserInfoTsBridgeCliOpts :: O.ParserInfo TsBridgeCliOpts
 parserInfoTsBridgeCliOpts = info (parserTsBridgeCliOpts <**> helper) mempty
@@ -65,7 +74,10 @@ mkTypeGenCliAff tsProg = do
           }
         writeTextFile UTF8 filePath source
     )
-  void $ spawn "prettier" [ "--write", cliOpts.outputDir <> "/**/*.d.ts" ] -- can fail, if there are no files!
+
+  for_ cliOpts.prettier \prettierPath ->
+    void $ spawn prettierPath
+      [ "--write", cliOpts.outputDir <> "/**/*.d.ts" ] -- can fail, if there are no files!
 
 mkTypeGenCli :: TsProgram -> Effect Unit
 mkTypeGenCli tsProg = launchAff_ $ mkTypeGenCliAff tsProg
