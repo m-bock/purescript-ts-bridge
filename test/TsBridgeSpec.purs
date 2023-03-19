@@ -166,11 +166,11 @@ spec = do
 
       describe "Maybe" do
         testTypePrint (toTsBridge (Proxy :: _ (Maybe Boolean)))
-          "Data_Maybe.Maybe<boolean>"
+          "import('~/Data.Maybe').Maybe<boolean>"
 
       describe "Either" do
         testTypePrint (toTsBridge (Proxy :: _ (Either String Boolean)))
-          "Data_Either.Either<string, boolean>"
+          "import('~/Data.Either').Either<string, boolean>"
 
       describe "Nullable" do
         testTypePrint (toTsBridge (Proxy :: _ (Nullable String)))

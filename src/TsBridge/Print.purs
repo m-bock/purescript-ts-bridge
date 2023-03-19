@@ -62,7 +62,6 @@ data TsToken
   | TsTokQuestionMark
   | TsTokAmpersand
   | TsTokPipe
-
   -- Formatting 
   | TsTokWhitespace
   | TsTokNewline
@@ -119,7 +118,16 @@ instance Tokenize DTS.TsModuleAlias where
 
 instance Tokenize DTS.TsQualName where
   tokenize (DTS.TsQualName s x) =
-    maybe [] (\n -> tokenize n <> [ TsTokDot ]) s
+    maybe []
+      ( \(DTS.TsModuleAlias n) ->
+          [ TsTokImport
+          , TsTokOpenParen
+          , TsTokStringLiteral ("~/" <> n)
+          , TsTokCloseParen
+          , TsTokDot
+          ]
+      )
+      s
       <> tokenize x
 
 instance Tokenize DTS.TsType where

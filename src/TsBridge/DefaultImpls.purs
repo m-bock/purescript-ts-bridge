@@ -220,7 +220,7 @@ instance
 defaultOpaqueType :: forall a. String -> String -> Array String -> Array (TsBridgeM DTS.TsType) -> a -> TsBridgeM DTS.TsType
 defaultOpaqueType pursModuleName pursTypeName targNames targs _ = brandedType
   (DTS.TsFilePath (pursModuleName <> "/index") "d.ts")
-  (DTS.TsModuleAlias $ dotsToLodashes pursModuleName)
+  (DTS.TsModuleAlias pursModuleName)
   (DTS.TsName pursTypeName)
   (OSet.fromFoldable $ DTS.TsName <$> targNames)
   targs
@@ -241,7 +241,7 @@ defaultBrandedType mp pursModuleName pursTypeName targNames targs t = do
   x <- toTsBridgeBy mp $ unwrap t
   brandedType
     (DTS.TsFilePath (pursModuleName <> "/index") "d.ts")
-    (DTS.TsModuleAlias $ dotsToLodashes pursModuleName)
+    (DTS.TsModuleAlias pursModuleName)
     (DTS.TsName pursTypeName)
     (OSet.fromFoldable $ DTS.TsName <$> targNames)
     targs
