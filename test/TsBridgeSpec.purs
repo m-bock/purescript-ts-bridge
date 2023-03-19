@@ -17,66 +17,66 @@ import Data.Variant (Variant)
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Util (shouldEqual)
-import TsBridge (class DefaultRecord, class DefaultVariant, class ToTsBridgeBy, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsValue)
+import TsBridge (class DefaultRecord, class DefaultVariant, class TsBridgeBy, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsValue)
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
 import Type.Proxy (Proxy(..))
 
-class ToTsBridge a where
-  toTsBridge :: a -> TsBridgeM TsType
+class TsBridge a where
+  tsBridge :: a -> TsBridgeM TsType
 
-instance ToTsBridge a => ToTsBridge (Proxy a) where
-  toTsBridge = TSB.defaultProxy Tok
+instance TsBridge a => TsBridge (Proxy a) where
+  tsBridge = TSB.defaultProxy Tok
 
-instance ToTsBridge Number where
-  toTsBridge = TSB.defaultNumber
+instance TsBridge Number where
+  tsBridge = TSB.defaultNumber
 
-instance ToTsBridge String where
-  toTsBridge = TSB.defaultString
+instance TsBridge String where
+  tsBridge = TSB.defaultString
 
-instance ToTsBridge Boolean where
-  toTsBridge = TSB.defaultBoolean
+instance TsBridge Boolean where
+  tsBridge = TSB.defaultBoolean
 
-instance ToTsBridge a => ToTsBridge (Array a) where
-  toTsBridge = TSB.defaultArray Tok
+instance TsBridge a => TsBridge (Array a) where
+  tsBridge = TSB.defaultArray Tok
 
-instance ToTsBridge a => ToTsBridge (Effect a) where
-  toTsBridge = TSB.defaultEffect Tok
+instance TsBridge a => TsBridge (Effect a) where
+  tsBridge = TSB.defaultEffect Tok
 
-instance ToTsBridge a => ToTsBridge (Nullable a) where
-  toTsBridge = TSB.defaultNullable Tok
+instance TsBridge a => TsBridge (Nullable a) where
+  tsBridge = TSB.defaultNullable Tok
 
-instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
-  toTsBridge = TSB.defaultFunction Tok
+instance (TsBridge a, TsBridge b) => TsBridge (a -> b) where
+  tsBridge = TSB.defaultFunction Tok
 
-instance (DefaultRecord Tok r) => ToTsBridge (Record r) where
-  toTsBridge = TSB.defaultRecord Tok
+instance (DefaultRecord Tok r) => TsBridge (Record r) where
+  tsBridge = TSB.defaultRecord Tok
 
 
-instance (DefaultVariant Tok r) => ToTsBridge (Variant r) where
-  toTsBridge = TSB.defaultVariant Tok
+instance (DefaultVariant Tok r) => TsBridge (Variant r) where
+  tsBridge = TSB.defaultVariant Tok
 
-instance ToTsBridge a => ToTsBridge (Maybe a) where
-  toTsBridge = TSB.defaultOpaqueType "Data.Maybe" "Maybe" [ "A" ]
-    [ toTsBridge (Proxy :: _ a) ]
+instance TsBridge a => TsBridge (Maybe a) where
+  tsBridge = TSB.defaultOpaqueType "Data.Maybe" "Maybe" [ "A" ]
+    [ tsBridge (Proxy :: _ a) ]
 
-instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
-  toTsBridge = TSB.defaultOpaqueType "Data.Either" "Either" [ "A", "B" ]
-    [ toTsBridge (Proxy :: _ a), toTsBridge (Proxy :: _ b) ]
+instance (TsBridge a, TsBridge b) => TsBridge (Either a b) where
+  tsBridge = TSB.defaultOpaqueType "Data.Either" "Either" [ "A", "B" ]
+    [ tsBridge (Proxy :: _ a), tsBridge (Proxy :: _ b) ]
 
-instance IsSymbol sym => ToTsBridge (Var sym) where
-  toTsBridge _ = TSB.defaultTypeVar (Var :: _ sym)
+instance IsSymbol sym => TsBridge (Var sym) where
+  tsBridge _ = TSB.defaultTypeVar (Var :: _ sym)
 
-instance ToTsBridge Unit where
-  toTsBridge = TSB.defaultUnit
+instance TsBridge Unit where
+  tsBridge = TSB.defaultUnit
 
 --
 
 data Tok = Tok
 
-instance ToTsBridge a => ToTsBridgeBy Tok a where
-  toTsBridgeBy _ = toTsBridge
+instance TsBridge a => TsBridgeBy Tok a where
+  tsBridgeBy _ = tsBridge
 
 --
 
@@ -142,47 +142,47 @@ spec = do
 
     describe "Type Printing" do
       describe "Number" do
-        testTypePrint (toTsBridge (Proxy :: _ Number))
+        testTypePrint (tsBridge (Proxy :: _ Number))
           "number"
 
       describe "String" do
-        testTypePrint (toTsBridge (Proxy :: _ String))
+        testTypePrint (tsBridge (Proxy :: _ String))
           "string"
 
       describe "Boolean" do
-        testTypePrint (toTsBridge (Proxy :: _ Boolean))
+        testTypePrint (tsBridge (Proxy :: _ Boolean))
           "boolean"
 
       describe "Array" do
-        testTypePrint (toTsBridge (Proxy :: _ (Array Boolean)))
+        testTypePrint (tsBridge (Proxy :: _ (Array Boolean)))
           "Array<boolean>"
 
       describe "Effect" do
-        testTypePrint (toTsBridge (Proxy :: _ (Effect Unit)))
+        testTypePrint (tsBridge (Proxy :: _ (Effect Unit)))
           "() => void"
 
       describe "Function" do
-        testTypePrint (toTsBridge (Proxy :: _ (String -> Number -> Boolean)))
+        testTypePrint (tsBridge (Proxy :: _ (String -> Number -> Boolean)))
           "(_: string) => (_: number) => boolean"
 
       describe "Record" do
-        testTypePrint (toTsBridge (Proxy :: _ { bar :: String, foo :: Number }))
+        testTypePrint (tsBridge (Proxy :: _ { bar :: String, foo :: Number }))
           "{ readonly bar: string; readonly foo: number; }"
 
       describe "Maybe" do
-        testTypePrint (toTsBridge (Proxy :: _ (Maybe Boolean)))
+        testTypePrint (tsBridge (Proxy :: _ (Maybe Boolean)))
           "import('~/Data.Maybe').Maybe<boolean>"
 
       describe "Either" do
-        testTypePrint (toTsBridge (Proxy :: _ (Either String Boolean)))
+        testTypePrint (tsBridge (Proxy :: _ (Either String Boolean)))
           "import('~/Data.Either').Either<string, boolean>"
 
       describe "Nullable" do
-        testTypePrint (toTsBridge (Proxy :: _ (Nullable String)))
+        testTypePrint (tsBridge (Proxy :: _ (Nullable String)))
           "(null)|(string)"
 
       describe "Variant" do
-        testTypePrint (toTsBridge (Proxy :: _ (Variant (a:: String, b :: Boolean))))
+        testTypePrint (tsBridge (Proxy :: _ (Variant (a:: String, b :: Boolean))))
           "({ readonly type: 'a'; readonly value: string; })|({ readonly type: 'b'; readonly value: boolean; })"
 
 

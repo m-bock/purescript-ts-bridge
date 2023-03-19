@@ -47,7 +47,7 @@ import Effect (Effect)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
-import TsBridge.Core (class ToTsBridgeBy, toTsBridgeBy)
+import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.DTS as DTS
 import TsBridge.Monad (Scope, TsBridgeAccum(..), TsBridgeM, TsBridge_Monad_Wrap(..), defaultTsBridgeAccum)
 import TsBridge.TypeVars (Var)
@@ -71,8 +71,8 @@ defaultTypeVar _ = do
     $ over TsBridgeAccum _ { scope = scope } defaultTsBridgeAccum
   pure $ DTS.TsTypeVar tsName
 
-defaultProxy :: forall f a. ToTsBridgeBy f a => f -> Proxy a -> TsBridgeM DTS.TsType
-defaultProxy mp _ = toTsBridgeBy mp (undefined :: a)
+defaultProxy :: forall f a. TsBridgeBy f a => f -> Proxy a -> TsBridgeM DTS.TsType
+defaultProxy mp _ = tsBridgeBy mp (undefined :: a)
 
 -- | Default type class method implementation for the `Number` type
 -- | Generates a TypeScript `number` type
@@ -108,12 +108,12 @@ defaultUnit _ = pure DTS.TsTypeVoid
 -- | Generates a TypeScript `() => void` type
 defaultEffect
   :: forall a tok
-   . ToTsBridgeBy tok (Proxy a)
+   . TsBridgeBy tok (Proxy a)
   => tok
   -> Effect a
   -> TsBridgeM DTS.TsType
 defaultEffect tok _ = censor mapAccum ado
-  ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ toTsBridgeBy tok (Proxy :: _ a)
+  ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ tsBridgeBy tok (Proxy :: _ a)
   let
     newFixed = (scopeRet.fixed)
       <> scopeRet.floating
@@ -133,22 +133,22 @@ defaultEffect tok _ = censor mapAccum ado
 -- | Generates a TypeScript `Array<A>` type
 defaultArray
   :: forall a f
-   . ToTsBridgeBy f (Proxy a)
+   . TsBridgeBy f (Proxy a)
   => f
   -> Array a
   -> TsBridgeM DTS.TsType
-defaultArray f _ = DTS.TsTypeArray <$> toTsBridgeBy f (Proxy :: _ a)
+defaultArray f _ = DTS.TsTypeArray <$> tsBridgeBy f (Proxy :: _ a)
 
 -- | Default type class method implementation for the `Promise a` type
 -- | Generates a TypeScript `Promise<A>` type
 defaultPromise
   :: forall a f
-   . ToTsBridgeBy f (Proxy a)
+   . TsBridgeBy f (Proxy a)
   => f
   -> Promise a
   -> TsBridgeM DTS.TsType
 defaultPromise f _ = do
-  x <- toTsBridgeBy f (Proxy :: _ a)
+  x <- tsBridgeBy f (Proxy :: _ a)
   pure $ DTS.TsTypeConstructor
     (DTS.TsQualName Nothing (DTS.TsName "Promise"))
     (DTS.TsTypeArgs [ x ])
@@ -157,12 +157,12 @@ defaultPromise f _ = do
 -- | Generates a TypeScript `A | null` type
 defaultNullable
   :: forall a tok
-   . ToTsBridgeBy tok (Proxy a)
+   . TsBridgeBy tok (Proxy a)
   => tok
   -> Nullable a
   -> TsBridgeM DTS.TsType
 defaultNullable tok _ = do
-  x <- toTsBridgeBy tok (Proxy :: _ a)
+  x <- tsBridgeBy tok (Proxy :: _ a)
   pure $ DTS.TsTypeUnion
     [ DTS.TsTypeNull, x ]
 
@@ -170,14 +170,14 @@ defaultNullable tok _ = do
 -- | Generates a TypeScript `(_ : A) => B` type
 defaultFunction
   :: forall f a b
-   . ToTsBridgeBy f (Proxy a)
-  => ToTsBridgeBy f (Proxy b)
+   . TsBridgeBy f (Proxy a)
+  => TsBridgeBy f (Proxy b)
   => f
   -> (a -> b)
   -> TsBridgeM DTS.TsType
 defaultFunction f _ = censor mapAccum ado
-  arg /\ TsBridgeAccum { scope: scopeArg } <- listen $ toTsBridgeBy f (Proxy :: _ a)
-  ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ toTsBridgeBy f (Proxy :: _ b)
+  arg /\ TsBridgeAccum { scope: scopeArg } <- listen $ tsBridgeBy f (Proxy :: _ a)
+  ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ tsBridgeBy f (Proxy :: _ b)
   let
     newFixed = (over2 wrap OSet.intersect scopeArg.fixed scopeRet.fixed)
       <> scopeArg.floating
@@ -217,13 +217,13 @@ instance DefaultRecordRL mp Nil where
   defaultRecordRL _ _ = pure []
 
 instance
-  ( ToTsBridgeBy mp (Proxy t)
+  ( TsBridgeBy mp (Proxy t)
   , DefaultRecordRL mp rl
   , IsSymbol s
   ) =>
   DefaultRecordRL mp (Cons s t rl) where
   defaultRecordRL mp _ = do
-    x <- toTsBridgeBy mp (Proxy :: _ t)
+    x <- tsBridgeBy mp (Proxy :: _ t)
     xs <- defaultRecordRL mp (Proxy :: _ rl)
     let k = DTS.TsName $ reflectSymbol (Proxy :: _ s)
     pure $
@@ -252,14 +252,14 @@ instance DefaultVariantRL mp Nil where
   defaultVariantRL _ _ = pure []
 
 instance
-  ( ToTsBridgeBy mp (Proxy t)
+  ( TsBridgeBy mp (Proxy t)
   , DefaultVariantRL mp rl
   , IsSymbol s
   ) =>
   DefaultVariantRL mp (Cons s t rl) where
   defaultVariantRL mp _ =
     do
-      x <- toTsBridgeBy mp (Proxy :: _ t)
+      x <- tsBridgeBy mp (Proxy :: _ t)
       xs <- defaultVariantRL mp (Proxy :: _ rl)
       pure $
         A.cons
@@ -288,7 +288,7 @@ defaultOpaqueType pursModuleName pursTypeName targNames targs _ = brandedType
 defaultBrandedType
   :: forall mp a t
    . Newtype a t
-  => ToTsBridgeBy mp t
+  => TsBridgeBy mp t
   => mp
   -> String
   -> String
@@ -297,7 +297,7 @@ defaultBrandedType
   -> a
   -> TsBridgeM DTS.TsType
 defaultBrandedType mp pursModuleName pursTypeName targNames targs t = do
-  x <- toTsBridgeBy mp $ unwrap t
+  x <- tsBridgeBy mp $ unwrap t
   brandedType
     (DTS.TsFilePath (pursModuleName <> "/index") "d.ts")
     (DTS.TsModuleAlias pursModuleName)

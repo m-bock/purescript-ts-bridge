@@ -1,9 +1,9 @@
 module TsBridge.Core
-  ( class ToTsBridgeBy
+  ( class TsBridgeBy
   , class TsValues
   , class TsValuesRL
   , tsValuesRL
-  , toTsBridgeBy
+  , tsBridgeBy
   , tsModuleFile
   , tsProgram
   , tsValue
@@ -31,8 +31,8 @@ import TsBridge.DTS (TsBridge_DTS_Wrap(..), TsDeclVisibility(..), TsDeclaration(
 import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, TsBridge_Monad_Wrap(..), runTsBridgeM)
 import Type.Proxy (Proxy(..))
 
-class ToTsBridgeBy tok a where
-  toTsBridgeBy :: tok -> a -> TsBridgeM TsType
+class TsBridgeBy tok a where
+  tsBridgeBy :: tok -> a -> TsBridgeM TsType
 
 tsModuleFile :: String -> Array (TsBridgeM (Array TsDeclaration)) -> Array TsModuleFile
 tsModuleFile n xs =
@@ -57,16 +57,16 @@ mergeModule (TsModule is1 ds1) (TsModule is2 ds2) =
 tsProgram :: Array (Array TsModuleFile) -> TsProgram
 tsProgram xs = mergeModules $ join xs
 
-tsTypeAlias :: forall mp a. ToTsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
+tsTypeAlias :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
 tsTypeAlias mp n x = ado
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope) t
   in [ TsDeclTypeDef (TsName n) Public (coerce scope.floating) x ]
   where
-  t = toTsBridgeBy mp x
+  t = tsBridgeBy mp x
 
-tsOpaqueType :: forall mp a. ToTsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
+tsOpaqueType :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
 tsOpaqueType mp n x = do
-  _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ toTsBridgeBy mp x
+  _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ tsBridgeBy mp x
   case uncons modules of
     Just { head: (TsModuleFile _ (TsModule imports decls)), tail: [] } -> do
       tell $ TsBridgeAccum
@@ -76,9 +76,9 @@ tsOpaqueType mp n x = do
       pure decls
     _ -> pure []
 
-tsValue :: forall mp a. ToTsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
+tsValue :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
 tsValue mp n x = do
-  t <- toTsBridgeBy mp x
+  t <- tsBridgeBy mp x
   pure [ TsDeclValueDef (TsName n) Public t ]
 
 --------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ instance TsValuesRL tok r RL.Nil where
 
 instance
   ( TsValuesRL tok r rl
-  , ToTsBridgeBy tok a
+  , TsBridgeBy tok a
   , Row.Cons sym a rx r
   , IsSymbol sym
   ) =>
