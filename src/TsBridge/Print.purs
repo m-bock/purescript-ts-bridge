@@ -174,6 +174,9 @@ instance Tokenize DTS.TsType where
 
     DTS.TsTypeVoid -> [ TsTokVoid ]
 
+    DTS.TsTypeTypelevelString str -> [ TsTokStringLiteral str ]
+
+
 instance Tokenize DTS.TsFnArg where
   tokenize (DTS.TsFnArg k v) = tokenize k
     <> [ TsTokColon, TsTokWhitespace ]

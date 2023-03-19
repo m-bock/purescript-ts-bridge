@@ -54,6 +54,7 @@ data TsType
   | TsTypeConstructor TsQualName TsTypeArgs
   | TsTypeUniqueSymbol
   | TsTypeVar TsName
+  | TsTypeTypelevelString String
   | TsTypeVoid
 
 data TsModule = TsModule (Set TsImport) (Array TsDeclaration)
@@ -118,6 +119,7 @@ mapQuantifier f = case _ of
   TsTypeUniqueSymbol -> TsTypeUniqueSymbol
   TsTypeVar x -> TsTypeVar $ goTsName x
   TsTypeVoid -> TsTypeVoid
+  TsTypeTypelevelString x -> TsTypeTypelevelString x
 
   where
   goTsRecordField (TsRecordField x y z) = TsRecordField

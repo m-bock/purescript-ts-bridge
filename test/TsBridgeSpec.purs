@@ -13,10 +13,11 @@ import Data.String as String
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (fst)
 import Data.Tuple.Nested (type (/\), (/\))
+import Data.Variant (Variant)
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Util (shouldEqual)
-import TsBridge (class DefaultRecord, class ToTsBridgeBy, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsValue)
+import TsBridge (class DefaultRecord, class DefaultVariant, class ToTsBridgeBy, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsValue)
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
@@ -51,6 +52,10 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
 
 instance (DefaultRecord Tok r) => ToTsBridge (Record r) where
   toTsBridge = TSB.defaultRecord Tok
+
+
+instance (DefaultVariant Tok r) => ToTsBridge (Variant r) where
+  toTsBridge = TSB.defaultVariant Tok
 
 instance ToTsBridge a => ToTsBridge (Maybe a) where
   toTsBridge = TSB.defaultOpaqueType "Data.Maybe" "Maybe" [ "A" ]
@@ -175,6 +180,11 @@ spec = do
       describe "Nullable" do
         testTypePrint (toTsBridge (Proxy :: _ (Nullable String)))
           "(null)|(string)"
+
+      describe "Variant" do
+        testTypePrint (toTsBridge (Proxy :: _ (Variant (a:: String, b :: Boolean))))
+          "({ readonly type: 'a'; readonly value: string; })|({ readonly type: 'b'; readonly value: boolean; })"
+
 
 testDeclPrint :: TsBridgeM (Array TsDeclaration) -> Array String -> Spec Unit
 testDeclPrint x s =

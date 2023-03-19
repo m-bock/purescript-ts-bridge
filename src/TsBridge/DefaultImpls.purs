@@ -1,6 +1,8 @@
 module TsBridge.DefaultImpls
   ( class DefaultRecord
   , class DefaultRecordRL
+  , class DefaultVariant
+  , class DefaultVariantRL
   , defaultArray
   , defaultBoolean
   , defaultBrandedType
@@ -13,6 +15,8 @@ module TsBridge.DefaultImpls
   , defaultProxy
   , defaultRecord
   , defaultRecordRL
+  , defaultVariant
+  , defaultVariantRL
   , defaultString
   , defaultTypeVar
   , defaultUnit
@@ -30,13 +34,13 @@ import Data.Nullable (Nullable)
 import Data.Set as Set
 import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
-import Data.Set.Ordered as Oset
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as Str
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (sequence)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
+import Data.Variant (Variant)
 import Effect (Effect)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
@@ -207,15 +211,58 @@ instance
   ) =>
   DefaultRecordRL mp (Cons s t rl) where
   defaultRecordRL mp _ = do
-    let
-      mkX = toTsBridgeBy mp (Proxy :: _ t)
-      mkXs = defaultRecordRL mp (Proxy :: _ rl)
-      str = reflectSymbol (Proxy :: _ s)
-    x <- mkX
-    xs <- mkXs
-    let k = DTS.TsName $ str
+    x <- toTsBridgeBy mp (Proxy :: _ t)
+    xs <- defaultRecordRL mp (Proxy :: _ rl)
+    let k = DTS.TsName $ reflectSymbol (Proxy :: _ s)
     pure $
       A.cons (DTS.TsRecordField k { optional: false, readonly: true } x) xs
+
+-------------------------------------------------------------------------------
+-- Class / DefaultVariant
+-------------------------------------------------------------------------------
+
+class DefaultVariant :: Type -> Row Type -> Constraint
+class DefaultVariant mp r where
+  defaultVariant :: mp -> Variant r -> TsBridgeM DTS.TsType
+
+instance (RowToList r rl, DefaultVariantRL mp rl) => DefaultVariant mp r where
+  defaultVariant mp _ = DTS.TsTypeUnion <$> defaultVariantRL mp (Proxy :: _ rl)
+
+-------------------------------------------------------------------------------
+-- Class / DefaultVariantRL
+-------------------------------------------------------------------------------
+
+class DefaultVariantRL :: Type -> RowList Type -> Constraint
+class DefaultVariantRL mp rl where
+  defaultVariantRL :: mp -> Proxy rl -> TsBridgeM (Array DTS.TsType)
+
+instance DefaultVariantRL mp Nil where
+  defaultVariantRL _ _ = pure []
+
+instance
+  ( ToTsBridgeBy mp (Proxy t)
+  , DefaultVariantRL mp rl
+  , IsSymbol s
+  ) =>
+  DefaultVariantRL mp (Cons s t rl) where
+  defaultVariantRL mp _ =
+    do
+      x <- toTsBridgeBy mp (Proxy :: _ t)
+      xs <- defaultVariantRL mp (Proxy :: _ rl)
+      pure $
+        A.cons
+          ( DTS.TsTypeRecord
+              [ DTS.TsRecordField (DTS.TsName "type")
+                  { readonly: true, optional: false }
+                  (DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ s))
+              , DTS.TsRecordField (DTS.TsName "value")
+                  { readonly: true, optional: false }
+                  x
+              ]
+          )
+          xs
+
+-------------------------------------------------------------------------------
 
 defaultOpaqueType :: forall a. String -> String -> Array String -> Array (TsBridgeM DTS.TsType) -> a -> TsBridgeM DTS.TsType
 defaultOpaqueType pursModuleName pursTypeName targNames targs _ = brandedType
@@ -248,7 +295,7 @@ defaultBrandedType mp pursModuleName pursTypeName targNames targs t = do
     (Just x)
 
 -------------------------------------------------------------------------------
--- Default Implementations
+-- Util
 -------------------------------------------------------------------------------
 
 fixScope :: Scope -> Scope
@@ -256,10 +303,6 @@ fixScope { fixed, floating } =
   { floating: mempty
   , fixed: fixed <> floating
   }
-
--------------------------------------------------------------------------------
--- Util
--------------------------------------------------------------------------------
 
 brandedType :: DTS.TsFilePath -> DTS.TsModuleAlias -> DTS.TsName -> OSet DTS.TsName -> Array (TsBridgeM DTS.TsType) -> Maybe DTS.TsType -> TsBridgeM DTS.TsType
 brandedType filePath moduleAlias name targs args' type_ = do

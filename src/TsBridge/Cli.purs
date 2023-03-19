@@ -78,9 +78,12 @@ mkTypeGenCliAff tsProg = do
         writeTextFile UTF8 filePath source
     )
 
-  for_ cliOpts.prettier \prettierPath ->
-    spawn prettierPath
-      [ "--write", cliOpts.outputDir <> "/**/*.d.ts" ] -- can fail, if there are no files!
+  case cliOpts.prettier of 
+    Just prettierPath ->
+      void $ spawn prettierPath
+        [ "--write", cliOpts.outputDir <> "/**/*.d.ts" ] -- can fail, if there are no files!
+    Nothing ->
+      log "No path to prettier specified. Generated files will be ugly."
 
 -- | Given a `TsProgram` returns an effectful CLI that can be used as an entry
 -- | point for a type generator.
