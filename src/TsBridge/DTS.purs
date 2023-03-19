@@ -95,7 +95,7 @@ type PropModifiers =
 -------------------------------------------------------------------------------
 
 dtsFilePath :: String -> TsFilePath
-dtsFilePath x = TsFilePath x "d.ts"
+dtsFilePath x = TsFilePath (x <> "/index") "d.ts"
 
 mapQuantifier :: (OSet TsName -> OSet TsName) -> TsType -> TsType
 mapQuantifier f = case _ of
