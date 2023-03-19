@@ -317,14 +317,14 @@ fixScope { fixed, floating } =
   }
 
 brandedType :: DTS.TsFilePath -> DTS.TsModuleAlias -> DTS.TsName -> OSet DTS.TsName -> Array (TsBridgeM DTS.TsType) -> Maybe DTS.TsType -> TsBridgeM DTS.TsType
-brandedType filePath moduleAlias name@(DTS.TsName n) targs args' type_ = do
+brandedType filePath moduleAlias@(DTS.TsModuleAlias alias) name targs args' type_ = do
   args <- sequence args'
 
   let
     typeDefs =
       [ DTS.TsModuleFile
           filePath
-          ( DTS.TsModule n Set.empty
+          ( DTS.TsModule alias Set.empty
               [ mkBrandedTypeDecl name targs type_
               ]
           )
