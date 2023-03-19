@@ -36,6 +36,7 @@ data TsToken
   | TsTokFrom
   | TsTokType
   | TsTokSymbol
+  | TsTokDeclareModule
 
   -- Builtins
   | TsTokString
@@ -176,7 +177,6 @@ instance Tokenize DTS.TsType where
 
     DTS.TsTypeTypelevelString str -> [ TsTokStringLiteral str ]
 
-
 instance Tokenize DTS.TsFnArg where
   tokenize (DTS.TsFnArg k v) = tokenize k
     <> [ TsTokColon, TsTokWhitespace ]
@@ -230,13 +230,16 @@ instance Tokenize DTS.TsDeclaration where
       xs >>= \x -> [ TsTokLineComment x ]
 
 instance Tokenize DTS.TsModule where
-  tokenize (DTS.TsModule is ds) =
-    ( is
-        # Set.toUnfoldable
-        <#> tokenize
-        # applyWhenNotEmpty (postfixNewline >>> (_ <> [ TsTokNewline ]))
-    )
+  tokenize (DTS.TsModule name is ds) =
+    [ TsTokDeclareModule, TsTokStringLiteral name, TsTokOpenBrace ]
+      <>
+        ( is
+            # Set.toUnfoldable
+            <#> tokenize
+            # applyWhenNotEmpty (postfixNewline >>> (_ <> [ TsTokNewline ]))
+        )
       <> (ds <#> tokenize # sepByDoubleNewline)
+      <> [ TsTokCloseBrace ]
 
 instance Tokenize DTS.TsImport where
   tokenize (DTS.TsImport n fp) =
@@ -279,6 +282,8 @@ printToken = case _ of
     "type"
   TsTokSymbol ->
     "symbol"
+  TsTokDeclareModule ->
+    "declare module"
 
   TsTokNumber ->
     "number"
@@ -354,9 +359,6 @@ printTsDeclarations x = x <#> tokenize <#> map printToken >>> S.joinWith ""
 
 printTsFilePath :: DTS.TsFilePath -> String
 printTsFilePath (DTS.TsFilePath x y) = x <> "." <> y
-
--- printTsModuleFile :: TsModuleFile -> String /\ String
--- printTsModuleFile (TsModuleFile fp m) = printTsFilePath fp /\ printTsModule m
 
 printTsProgram :: DTS.TsProgram -> Map String String
 printTsProgram (DTS.TsProgram xs) = xs

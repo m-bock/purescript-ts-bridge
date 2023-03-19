@@ -39,7 +39,7 @@ tsModuleFile n xs =
   let
     (xs' /\ TsBridgeAccum { typeDefs }) = runTsBridgeM $ join <$> sequence xs
   in
-    typeDefs <> [ TsModuleFile (dtsFilePath n) (TsModule Set.empty xs') ]
+    typeDefs <> [ TsModuleFile (dtsFilePath n) (TsModule n Set.empty xs') ]
 
 mergeModules :: Array TsModuleFile -> TsProgram
 mergeModules xs =
@@ -49,8 +49,9 @@ mergeModules xs =
     # TsProgram
 
 mergeModule :: TsModule -> TsModule -> TsModule
-mergeModule (TsModule is1 ds1) (TsModule is2 ds2) =
+mergeModule (TsModule n1 is1 ds1) (TsModule n2 is2 ds2) =
   TsModule
+    n2
     (is1 `Set.union` is2)
     (Array.nub (ds1 <> ds2))
 
@@ -68,7 +69,7 @@ tsOpaqueType :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (
 tsOpaqueType mp n x = do
   _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ tsBridgeBy mp x
   case uncons modules of
-    Just { head: (TsModuleFile _ (TsModule imports decls)), tail: [] } -> do
+    Just { head: (TsModuleFile _ (TsModule n imports decls)), tail: [] } -> do
       tell $ TsBridgeAccum
         { typeDefs: mempty
         , scope: mempty

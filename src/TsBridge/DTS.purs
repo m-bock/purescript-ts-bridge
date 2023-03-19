@@ -57,7 +57,7 @@ data TsType
   | TsTypeTypelevelString String
   | TsTypeVoid
 
-data TsModule = TsModule (Set TsImport) (Array TsDeclaration)
+data TsModule = TsModule String (Set TsImport) (Array TsDeclaration)
 
 data TsModuleFile = TsModuleFile TsFilePath TsModule
 
