@@ -96,7 +96,7 @@ defaultInt = defaultOpaqueType "Prim" "Int" [] []
 
 -- | Default type class method implementation for the `Char` type
 -- | Generates a TypeScript opaque type
-defaultChar :: Int -> TsBridgeM DTS.TsType
+defaultChar :: Char -> TsBridgeM DTS.TsType
 defaultChar = defaultOpaqueType "Prim" "Char" [] []
 
 -- | Default type class method implementation for the `Unit` type
