@@ -123,7 +123,7 @@ instance Tokenize DTS.TsQualName where
       ( \(DTS.TsModuleAlias n) ->
           [ TsTokImport
           , TsTokOpenParen
-          , TsTokStringLiteral ("~/" <> n)
+          , TsTokStringLiteral ("../" <> n)
           , TsTokCloseParen
           , TsTokDot
           ]
@@ -231,7 +231,7 @@ instance Tokenize DTS.TsDeclaration where
 
 instance Tokenize DTS.TsModule where
   tokenize (DTS.TsModule name is ds) =
-    [ TsTokDeclareModule, TsTokStringLiteral ("~/" <> name), TsTokOpenBrace ]
+    [ TsTokDeclareModule, TsTokStringLiteral ("output/" <> name), TsTokOpenBrace ]
       <>
         ( is
             # Set.toUnfoldable
