@@ -140,10 +140,10 @@ instance Tokenize DTS.TsType where
       [ TsTokIdentifier "Array" ] <> wrapAngles (tokenize x)
 
     DTS.TsTypeIntersection xs ->
-      intersperse TsTokAmpersand $ wrapParens $ tokenize =<< xs
+      intersperse TsTokAmpersand $ join $ wrapParens <<< tokenize <$> xs
 
     DTS.TsTypeUnion xs ->
-      intersperse TsTokPipe $ wrapParens $ tokenize =<< xs
+      intersperse TsTokPipe $ join $ wrapParens <<< tokenize <$> xs
 
     DTS.TsTypeRecord xs ->
       wrapBraces $
