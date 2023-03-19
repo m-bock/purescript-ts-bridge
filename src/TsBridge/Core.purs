@@ -37,9 +37,9 @@ class ToTsBridgeBy tok a where
 tsModuleFile :: String -> Array (TsBridgeM (Array TsDeclaration)) -> Array TsModuleFile
 tsModuleFile n xs =
   let
-    (xs' /\ TsBridgeAccum { typeDefs, imports }) = runTsBridgeM $ join <$> sequence xs
+    (xs' /\ TsBridgeAccum { typeDefs }) = runTsBridgeM $ join <$> sequence xs
   in
-    typeDefs <> [ TsModuleFile (dtsFilePath n) (TsModule imports xs') ]
+    typeDefs <> [ TsModuleFile (dtsFilePath n) (TsModule Set.empty xs') ]
 
 mergeModules :: Array TsModuleFile -> TsProgram
 mergeModules xs =
@@ -71,7 +71,6 @@ tsOpaqueType mp n x = do
     Just { head: (TsModuleFile _ (TsModule imports decls)), tail: [] } -> do
       tell $ TsBridgeAccum
         { typeDefs: mempty
-        , imports
         , scope: mempty
         }
       pure decls

@@ -266,14 +266,6 @@ brandedType filePath moduleAlias name targs args' type_ = do
   args <- sequence args'
 
   let
-    imports = Set.singleton $
-      DTS.TsImport
-        moduleAlias
-        ( filePath
-            # filePathToModulePath
-            # (\(DTS.TsModulePath x) -> DTS.TsModulePath ("~/" <> x))
-        )
-
     typeDefs =
       [ DTS.TsModuleFile
           filePath
@@ -285,7 +277,7 @@ brandedType filePath moduleAlias name targs args' type_ = do
 
   tell
     $ TsBridgeAccum
-    $ R.union mempty { typeDefs, imports }
+    $ R.union mempty { typeDefs }
 
   pure
     $ DTS.TsTypeConstructor (DTS.TsQualName (Just moduleAlias) name) (DTS.TsTypeArgs args)

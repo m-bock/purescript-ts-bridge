@@ -11,11 +11,10 @@ import Prelude
 
 import Control.Monad.Writer (class MonadTell, class MonadWriter, Writer, runWriter)
 import Data.Newtype (class Newtype)
-import Data.Set (Set)
 import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
 import Data.Tuple.Nested (type (/\))
-import TsBridge.DTS (TsImport, TsModuleFile, TsName)
+import TsBridge.DTS (TsModuleFile, TsName)
 
 -------------------------------------------------------------------------------
 -- Types / TsBridge
@@ -25,14 +24,12 @@ newtype TsBridgeM a = TsBridgeM (Writer TsBridgeAccum a)
 
 newtype TsBridgeAccum = TsBridgeAccum
   { typeDefs :: Array TsModuleFile
-  , imports :: Set TsImport
   , scope :: Scope
   }
 
 defaultTsBridgeAccum :: TsBridgeAccum
 defaultTsBridgeAccum = TsBridgeAccum
   { typeDefs: mempty
-  , imports: mempty
   , scope: mempty
   }
 
