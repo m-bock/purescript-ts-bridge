@@ -13,6 +13,7 @@ import Data.String as String
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (fst)
 import Data.Tuple.Nested (type (/\), (/\))
+import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Util (shouldEqual)
 import TsBridge (class DefaultRecord, class ToTsBridgeBy, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsValue)
@@ -39,6 +40,9 @@ instance ToTsBridge Boolean where
 instance ToTsBridge a => ToTsBridge (Array a) where
   toTsBridge = TSB.defaultArray Tok
 
+instance ToTsBridge a => ToTsBridge (Effect a) where
+  toTsBridge = TSB.defaultEffect Tok
+
 instance ToTsBridge a => ToTsBridge (Nullable a) where
   toTsBridge = TSB.defaultNullable Tok
 
@@ -58,6 +62,9 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
 
 instance IsSymbol sym => ToTsBridge (Var sym) where
   toTsBridge _ = TSB.defaultTypeVar (Var :: _ sym)
+
+instance ToTsBridge Unit where
+  toTsBridge = TSB.defaultUnit
 
 --
 
@@ -145,6 +152,10 @@ spec = do
         testTypePrint (toTsBridge (Proxy :: _ (Array Boolean)))
           "Array<boolean>"
 
+      describe "Effect" do
+        testTypePrint (toTsBridge (Proxy :: _ (Effect Unit)))
+          "() => void"
+
       describe "Function" do
         testTypePrint (toTsBridge (Proxy :: _ (String -> Number -> Boolean)))
           "(_: string) => (_: number) => boolean"
@@ -176,10 +187,12 @@ testDeclPrint x s =
 testTypePrint :: TsBridgeM TsType -> String -> Spec Unit
 testTypePrint x s =
   it "prints the correct type" do
-    runTsBridgeM x
-      # fst
-      # printTsType
-      # shouldEqual s
+    shouldEqual
+      ( runTsBridgeM x
+          # fst
+          # printTsType
+      )
+      s
 
 textFile :: String -> Array String -> String /\ Array String
 textFile n lines = n /\ lines

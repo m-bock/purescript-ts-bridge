@@ -91,17 +91,27 @@ defaultUnit _ = pure DTS.TsTypeVoid
 -- | Default type class method implementation for the `Effect` type
 -- | Generates a TypeScript `() => void` type
 defaultEffect
-  :: forall a f
-   . ToTsBridgeBy f (Proxy a)
-  => f
+  :: forall a tok
+   . ToTsBridgeBy tok (Proxy a)
+  => tok
   -> Effect a
   -> TsBridgeM DTS.TsType
-defaultEffect f _ = do
-  x <- (toTsBridgeBy f (Proxy :: _ a))
-  pure $ DTS.TsTypeFunction
-    (DTS.TsTypeArgsQuant $ coerce $ Oset.singleton $ DTS.TsName "A")
-    []
-    x
+defaultEffect tok _ = censor mapAccum ado
+  ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ toTsBridgeBy tok (Proxy :: _ a)
+  let
+    newFixed = (scopeRet.fixed)
+      <> scopeRet.floating
+
+    removeQuant =
+      DTS.mapQuantifier $ OSet.filter (_ `OSet.notElem` (unwrap newFixed))
+
+  in
+    DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
+      [
+      ]
+      (removeQuant ret)
+  where
+  mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
 
 -- | Default type class method implementation for the `Array a` type
 -- | Generates a TypeScript `Array<A>` type
