@@ -123,7 +123,7 @@ instance Tokenize DTS.TsQualName where
       ( \(DTS.TsModuleAlias n) ->
           [ TsTokImport
           , TsTokOpenParen
-          , TsTokStringLiteral ("output/" <> n)
+          , TsTokStringLiteral ("../" <> n)
           , TsTokCloseParen
           , TsTokDot
           ]
@@ -231,15 +231,12 @@ instance Tokenize DTS.TsDeclaration where
 
 instance Tokenize DTS.TsModule where
   tokenize (DTS.TsModule name is ds) =
-    [ TsTokDeclareModule, TsTokStringLiteral ("output/" <> name), TsTokOpenBrace ]
-      <>
-        ( is
-            # Set.toUnfoldable
-            <#> tokenize
-            # applyWhenNotEmpty (postfixNewline >>> (_ <> [ TsTokNewline ]))
-        )
+    ( is
+        # Set.toUnfoldable
+        <#> tokenize
+        # applyWhenNotEmpty (postfixNewline >>> (_ <> [ TsTokNewline ]))
+    )
       <> (ds <#> tokenize # sepByDoubleNewline)
-      <> [ TsTokCloseBrace ]
 
 instance Tokenize DTS.TsImport where
   tokenize (DTS.TsImport n fp) =
