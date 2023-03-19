@@ -17,6 +17,7 @@
   , "node-fs"
   , "node-fs-aff"
   , "node-path"
+  , "nullable"
   , "optparse"
   , "ordered-collections"
   , "ordered-set"

@@ -26,6 +26,7 @@ import Data.Array (mapWithIndex, (:))
 import Data.Array as A
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over, over2, unwrap, wrap)
+import Data.Nullable (Nullable)
 import Data.Set as Set
 import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
@@ -132,7 +133,7 @@ defaultNullable
   :: forall a tok
    . ToTsBridgeBy tok (Proxy a)
   => tok
-  -> Promise a
+  -> Nullable a
   -> TsBridgeM DTS.TsType
 defaultNullable tok _ = do
   x <- toTsBridgeBy tok (Proxy :: _ a)

@@ -7,6 +7,7 @@ import Prelude
 import Data.Either (Either)
 import Data.Map (Map)
 import Data.Maybe (Maybe)
+import Data.Nullable (Nullable)
 import Data.String (Pattern(..))
 import Data.String as String
 import Data.Symbol (class IsSymbol)
@@ -37,6 +38,9 @@ instance ToTsBridge Boolean where
 
 instance ToTsBridge a => ToTsBridge (Array a) where
   toTsBridge = TSB.defaultArray Tok
+
+instance ToTsBridge a => ToTsBridge (Nullable a) where
+  toTsBridge = TSB.defaultNullable Tok
 
 instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (a -> b) where
   toTsBridge = TSB.defaultFunction Tok
@@ -156,6 +160,10 @@ spec = do
       describe "Either" do
         testTypePrint (toTsBridge (Proxy :: _ (Either String Boolean)))
           "Data_Either.Either<string, boolean>"
+
+      describe "Nullable" do
+        testTypePrint (toTsBridge (Proxy :: _ (Nullable String)))
+          "(null)|(string)"
 
 testDeclPrint :: TsBridgeM (Array TsDeclaration) -> Array String -> Spec Unit
 testDeclPrint x s =
