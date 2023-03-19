@@ -1,3 +1,6 @@
+-- | This module contains code that can turn a TsProgram into a CLI that writes
+-- | it to the file system.
+-- |
 module TsBridge.Cli (mkTypeGenCli) where
 
 import Prelude
@@ -76,9 +79,11 @@ mkTypeGenCliAff tsProg = do
     )
 
   for_ cliOpts.prettier \prettierPath ->
-    void $ spawn prettierPath
+    spawn prettierPath
       [ "--write", cliOpts.outputDir <> "/**/*.d.ts" ] -- can fail, if there are no files!
 
+-- | Given a `TsProgram` returns an effectful CLI that can be used as an entry
+-- | point for a type generator.
 mkTypeGenCli :: TsProgram -> Effect Unit
 mkTypeGenCli tsProg = launchAff_ $ mkTypeGenCliAff tsProg
 

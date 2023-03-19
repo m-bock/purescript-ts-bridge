@@ -1,58 +1,34 @@
 module TsBridge.Core
-  ( class DefaultRecord
-  , class DefaultRecordRL
-  , class ToTsBridgeBy
+  ( class ToTsBridgeBy
+  , class TsValues
+  , class TsValuesRL
+  , tsValuesRL
   , toTsBridgeBy
-  , defaultArray
-  , defaultBoolean
-  , defaultBrandedType
-  , defaultEffect
-  , defaultFunction
-  , defaultNumber
-  , defaultOpaqueType
-  , defaultPromise
-  , defaultProxy
-  , defaultRecord
-  , defaultString
-  , defaultTypeVar
-  , defaultUnit
-  , defaultRecordRL
-  , mergeTsPrograms
   , tsModuleFile
-  , tsOpaqueType
   , tsProgram
-  , tsTypeAlias
-  , tsUnsupported
   , tsValue
+  , tsValues
   ) where
 
 import Prelude
 
-import Control.Monad.Writer (listens, censor, listen, tell)
-import Control.Promise (Promise)
-import Data.Array (mapWithIndex, uncons, (:))
-import Data.Array as A
+import Control.Monad.Writer (listens, tell)
+import Data.Array (uncons)
 import Data.Array as Array
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, over, over2, un, unwrap, wrap)
+import Data.Newtype (un)
 import Data.Set as Set
-import Data.Set.Ordered (OSet)
-import Data.Set.Ordered as OSet
-import Data.Set.Ordered as Oset
-import Data.String (Pattern(..), Replacement(..))
-import Data.String as Str
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (sequence)
 import Data.Tuple.Nested ((/\))
-import Data.Typelevel.Undefined (undefined)
-import Effect (Effect)
-import Prim.RowList (class RowToList, Cons, Nil, RowList)
-import Record as R
+import Prim.Row as Row
+import Prim.RowList (class RowToList, RowList)
+import Prim.RowList as RL
+import Record as Record
 import Safe.Coerce (coerce)
-import TsBridge.DTS (TsBridge_DTS_Wrap(..), TsDeclVisibility(..), TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsImport(..), TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsProgram(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..), dtsFilePath, mapQuantifier)
-import TsBridge.Monad (Scope, TsBridgeAccum(..), TsBridgeM, TsBridge_Monad_Wrap(..), defaultTsBridgeAccum, runTsBridgeM)
-import TsBridge.TypeVars (Var)
+import TsBridge.DTS (TsBridge_DTS_Wrap(..), TsDeclVisibility(..), TsDeclaration(..), TsModule(..), TsModuleFile(..), TsName(..), TsProgram(..), TsType, dtsFilePath)
+import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, TsBridge_Monad_Wrap(..), runTsBridgeM)
 import Type.Proxy (Proxy(..))
 
 class ToTsBridgeBy tok a where
@@ -106,242 +82,35 @@ tsValue mp n x = do
   t <- toTsBridgeBy mp x
   pure [ TsDeclValueDef (TsName n) Public t ]
 
-tsUnsupported :: String -> String -> TsBridgeM (Array TsDeclaration)
-tsUnsupported x reason = pure
-  [ TsDeclComments [ "`" <> x <> "` is unsupported: " <> reason ]
-  ]
+--------------------------------------------------------------------------------
+-- class TsValues
+--------------------------------------------------------------------------------
 
-mergeTsPrograms :: TsProgram -> TsProgram -> TsProgram
-mergeTsPrograms p1 p2 = p1 --TODO
+class TsValues tok r where
+  tsValues :: tok -> Record r -> TsBridgeM (Array TsDeclaration)
 
--------------------------------------------------------------------------------
--- Util
--------------------------------------------------------------------------------
+instance (TsValuesRL tok r rl, RowToList r rl) => TsValues tok r where
+  tsValues tok r = tsValuesRL tok r (Proxy :: _ rl)
 
-mkBrandedTypeDecl :: TsName -> OSet TsName -> Maybe TsType -> TsDeclaration
-mkBrandedTypeDecl name args type_ = TsDeclTypeDef name Public (coerce args)
-  $ maybeWithType
-  $
-    TsTypeRecord
-      (opaqueField : (mapWithIndex mkArgFields $ OSet.toUnfoldable args))
+--------------------------------------------------------------------------------
+-- class TsValuesRL
+--------------------------------------------------------------------------------
 
-  where
-  maybeWithType = case type_ of
-    Nothing -> identity
-    Just t -> \x -> TsTypeIntersection x t
+class TsValuesRL :: Type -> Row Type -> RowList Type -> Constraint
+class TsValuesRL tok r rl where
+  tsValuesRL :: tok -> Record r -> Proxy rl -> TsBridgeM (Array TsDeclaration)
 
-  opaqueField = TsRecordField
-    (TsName $ "brand")
-    { optional: false, readonly: true }
-    TsTypeUniqueSymbol
-
-  mkArgFields idx name' = TsRecordField
-    (TsName ("arg" <> show idx))
-    { optional: false, readonly: true }
-    (TsTypeVar name')
-
-filePathToModulePath :: TsFilePath -> TsModulePath
-filePathToModulePath (TsFilePath x _) = TsModulePath x
-
--------------------------------------------------------------------------------
--- Default Implementations
--------------------------------------------------------------------------------
-
-defaultTypeVar :: forall s. IsSymbol s => Var s -> TsBridgeM TsType
-defaultTypeVar _ = do
-  let
-    tsName = TsName $ reflectSymbol (Proxy :: _ s)
-
-    scope =
-      { floating: wrap $ OSet.singleton tsName
-      , fixed: mempty
-      }
-
-  tell
-    $ over TsBridgeAccum _ { scope = scope } defaultTsBridgeAccum
-  pure $ TsTypeVar tsName
-
-defaultProxy :: forall f a. ToTsBridgeBy f a  => f -> Proxy a -> TsBridgeM TsType
-defaultProxy mp _ = toTsBridgeBy mp (undefined :: a)
-
-defaultNumber :: Number -> TsBridgeM TsType
-defaultNumber _ = pure TsTypeNumber
-
-defaultString :: String -> TsBridgeM TsType
-defaultString _ = pure TsTypeString
-
-defaultBoolean :: Boolean -> TsBridgeM TsType
-defaultBoolean _ = pure TsTypeBoolean
-
-defaultUnit :: Unit -> TsBridgeM TsType
-defaultUnit _ = pure TsTypeVoid
-
-defaultEffect
-  :: forall a f
-   . ToTsBridgeBy f (Proxy a)
-  => f
-  -> Effect a
-  -> TsBridgeM TsType
-defaultEffect f _ = do
-  x <- (toTsBridgeBy f (Proxy :: _ a))
-  pure $ TsTypeFunction
-    (TsTypeArgsQuant $ coerce $ Oset.singleton $ TsName "A")
-    []
-    x
-
-defaultArray
-  :: forall a f
-   . ToTsBridgeBy f (Proxy a)
-  => f
-  -> Array a
-  -> TsBridgeM TsType
-defaultArray f _ = TsTypeArray <$> toTsBridgeBy f (Proxy :: _ a)
-
-defaultPromise
-  :: forall a f
-   . ToTsBridgeBy f (Proxy a)
-  => f
-  -> Promise a
-  -> TsBridgeM TsType
-defaultPromise f _ = do
-  x <- toTsBridgeBy f (Proxy :: _ a)
-  pure $ TsTypeConstructor
-    (TsQualName Nothing (TsName "Promise"))
-    (TsTypeArgs [ x ])
-
-defaultFunction
-  :: forall f a b
-   . ToTsBridgeBy f (Proxy a)
-  => ToTsBridgeBy f (Proxy b)
-  => f
-  -> (a -> b)
-  -> TsBridgeM TsType
-defaultFunction f _ = censor mapAccum ado
-  arg /\ TsBridgeAccum { scope: scopeArg } <- listen $ toTsBridgeBy f (Proxy :: _ a)
-  ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ toTsBridgeBy f (Proxy :: _ b)
-  let
-    newFixed = (over2 wrap OSet.intersect scopeArg.fixed scopeRet.fixed)
-      <> scopeArg.floating
-      <> scopeRet.floating
-
-    removeQuant =
-      mapQuantifier $ OSet.filter (_ `OSet.notElem` (unwrap newFixed))
-
-  in
-    TsTypeFunction (TsTypeArgsQuant $ coerce newFixed)
-      [ TsFnArg (TsName "_") (removeQuant arg)
-      ]
-      (removeQuant ret)
-  where
-  mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
-
-fixScope :: Scope -> Scope
-fixScope { fixed, floating } =
-  { floating: mempty
-  , fixed: fixed <> floating
-  }
-
--------------------------------------------------------------------------------
--- Class / DefaultRecord
--------------------------------------------------------------------------------
-
-class DefaultRecord :: Type -> Row Type -> Constraint
-class DefaultRecord mp r where
-  defaultRecord :: mp -> Record r -> TsBridgeM TsType
-
-instance (RowToList r rl, DefaultRecordRL mp rl) => DefaultRecord mp r where
-  defaultRecord mp _ = TsTypeRecord <$> defaultRecordRL mp (Proxy :: _ rl)
-
--------------------------------------------------------------------------------
--- Class / DefaultRecordRL
--------------------------------------------------------------------------------
-
-class DefaultRecordRL :: Type -> RowList Type -> Constraint
-class DefaultRecordRL mp rl where
-  defaultRecordRL :: mp -> Proxy rl -> TsBridgeM (Array TsRecordField)
-
-instance DefaultRecordRL mp Nil where
-  defaultRecordRL _ _ = pure []
+instance TsValuesRL tok r RL.Nil where
+  tsValuesRL _ _ _ = pure []
 
 instance
-  ( ToTsBridgeBy mp (Proxy t)
-  , DefaultRecordRL mp rl
-  , IsSymbol s
+  ( TsValuesRL tok r rl
+  , ToTsBridgeBy tok a
+  , Row.Cons sym a rx r
+  , IsSymbol sym
   ) =>
-  DefaultRecordRL mp (Cons s t rl) where
-  defaultRecordRL mp _ = do
-    let
-      mkX = toTsBridgeBy mp (Proxy :: _ t)
-      mkXs = defaultRecordRL mp (Proxy :: _ rl)
-      str = reflectSymbol (Proxy :: _ s)
-    x <- mkX
-    xs <- mkXs
-    let k = TsName $ str
-    pure $
-      A.cons (TsRecordField k { optional: false, readonly: true } x) xs
-
--------------------------------------------------------------------------------
--- Util
--------------------------------------------------------------------------------
-
-defaultOpaqueType :: forall a. String -> String -> Array String -> Array (TsBridgeM TsType) -> a -> TsBridgeM TsType
-defaultOpaqueType pursModuleName pursTypeName targNames targs _ = brandedType
-  (TsFilePath (pursModuleName <> "/index") "d.ts")
-  (TsModuleAlias $ dotsToLodashes pursModuleName)
-  (TsName pursTypeName)
-  (OSet.fromFoldable $ TsName <$> targNames)
-  targs
-  Nothing
-
-defaultBrandedType
-  :: forall mp a t
-   . Newtype a t
-  => ToTsBridgeBy mp t
-  => mp
-  -> String
-  -> String
-  -> Array String
-  -> Array (TsBridgeM TsType)
-  -> a
-  -> TsBridgeM TsType
-defaultBrandedType mp pursModuleName pursTypeName targNames targs t = do
-  x <- toTsBridgeBy mp $ unwrap t
-  brandedType
-    (TsFilePath (pursModuleName <> "/index") "d.ts")
-    (TsModuleAlias $ dotsToLodashes pursModuleName)
-    (TsName pursTypeName)
-    (OSet.fromFoldable $ TsName <$> targNames)
-    targs
-    (Just x)
-
-brandedType :: TsFilePath -> TsModuleAlias -> TsName -> OSet TsName -> Array (TsBridgeM TsType) -> Maybe TsType -> TsBridgeM TsType
-brandedType filePath moduleAlias name targs args' type_ = do
-  args <- sequence args'
-
-  let
-    imports = Set.singleton $
-      TsImport
-        moduleAlias
-        ( filePath
-            # filePathToModulePath
-            # (\(TsModulePath x) -> TsModulePath ("~/" <> x))
-        )
-
-    typeDefs =
-      [ TsModuleFile
-          filePath
-          ( TsModule Set.empty
-              [ mkBrandedTypeDecl name targs type_
-              ]
-          )
-      ]
-
-  tell
-    $ TsBridgeAccum
-    $ R.union mempty { typeDefs, imports }
-
-  pure
-    $ TsTypeConstructor (TsQualName (Just moduleAlias) name) (TsTypeArgs args)
-
-dotsToLodashes :: String -> String
-dotsToLodashes = Str.replaceAll (Pattern ".") (Replacement "_")
+  TsValuesRL tok r (RL.Cons sym a rl) where
+  tsValuesRL tok r _ = (<>) <$> head <*> tail
+    where
+    tail = tsValuesRL tok r (Proxy :: _ rl)
+    head = tsValue tok (reflectSymbol (Proxy :: _ sym)) (Record.get (Proxy :: _ sym) r)

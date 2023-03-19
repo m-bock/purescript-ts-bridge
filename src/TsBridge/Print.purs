@@ -59,7 +59,7 @@ data TsToken
   | TsTokDot
   | TsTokFatArrow
   | TsTokQuestionMark
-  | TsTokAmpersand    
+  | TsTokAmpersand
 
   -- Formatting 
   | TsTokWhitespace
@@ -99,18 +99,8 @@ sepByComma = sepBy [ TsTokComma, TsTokWhitespace ]
 sepByDoubleNewline :: Array TsTokens -> TsTokens
 sepByDoubleNewline = sepBy [ TsTokNewline, TsTokNewline ]
 
--- postfixSemicolon :: Array TsTokens -> TsTokens
--- postfixSemicolon = postfix [ TsTokSemicolon ]
-
--- postfixDoubleNewline :: Array TsTokens -> TsTokens
--- postfixDoubleNewline = postfix [ TsTokNewline, TsTokNewline ]
-
 postfixNewline :: Array TsTokens -> TsTokens
 postfixNewline = postfix [ TsTokNewline ]
-
--- sectionNewline :: (Array TsTokens -> TsTokens) -> Array TsTokens -> TsTokens
--- sectionNewline f xs | Array.length xs == 0 = []
--- sectionNewline f xs = f xs <> [ TsTokNewline ]
 
 applyWhenNotEmpty :: forall a b. (Array a -> Array b) -> Array a -> Array b
 applyWhenNotEmpty _ xs | Array.null xs = []
