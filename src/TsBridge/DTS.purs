@@ -45,8 +45,10 @@ data TsType
   = TsTypeNumber
   | TsTypeString
   | TsTypeBoolean
+  | TsTypeNull
   | TsTypeArray TsType
-  | TsTypeIntersection TsType TsType
+  | TsTypeIntersection (Array TsType)
+  | TsTypeUnion (Array TsType)
   | TsTypeRecord (Array TsRecordField)
   | TsTypeFunction TsTypeArgsQuant (Array TsFnArg) TsType
   | TsTypeConstructor TsQualName TsTypeArgs
@@ -99,10 +101,12 @@ mapQuantifier f = case _ of
   TsTypeNumber -> TsTypeNumber
   TsTypeString -> TsTypeString
   TsTypeBoolean -> TsTypeBoolean
+  TsTypeNull -> TsTypeNull
   TsTypeArray x -> TsTypeArray $ mapQuantifier f x
-  TsTypeIntersection x y -> TsTypeIntersection
-    (mapQuantifier f x)
-    (mapQuantifier f y)
+  TsTypeIntersection xs -> TsTypeIntersection
+    (mapQuantifier f <$> xs)
+  TsTypeUnion xs -> TsTypeUnion
+    (mapQuantifier f <$> xs)
   TsTypeRecord x -> TsTypeRecord $ goTsRecordField <$> x
   TsTypeFunction x y z -> TsTypeFunction
     (goTsTypeArgsQuant x)

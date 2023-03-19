@@ -16,8 +16,8 @@ import Data.Newtype (unwrap)
 import Data.Set as Set
 import Data.Set.Ordered as OSet
 import Data.String as S
-import Data.Tuple.Nested (type (/\), (/\))
-import TsBridge.DTS (TsDeclVisibility(..), TsDeclaration(..), TsFilePath(..), TsFnArg(..), TsImport(..), TsModule(..), TsModuleAlias(..), TsModuleFile(..), TsModulePath(..), TsName(..), TsProgram(..), TsQualName(..), TsRecordField(..), TsType(..), TsTypeArgs(..), TsTypeArgsQuant(..))
+import Data.Tuple.Nested ((/\))
+import TsBridge.DTS as DTS
 
 type TsTokens = Array TsToken
 
@@ -41,6 +41,7 @@ data TsToken
   | TsTokString
   | TsTokNumber
   | TsTokBoolean
+  | TsTokNull
 
   -- Punctuation
   | TsTokSemicolon
@@ -60,6 +61,7 @@ data TsToken
   | TsTokFatArrow
   | TsTokQuestionMark
   | TsTokAmpersand
+  | TsTokPipe
 
   -- Formatting 
   | TsTokWhitespace
@@ -109,73 +111,79 @@ applyWhenNotEmpty f xs = f xs
 class Tokenize a where
   tokenize :: a -> TsTokens
 
-instance Tokenize TsName where
-  tokenize (TsName x) = [ TsTokIdentifier x ]
+instance Tokenize DTS.TsName where
+  tokenize (DTS.TsName x) = [ TsTokIdentifier x ]
 
-instance Tokenize TsModuleAlias where
-  tokenize (TsModuleAlias x) = [ TsTokIdentifier x ]
+instance Tokenize DTS.TsModuleAlias where
+  tokenize (DTS.TsModuleAlias x) = [ TsTokIdentifier x ]
 
-instance Tokenize TsQualName where
-  tokenize (TsQualName s x) =
+instance Tokenize DTS.TsQualName where
+  tokenize (DTS.TsQualName s x) =
     maybe [] (\n -> tokenize n <> [ TsTokDot ]) s
       <> tokenize x
 
-instance Tokenize TsType where
+instance Tokenize DTS.TsType where
   tokenize = case _ of
-    TsTypeNumber ->
+    DTS.TsTypeNumber ->
       [ TsTokNumber ]
 
-    TsTypeString ->
+    DTS.TsTypeString ->
       [ TsTokString ]
 
-    TsTypeBoolean ->
+    DTS.TsTypeBoolean ->
       [ TsTokBoolean ]
 
-    TsTypeArray x ->
+    DTS.TsTypeNull ->
+      [ TsTokNull ]
+
+    DTS.TsTypeArray x ->
       [ TsTokIdentifier "Array" ] <> wrapAngles (tokenize x)
 
-    TsTypeIntersection x y ->
-      tokenize x <> [ TsTokAmpersand ] <> tokenize y
+    DTS.TsTypeIntersection xs ->
+      intersperse TsTokAmpersand $ (wrapParens <<< tokenize) =<< xs
 
-    TsTypeRecord xs ->
+    DTS.TsTypeUnion xs ->
+      intersperse TsTokPipe $ (wrapParens <<< tokenize) =<< xs
+
+    DTS.TsTypeRecord xs ->
       wrapBraces $
         applyWhenNotEmpty (\xs' -> [ TsTokWhitespace ] <> (tokenize =<< xs')) xs
 
-    TsTypeFunction targsQ args ret ->
+    DTS.TsTypeFunction targsQ args ret ->
       tokenize targsQ
         <> wrapParens (tokenize =<< args)
         <> [ TsTokWhitespace, TsTokFatArrow, TsTokWhitespace ]
         <> tokenize ret
 
-    TsTypeConstructor qname targs ->
+    DTS.TsTypeConstructor qname targs ->
       tokenize qname <> tokenize targs
 
-    TsTypeUniqueSymbol ->
+    DTS.TsTypeUniqueSymbol ->
       [ TsTokUnique, TsTokWhitespace, TsTokSymbol ]
 
-    TsTypeVar n ->
+    DTS.TsTypeVar n ->
       tokenize n
 
-    TsTypeVoid -> [ TsTokVoid ]
+    DTS.TsTypeVoid -> [ TsTokVoid ]
 
-instance Tokenize TsFnArg where
-  tokenize (TsFnArg k v) = tokenize k
+instance Tokenize DTS.TsFnArg where
+  tokenize (DTS.TsFnArg k v) = tokenize k
     <> [ TsTokColon, TsTokWhitespace ]
     <> tokenize v
 
-instance Tokenize TsTypeArgs where
-  tokenize (TsTypeArgs xs) | Array.length xs == 0 = []
-  tokenize (TsTypeArgs xs) = wrapAngles $ sepByComma $ tokenize <$> xs
+instance Tokenize DTS.TsTypeArgs where
+  tokenize (DTS.TsTypeArgs xs) | Array.length xs == 0 = []
+  tokenize (DTS.TsTypeArgs xs) = wrapAngles $ sepByComma $ tokenize <$> xs
 
-instance Tokenize TsTypeArgsQuant where
-  tokenize (TsTypeArgsQuant xs) | OSet.isEmpty $ unwrap xs = []
-  tokenize (TsTypeArgsQuant xs) = wrapAngles
+instance Tokenize DTS.TsTypeArgsQuant where
+  tokenize (DTS.TsTypeArgsQuant xs) | OSet.isEmpty $ unwrap xs = []
+  tokenize (DTS.TsTypeArgsQuant xs) = wrapAngles
     $ sepByComma
     $ tokenize
         <$> (OSet.toUnfoldable $ unwrap xs)
 
-instance Tokenize TsRecordField where
-  tokenize (TsRecordField k { readonly, optional } v) =
+instance Tokenize DTS.TsRecordField where
+  tokenize (DTS.TsRecordField k { readonly, optional } v) =
     (if readonly then [ TsTokReadonly, TsTokWhitespace ] else [])
       <> tokenize k
       <> (if optional then [ TsTokWhitespace ] else [])
@@ -183,13 +191,13 @@ instance Tokenize TsRecordField where
       <> tokenize v
       <> [ TsTokSemicolon, TsTokWhitespace ]
 
-instance Tokenize TsDeclVisibility where
-  tokenize Private = []
-  tokenize Public = [ TsTokExport, TsTokWhitespace ]
+instance Tokenize DTS.TsDeclVisibility where
+  tokenize DTS.Private = []
+  tokenize DTS.Public = [ TsTokExport, TsTokWhitespace ]
 
-instance Tokenize TsDeclaration where
+instance Tokenize DTS.TsDeclaration where
   tokenize = case _ of
-    TsDeclTypeDef n vis targs t ->
+    DTS.TsDeclTypeDef n vis targs t ->
       tokenize vis
         <> [ TsTokType, TsTokWhitespace ]
         <> tokenize n
@@ -200,18 +208,18 @@ instance Tokenize TsDeclaration where
         <> [ TsTokWhitespace, TsTokEquals, TsTokWhitespace ]
         <> tokenize t
 
-    TsDeclValueDef n vis t ->
+    DTS.TsDeclValueDef n vis t ->
       tokenize vis
         <> [ TsTokConst, TsTokWhitespace ]
         <> tokenize n
         <> [ TsTokWhitespace, TsTokColon, TsTokWhitespace ]
         <> tokenize t
 
-    TsDeclComments xs ->
+    DTS.TsDeclComments xs ->
       xs >>= \x -> [ TsTokLineComment x ]
 
-instance Tokenize TsModule where
-  tokenize (TsModule is ds) =
+instance Tokenize DTS.TsModule where
+  tokenize (DTS.TsModule is ds) =
     ( is
         # Set.toUnfoldable
         <#> tokenize
@@ -219,15 +227,15 @@ instance Tokenize TsModule where
     )
       <> (ds <#> tokenize # sepByDoubleNewline)
 
-instance Tokenize TsImport where
-  tokenize (TsImport n fp) =
+instance Tokenize DTS.TsImport where
+  tokenize (DTS.TsImport n fp) =
     [ TsTokImport, TsTokWhitespace, TsTokAsterisk, TsTokWhitespace, TsTokAs, TsTokWhitespace ]
       <> tokenize n
       <> [ TsTokWhitespace, TsTokFrom, TsTokWhitespace ]
       <> tokenize fp
 
-instance Tokenize TsModulePath where
-  tokenize (TsModulePath x) =
+instance Tokenize DTS.TsModulePath where
+  tokenize (DTS.TsModulePath x) =
     [ TsTokStringLiteral x ]
 
 -------------------------------------------------------------------------------
@@ -267,6 +275,8 @@ printToken = case _ of
     "string"
   TsTokBoolean ->
     "boolean"
+  TsTokNull ->
+    "null"
 
   TsTokSemicolon ->
     ";"
@@ -302,6 +312,8 @@ printToken = case _ of
     "?"
   TsTokAmpersand ->
     "&"
+  TsTokPipe ->
+    "|"
 
   TsTokWhitespace ->
     " "
@@ -317,26 +329,26 @@ printToken = case _ of
   TsTokLineComment x ->
     "// " <> x <> "\n"
 
-printTsName :: TsName -> String
+printTsName :: DTS.TsName -> String
 printTsName x = tokenize x <#> printToken # S.joinWith ""
 
-printTsModule :: TsModule -> String
+printTsModule :: DTS.TsModule -> String
 printTsModule x = tokenize x <#> printToken # S.joinWith ""
 
-printTsType :: TsType -> String
+printTsType :: DTS.TsType -> String
 printTsType x = tokenize x <#> printToken # S.joinWith ""
 
-printTsDeclarations :: Array TsDeclaration -> Array String
+printTsDeclarations :: Array DTS.TsDeclaration -> Array String
 printTsDeclarations x = x <#> tokenize <#> map printToken >>> S.joinWith ""
 
-printTsFilePath :: TsFilePath -> String
-printTsFilePath (TsFilePath x y) = x <> "." <> y
+printTsFilePath :: DTS.TsFilePath -> String
+printTsFilePath (DTS.TsFilePath x y) = x <> "." <> y
 
 -- printTsModuleFile :: TsModuleFile -> String /\ String
 -- printTsModuleFile (TsModuleFile fp m) = printTsFilePath fp /\ printTsModule m
 
-printTsProgram :: TsProgram -> Map String String
-printTsProgram (TsProgram xs) = xs
+printTsProgram :: DTS.TsProgram -> Map String String
+printTsProgram (DTS.TsProgram xs) = xs
   # (Map.toUnfoldable :: _ -> Array _)
   <#> (\(k /\ v) -> printTsFilePath k /\ printTsModule v)
   # Map.fromFoldable

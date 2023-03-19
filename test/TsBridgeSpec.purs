@@ -9,13 +9,13 @@ import Data.Map (Map)
 import Data.Maybe (Maybe)
 import Data.String (Pattern(..))
 import Data.String as String
+import Data.Symbol (class IsSymbol)
 import Data.Tuple (fst)
 import Data.Tuple.Nested (type (/\), (/\))
 import Test.Spec (Spec, describe, it)
 import Test.Util (shouldEqual)
 import TsBridge (class DefaultRecord, class ToTsBridgeBy, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsValue)
 import TsBridge as TSB
-import TsBridge.TypeVars (A, B, C)
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
 import Type.Proxy (Proxy(..))
@@ -52,14 +52,8 @@ instance (ToTsBridge a, ToTsBridge b) => ToTsBridge (Either a b) where
   toTsBridge = TSB.defaultOpaqueType "Data.Either" "Either" [ "A", "B" ]
     [ toTsBridge (Proxy :: _ a), toTsBridge (Proxy :: _ b) ]
 
-instance ToTsBridge A where
-  toTsBridge _ = TSB.defaultTypeVar (Var :: _ "A")
-
-instance ToTsBridge B where
-  toTsBridge _ = TSB.defaultTypeVar (Var :: _ "B")
-
-instance ToTsBridge C where
-  toTsBridge _ = TSB.defaultTypeVar (Var :: _ "C")
+instance IsSymbol sym => ToTsBridge (Var sym) where
+  toTsBridge _ = TSB.defaultTypeVar (Var :: _ sym)
 
 --
 
@@ -74,28 +68,28 @@ spec :: Spec Unit
 spec = do
   describe "TsBridgeSpec" do
     -- describe "Program Printing" do
-      -- describe "Program with imports" do
-      --   it "generates a type alias and adds the type module" do
-      --     tsProgram
-      --       [ tsModuleFile "types"
-      --           [ tsTypeAlias Tok "Foo" (Proxy :: _ (Either String Boolean)) ]
-      --       , tsModuleFile "Data.Either/index"
-      --           [ tsOpaqueType Tok "Either" (Proxy :: _ (Either String Boolean)) ]
-      --       ]
-      --       # printTsProgram
-      --       # shouldEqual
-      --       $ Map.fromFoldable
-      --           [ textFile "types.d.ts"
-      --               [ "import * as Data_Either from '~/Data.Either/index'"
-      --               , ""
-      --               , "export type Foo = Data_Either.Either<string, boolean>"
-      --               ]
-      --           , textFile "Data.Either/index.d.ts"
-      --               [ "import * as Data_Either from '~/Data.Either/index'"
-      --               , ""
-      --               , "export type Either<A, B> = { readonly opaque_Either: unique symbol; readonly arg0: A; readonly arg1: B; }"
-      --               ]
-      --           ]
+    -- describe "Program with imports" do
+    --   it "generates a type alias and adds the type module" do
+    --     tsProgram
+    --       [ tsModuleFile "types"
+    --           [ tsTypeAlias Tok "Foo" (Proxy :: _ (Either String Boolean)) ]
+    --       , tsModuleFile "Data.Either/index"
+    --           [ tsOpaqueType Tok "Either" (Proxy :: _ (Either String Boolean)) ]
+    --       ]
+    --       # printTsProgram
+    --       # shouldEqual
+    --       $ Map.fromFoldable
+    --           [ textFile "types.d.ts"
+    --               [ "import * as Data_Either from '~/Data.Either/index'"
+    --               , ""
+    --               , "export type Foo = Data_Either.Either<string, boolean>"
+    --               ]
+    --           , textFile "Data.Either/index.d.ts"
+    --               [ "import * as Data_Either from '~/Data.Either/index'"
+    --               , ""
+    --               , "export type Either<A, B> = { readonly opaque_Either: unique symbol; readonly arg0: A; readonly arg1: B; }"
+    --               ]
+    --           ]
 
     describe "Declaration Printing" do
       -- describe "tsTypeAlias" do
