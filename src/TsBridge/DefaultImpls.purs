@@ -6,8 +6,10 @@ module TsBridge.DefaultImpls
   , defaultArray
   , defaultBoolean
   , defaultBrandedType
+  , defaultChar
   , defaultEffect
   , defaultFunction
+  , defaultInt
   , defaultNullable
   , defaultNumber
   , defaultOpaqueType
@@ -15,11 +17,11 @@ module TsBridge.DefaultImpls
   , defaultProxy
   , defaultRecord
   , defaultRecordRL
-  , defaultVariant
-  , defaultVariantRL
   , defaultString
   , defaultTypeVar
   , defaultUnit
+  , defaultVariant
+  , defaultVariantRL
   ) where
 
 import Prelude
@@ -86,6 +88,16 @@ defaultString _ = pure DTS.TsTypeString
 -- | Generates a TypeScript `boolean` type
 defaultBoolean :: Boolean -> TsBridgeM DTS.TsType
 defaultBoolean _ = pure DTS.TsTypeBoolean
+
+-- | Default type class method implementation for the `Int` type
+-- | Generates a TypeScript opaque type
+defaultInt :: Int -> TsBridgeM DTS.TsType
+defaultInt = defaultOpaqueType "Prim" "Int" [] []
+
+-- | Default type class method implementation for the `Char` type
+-- | Generates a TypeScript opaque type
+defaultChar :: Int -> TsBridgeM DTS.TsType
+defaultChar = defaultOpaqueType "Prim" "Char" [] []
 
 -- | Default type class method implementation for the `Unit` type
 -- | Generates a TypeScript `void` type
