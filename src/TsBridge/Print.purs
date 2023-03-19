@@ -231,7 +231,7 @@ instance Tokenize DTS.TsDeclaration where
 
 instance Tokenize DTS.TsModule where
   tokenize (DTS.TsModule name is ds) =
-    [ TsTokDeclareModule, TsTokStringLiteral name, TsTokOpenBrace ]
+    [ TsTokDeclareModule, TsTokStringLiteral ("~/" <> name), TsTokOpenBrace ]
       <>
         ( is
             # Set.toUnfoldable
