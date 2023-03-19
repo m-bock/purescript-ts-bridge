@@ -123,7 +123,7 @@ instance Tokenize DTS.TsQualName where
       ( \(DTS.TsModuleAlias n) ->
           [ TsTokImport
           , TsTokOpenParen
-          , TsTokStringLiteral ("~/" <> n)
+          , TsTokStringLiteral ("output/" <> n)
           , TsTokCloseParen
           , TsTokDot
           ]
