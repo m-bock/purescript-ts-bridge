@@ -8,6 +8,7 @@ import Prelude
 import Data.Foldable (fold, for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.Newtype (un)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Aff (Aff, error, launchAff_, throwError)
@@ -23,7 +24,7 @@ import Options.Applicative as O
 import Options.Applicative.Types (optional)
 import Sunde as Sun
 import TsBridge.DTS (TsProgram)
-import TsBridge.Print (printTsProgram)
+import TsBridge.Print (TsSource(..), printTsProgram)
 
 -------------------------------------------------------------------------------
 -- Types
@@ -75,7 +76,7 @@ mkTypeGenCliAff tsProg = do
           { recursive: true
           , mode: mkPerms all all all
           }
-        writeTextFile UTF8 filePath source
+        writeTextFile UTF8 filePath (un TsSource source)
     )
 
   case cliOpts.prettier of

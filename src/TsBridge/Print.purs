@@ -1,23 +1,34 @@
 module TsBridge.Print
-  ( printTsDeclarations
-  , printTsName
+  ( TsSource(..)
+  , printTsDeclarations
   , printTsProgram
   , printTsType
   ) where
 
 import Prelude
 
-import Data.Array (intersperse)
+import Data.Array (fold, intersperse)
 import Data.Array as Array
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (maybe)
-import Data.Newtype (unwrap)
+import Data.Newtype (class Newtype, unwrap)
 import Data.Set as Set
 import Data.Set.Ordered as OSet
-import Data.String as S
 import Data.Tuple.Nested ((/\))
 import TsBridge.DTS as DTS
+
+newtype TsSource = TsSource String
+
+derive newtype instance Semigroup TsSource
+
+derive newtype instance Eq TsSource
+
+derive newtype instance Show TsSource
+
+derive newtype instance Monoid TsSource
+
+derive instance Newtype TsSource _
 
 type TsTokens = Array TsToken
 
@@ -253,8 +264,8 @@ instance Tokenize DTS.TsModulePath where
 -- Print
 -------------------------------------------------------------------------------
 
-printToken :: TsToken -> String
-printToken = case _ of
+printToken :: TsToken -> TsSource
+printToken tsToken = TsSource case tsToken of
   TsTokConst ->
     "const"
   TsTokDefault ->
@@ -342,23 +353,24 @@ printToken = case _ of
   TsTokLineComment x ->
     "// " <> x <> "\n"
 
-printTsName :: DTS.TsName -> String
-printTsName x = tokenize x <#> printToken # S.joinWith ""
+printTsName :: DTS.TsName -> TsSource
+printTsName x = tokenize x <#> printToken # fold
 
-printTsModule :: DTS.TsModule -> String
-printTsModule x = tokenize x <#> printToken # S.joinWith ""
+printTsModule :: DTS.TsModule -> TsSource
+printTsModule x = tokenize x <#> printToken # fold
 
-printTsType :: DTS.TsType -> String
-printTsType x = tokenize x <#> printToken # S.joinWith ""
+printTsType :: DTS.TsType -> TsSource
+printTsType x = tokenize x <#> printToken # fold
 
-printTsDeclarations :: Array DTS.TsDeclaration -> Array String
-printTsDeclarations x = x <#> tokenize <#> map printToken >>> S.joinWith ""
+printTsDeclarations :: Array DTS.TsDeclaration -> Array TsSource
+printTsDeclarations x = x <#> tokenize <#> map printToken >>> fold
 
 printTsFilePath :: DTS.TsFilePath -> String
 printTsFilePath (DTS.TsFilePath x y) = x <> "." <> y
 
-printTsProgram :: DTS.TsProgram -> Map String String
+printTsProgram :: DTS.TsProgram -> Map String TsSource
 printTsProgram (DTS.TsProgram xs) = xs
   # (Map.toUnfoldable :: _ -> Array _)
   <#> (\(k /\ v) -> printTsFilePath k /\ printTsModule v)
   # Map.fromFoldable
+

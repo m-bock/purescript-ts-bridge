@@ -8,6 +8,7 @@ import Data.Either (Either)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe)
+import Data.Newtype (un)
 import Data.Nullable (Nullable)
 import Data.String (Pattern(..))
 import Data.String as String
@@ -18,7 +19,7 @@ import Data.Variant (Variant)
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Util (shouldEqual)
-import TsBridge (class DefaultRecord, class DefaultVariant, class TsBridgeBy, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsModuleFile, tsProgram, tsValue)
+import TsBridge (class DefaultRecord, class DefaultVariant, class TsBridgeBy, TsDeclaration, TsProgram, TsSource(..), TsType, Var(..), runTsBridgeM, tsModuleFile, tsProgram, tsValue)
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
@@ -164,7 +165,7 @@ testDeclPrint x s =
     runTsBridgeM x
       # fst
       # printTsDeclarations
-      # shouldEqual s
+      # shouldEqual (TsSource <$> s)
 
 testTypePrint :: TsBridgeM TsType -> String -> Spec Unit
 testTypePrint x s =
@@ -174,10 +175,11 @@ testTypePrint x s =
           # fst
           # printTsType
       )
-      s
+      (TsSource s)
 
 textFile :: String -> Array String -> String /\ Array String
 textFile n lines = n /\ lines
 
 printTsProgram :: TsProgram -> Map String (Array String)
-printTsProgram x = TSB.printTsProgram x <#> String.split (Pattern "\n")
+printTsProgram x = TSB.printTsProgram x
+  <#> un TsSource >>> String.split (Pattern "\n")
