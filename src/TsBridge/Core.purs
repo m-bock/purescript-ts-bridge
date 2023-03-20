@@ -2,21 +2,21 @@ module TsBridge.Core
   ( class TsBridgeBy
   , class TsValues
   , class TsValuesRL
-  , tsValuesRL
   , tsBridgeBy
   , tsModuleFile
   , tsProgram
+  , tsTypeAlias
   , tsValue
   , tsValues
-  ) where
+  , tsValuesRL
+  )
+  where
 
 import Prelude
 
-import Control.Monad.Writer (listens, tell)
-import Data.Array (uncons)
+import Control.Monad.Writer (listens)
 import Data.Array as Array
 import Data.Map as Map
-import Data.Maybe (Maybe(..))
 import Data.Newtype (un)
 import Data.Set as Set
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -28,7 +28,7 @@ import Prim.RowList as RL
 import Record as Record
 import Safe.Coerce (coerce)
 import TsBridge.DTS (TsBridge_DTS_Wrap(..), TsDeclVisibility(..), TsDeclaration(..), TsModule(..), TsModuleFile(..), TsName(..), TsProgram(..), TsType, dtsFilePath)
-import TsBridge.Monad (TsBridgeAccum(..), TsBridgeM, TsBridge_Monad_Wrap(..), runTsBridgeM)
+import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, runTsBridgeM)
 import Type.Proxy (Proxy(..))
 
 class TsBridgeBy tok a where
@@ -49,7 +49,7 @@ mergeModules xs =
     # TsProgram
 
 mergeModule :: TsModule -> TsModule -> TsModule
-mergeModule (TsModule n1 is1 ds1) (TsModule n2 is2 ds2) =
+mergeModule (TsModule _ is1 ds1) (TsModule n2 is2 ds2) =
   TsModule
     n2
     (is1 `Set.union` is2)
@@ -58,24 +58,29 @@ mergeModule (TsModule n1 is1 ds1) (TsModule n2 is2 ds2) =
 tsProgram :: Array (Array TsModuleFile) -> TsProgram
 tsProgram xs = mergeModules $ join xs
 
+-- | For cases where you want to export a type alias. References to this type
+-- | alias will be fully resolved in the generated code. So it is more practical
+-- | to use a newtype instead, which can be references by name.
 tsTypeAlias :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
 tsTypeAlias mp n x = ado
-  x /\ scope <- listens (un TsBridgeAccum >>> _.scope) t
+  x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
   in [ TsDeclTypeDef (TsName n) Public (coerce scope.floating) x ]
   where
   t = tsBridgeBy mp x
 
-tsOpaqueType :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
-tsOpaqueType mp n x = do
-  _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ tsBridgeBy mp x
-  case uncons modules of
-    Just { head: (TsModuleFile _ (TsModule n imports decls)), tail: [] } -> do
-      tell $ TsBridgeAccum
-        { typeDefs: mempty
-        , scope: mempty
-        }
-      pure decls
-    _ -> pure []
+
+-- TODO: Check if this is still needed:
+-- tsOpaqueType :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
+-- tsOpaqueType mp n x = do
+--   _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ tsBridgeBy mp x
+--   case uncons modules of
+--     Just { head: (TsModuleFile _ (TsModule n imports decls)), tail: [] } -> do
+--       tell $ TsBridgeAccum
+--         { typeDefs: mempty
+--         , scope: mempty
+--         }
+--       pure decls
+--     _ -> pure []
 
 tsValue :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
 tsValue mp n x = do

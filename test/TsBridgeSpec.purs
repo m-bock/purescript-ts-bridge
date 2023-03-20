@@ -6,6 +6,7 @@ import Prelude
 
 import Data.Either (Either)
 import Data.Map (Map)
+import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable)
 import Data.String (Pattern(..))
@@ -17,7 +18,7 @@ import Data.Variant (Variant)
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Util (shouldEqual)
-import TsBridge (class DefaultRecord, class DefaultVariant, class TsBridgeBy, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsValue)
+import TsBridge (class DefaultRecord, class DefaultVariant, class TsBridgeBy, TsDeclaration, TsProgram, TsType, Var(..), runTsBridgeM, tsModuleFile, tsProgram, tsValue)
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
@@ -53,7 +54,6 @@ instance (TsBridge a, TsBridge b) => TsBridge (a -> b) where
 instance (DefaultRecord Tok r) => TsBridge (Record r) where
   tsBridge = TSB.defaultRecord Tok
 
-
 instance (DefaultVariant Tok r) => TsBridge (Variant r) where
   tsBridge = TSB.defaultVariant Tok
 
@@ -83,56 +83,23 @@ instance TsBridge a => TsBridgeBy Tok a where
 spec :: Spec Unit
 spec = do
   describe "TsBridgeSpec" do
-    -- describe "Program Printing" do
-    -- describe "Program with imports" do
-    --   it "generates a type alias and adds the type module" do
-    --     tsProgram
-    --       [ tsModuleFile "types"
-    --           [ tsTypeAlias Tok "Foo" (Proxy :: _ (Either String Boolean)) ]
-    --       , tsModuleFile "Data.Either/index"
-    --           [ tsOpaqueType Tok "Either" (Proxy :: _ (Either String Boolean)) ]
-    --       ]
-    --       # printTsProgram
-    --       # shouldEqual
-    --       $ Map.fromFoldable
-    --           [ textFile "types.d.ts"
-    --               [ "import * as Data_Either from '~/Data.Either/index'"
-    --               , ""
-    --               , "export type Foo = Data_Either.Either<string, boolean>"
-    --               ]
-    --           , textFile "Data.Either/index.d.ts"
-    --               [ "import * as Data_Either from '~/Data.Either/index'"
-    --               , ""
-    --               , "export type Either<A, B> = { readonly opaque_Either: unique symbol; readonly arg0: A; readonly arg1: B; }"
-    --               ]
-    --           ]
-
-    describe "Declaration Printing" do
-      -- describe "tsTypeAlias" do
-      --   describe "Number" do
-      --     testDeclPrint
-      --       (tsTypeAlias Tok "Foo" (Proxy :: _ Number))
-      --       [ "export type Foo = number" ]
-
-      --   describe "Type Variable" do
-      --     testDeclPrint
-      --       (tsTypeAlias Tok "Foo" (Proxy :: _ A))
-      --       [ "export type Foo<A> = A" ]
-
-      --   describe "Type Variables" do
-      --     testDeclPrint
-      --       (tsTypeAlias Tok "Foo" (Proxy :: _ { c :: C, sub :: { a :: A, b :: B } }))
-      --       [ "export type Foo<C, A, B> = { readonly c: C; readonly sub: { readonly a: A; readonly b: B; }; }" ]
-
-      --   describe "" do
-      --     testDeclPrint
-      --       (tsTypeAlias Tok "Foo" (Proxy :: _ (A -> B -> C)))
-      --       [ "export type Foo = <A>(_: A) => <B, C>(_: B) => C" ]
-
-      --   describe "" do
-      --     testDeclPrint
-      --       (tsTypeAlias Tok "Foo" (Proxy :: _ (A -> A -> A)))
-      --       [ "export type Foo = <A>(_: A) => (_: A) => A" ]
+    describe "Program Printing" do
+      describe "Program with imports" do
+        it "generates a type and adds the type module" do
+          tsProgram
+            [ tsModuleFile "Foo.Bar"
+                [ tsValue Tok "a" (Proxy :: _ (Either String Boolean)) ]
+            ]
+            # printTsProgram
+            # shouldEqual
+            $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export const a : import('../Data.Either').Either<string, boolean>"
+                    ]
+                , textFile "Data.Either/index.d.ts"
+                    [ "export type Either<A, B> = { readonly brand: unique symbol; readonly arg0: A; readonly arg1: B; }"
+                    ]
+                ]
 
       describe "tsValue" do
         describe "Number" do
@@ -171,20 +138,19 @@ spec = do
 
       describe "Maybe" do
         testTypePrint (tsBridge (Proxy :: _ (Maybe Boolean)))
-          "import('~/Data.Maybe').Maybe<boolean>"
+          "import('../Data.Maybe').Maybe<boolean>"
 
       describe "Either" do
         testTypePrint (tsBridge (Proxy :: _ (Either String Boolean)))
-          "import('~/Data.Either').Either<string, boolean>"
+          "import('../Data.Either').Either<string, boolean>"
 
       describe "Nullable" do
         testTypePrint (tsBridge (Proxy :: _ (Nullable String)))
           "(null)|(string)"
 
       describe "Variant" do
-        testTypePrint (tsBridge (Proxy :: _ (Variant (a:: String, b :: Boolean))))
+        testTypePrint (tsBridge (Proxy :: _ (Variant (a :: String, b :: Boolean))))
           "({ readonly type: 'a'; readonly value: string; })|({ readonly type: 'b'; readonly value: boolean; })"
-
 
 testDeclPrint :: TsBridgeM (Array TsDeclaration) -> Array String -> Spec Unit
 testDeclPrint x s =

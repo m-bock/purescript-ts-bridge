@@ -78,7 +78,7 @@ mkTypeGenCliAff tsProg = do
         writeTextFile UTF8 filePath source
     )
 
-  case cliOpts.prettier of 
+  case cliOpts.prettier of
     Just prettierPath ->
       void $ spawn prettierPath
         [ "--write", cliOpts.outputDir <> "/**/*.d.ts" ] -- can fail, if there are no files!

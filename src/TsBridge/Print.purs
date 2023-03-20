@@ -230,7 +230,7 @@ instance Tokenize DTS.TsDeclaration where
       xs >>= \x -> [ TsTokLineComment x ]
 
 instance Tokenize DTS.TsModule where
-  tokenize (DTS.TsModule name is ds) =
+  tokenize (DTS.TsModule _ is ds) =
     ( is
         # Set.toUnfoldable
         <#> tokenize

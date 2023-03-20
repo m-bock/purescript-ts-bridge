@@ -1,5 +1,6 @@
 module TsBridge.DefaultImpls
-  ( class DefaultRecord
+  ( Var(..)
+  , class DefaultRecord
   , class DefaultRecordRL
   , class DefaultVariant
   , class DefaultVariantRL
@@ -22,7 +23,8 @@ module TsBridge.DefaultImpls
   , defaultUnit
   , defaultVariant
   , defaultVariantRL
-  ) where
+  )
+  where
 
 import Prelude
 
@@ -31,13 +33,11 @@ import Control.Promise (Promise)
 import Data.Array (mapWithIndex, (:))
 import Data.Array as A
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, over, over2, unwrap, wrap)
+import Data.Newtype (class Newtype, over, unwrap)
 import Data.Nullable (Nullable)
 import Data.Set as Set
 import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
-import Data.String (Pattern(..), Replacement(..))
-import Data.String as Str
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (sequence)
 import Data.Tuple.Nested ((/\))
@@ -49,9 +49,11 @@ import Record as R
 import Safe.Coerce (coerce)
 import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.DTS as DTS
-import TsBridge.Monad (Scope, TsBridgeAccum(..), TsBridgeM, TsBridge_Monad_Wrap(..), defaultTsBridgeAccum)
-import TsBridge.TypeVars (Var)
+import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, defaultTsBridgeAccum)
 import Type.Proxy (Proxy(..))
+
+
+data Var (s :: Symbol) = Var
 
 -- | Default type class method implementation for type variables.
 -- | This is needed because polymorphic values cannot be exported directly.
@@ -62,9 +64,9 @@ defaultTypeVar _ = do
   let
     tsName = DTS.TsName $ reflectSymbol (Proxy :: _ s)
 
-    scope =
-      { floating: wrap $ OSet.singleton tsName
-      , fixed: mempty
+    scope = Scope
+      { floating: OSet.singleton tsName
+      , fixed: OSet.empty
       }
 
   tell
@@ -113,13 +115,13 @@ defaultEffect
   -> Effect a
   -> TsBridgeM DTS.TsType
 defaultEffect tok _ = censor mapAccum ado
-  ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ tsBridgeBy tok (Proxy :: _ a)
+  ret /\ TsBridgeAccum { scope: Scope scopeRet } <- listen $ tsBridgeBy tok (Proxy :: _ a)
   let
     newFixed = (scopeRet.fixed)
       <> scopeRet.floating
 
     removeQuant =
-      DTS.mapQuantifier $ OSet.filter (_ `OSet.notElem` (unwrap newFixed))
+      DTS.mapQuantifier $ OSet.filter (_ `OSet.notElem` newFixed)
 
   in
     DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
@@ -176,15 +178,15 @@ defaultFunction
   -> (a -> b)
   -> TsBridgeM DTS.TsType
 defaultFunction f _ = censor mapAccum ado
-  arg /\ TsBridgeAccum { scope: scopeArg } <- listen $ tsBridgeBy f (Proxy :: _ a)
-  ret /\ TsBridgeAccum { scope: scopeRet } <- listen $ tsBridgeBy f (Proxy :: _ b)
+  arg /\ TsBridgeAccum { scope: Scope scopeArg } <- listen $ tsBridgeBy f (Proxy :: _ a)
+  ret /\ TsBridgeAccum { scope: Scope scopeRet } <- listen $ tsBridgeBy f (Proxy :: _ b)
   let
-    newFixed = (over2 wrap OSet.intersect scopeArg.fixed scopeRet.fixed)
+    newFixed = (OSet.intersect scopeArg.fixed scopeRet.fixed)
       <> scopeArg.floating
       <> scopeRet.floating
 
     removeQuant =
-      DTS.mapQuantifier $ OSet.filter (_ `OSet.notElem` (unwrap newFixed))
+      DTS.mapQuantifier $ OSet.filter (_ `OSet.notElem` newFixed)
 
   in
     DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
@@ -311,8 +313,8 @@ defaultBrandedType mp pursModuleName pursTypeName targNames targs t = do
 -------------------------------------------------------------------------------
 
 fixScope :: Scope -> Scope
-fixScope { fixed, floating } =
-  { floating: mempty
+fixScope (Scope { fixed, floating }) = Scope
+  { floating: OSet.empty
   , fixed: fixed <> floating
   }
 
@@ -336,12 +338,6 @@ brandedType filePath moduleAlias@(DTS.TsModuleAlias alias) name targs args' type
 
   pure
     $ DTS.TsTypeConstructor (DTS.TsQualName (Just moduleAlias) name) (DTS.TsTypeArgs args)
-
-dotsToLodashes :: String -> String
-dotsToLodashes = Str.replaceAll (Pattern ".") (Replacement "_")
-
-filePathToModulePath :: DTS.TsFilePath -> DTS.TsModulePath
-filePathToModulePath (DTS.TsFilePath x _) = DTS.TsModulePath x
 
 mkBrandedTypeDecl :: DTS.TsName -> OSet DTS.TsName -> Maybe DTS.TsType -> DTS.TsDeclaration
 mkBrandedTypeDecl name args type_ = DTS.TsDeclTypeDef name DTS.Public (coerce args)
