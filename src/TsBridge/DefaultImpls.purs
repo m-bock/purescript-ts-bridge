@@ -52,7 +52,7 @@ import Record as R
 import Safe.Coerce (coerce)
 import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.DTS as DTS
-import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, defaultTsBridgeAccum)
+import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM)
 import Type.Proxy (Proxy(..))
 
 data Var (s :: Symbol) = Var
@@ -72,7 +72,7 @@ defaultTypeVar _ = do
       }
 
   tell
-    $ over TsBridgeAccum _ { scope = scope } defaultTsBridgeAccum
+    $ over TsBridgeAccum _ { scope = scope } mempty
   pure $ DTS.TsTypeVar tsName
 
 defaultProxy :: forall f a. TsBridgeBy f a => f -> Proxy a -> TsBridgeM DTS.TsType

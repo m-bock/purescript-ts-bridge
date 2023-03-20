@@ -24,13 +24,13 @@ import Options.Applicative as O
 import Options.Applicative.Types (optional)
 import Sunde as Sun
 import TsBridge.DTS (TsProgram)
-import TsBridge.Print (TsSource(..), printTsProgram)
+import TsBridge.Print (Path(..), TsSource(..), printTsProgram)
 
 -------------------------------------------------------------------------------
 -- Types
 -------------------------------------------------------------------------------
 type TsBridgeCliOpts =
-  { outputDir :: String
+  { outputDir :: Path
   , prettier :: Maybe String
   }
 
@@ -40,12 +40,14 @@ type TsBridgeCliOpts =
 parserTsBridgeCliOpts :: O.Parser TsBridgeCliOpts
 parserTsBridgeCliOpts = ado
   outputDir <-
-    strOption
-      $ fold
-          [ long "output-dir"
-          , metavar "OUTPUT_DIR"
-          , help "Dictionary the CLI will write the output d.ts files to."
-          ]
+    Path <$>
+      ( strOption
+          $ fold
+              [ long "output-dir"
+              , metavar "OUTPUT_DIR"
+              , help "Dictionary the CLI will write the output d.ts files to."
+              ]
+      )
   prettier <- optional
     $ strOption
     $ fold
@@ -70,19 +72,19 @@ mkTypeGenCliAff tsProg = do
   for_ files
     ( \(modPath /\ source) -> do
         let
-          filePath = cliOpts.outputDir <> "/" <> modPath
-        log filePath
-        mkdir' (dirname filePath)
+          filePath = cliOpts.outputDir <> Path "/" <> modPath
+        log $ un Path filePath
+        mkdir' (dirname $ un Path filePath)
           { recursive: true
           , mode: mkPerms all all all
           }
-        writeTextFile UTF8 filePath (un TsSource source)
+        writeTextFile UTF8 (un Path filePath) (un TsSource source)
     )
 
   case cliOpts.prettier of
     Just prettierPath ->
       void $ spawn prettierPath
-        [ "--write", cliOpts.outputDir <> "/**/*.d.ts" ] -- can fail, if there are no files!
+        [ "--write", un Path (cliOpts.outputDir <> Path "/**/*.d.ts") ] -- can fail, if there are no files!
     Nothing ->
       log "No path to prettier specified. Generated files will be ugly."
 

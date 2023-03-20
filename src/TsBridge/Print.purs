@@ -1,5 +1,6 @@
 module TsBridge.Print
-  ( TsSource(..)
+  ( Path(..)
+  , TsSource(..)
   , printTsDeclarations
   , printTsProgram
   , printTsType
@@ -29,6 +30,20 @@ derive newtype instance Show TsSource
 derive newtype instance Monoid TsSource
 
 derive instance Newtype TsSource _
+
+newtype Path = Path String
+
+derive newtype instance Eq Path
+
+derive newtype instance Ord Path
+
+derive newtype instance Semigroup Path
+
+derive newtype instance Monoid Path
+
+derive newtype instance Show Path
+
+derive instance Newtype Path _
 
 type TsTokens = Array TsToken
 
@@ -353,9 +368,6 @@ printToken tsToken = TsSource case tsToken of
   TsTokLineComment x ->
     "// " <> x <> "\n"
 
-printTsName :: DTS.TsName -> TsSource
-printTsName x = tokenize x <#> printToken # fold
-
 printTsModule :: DTS.TsModule -> TsSource
 printTsModule x = tokenize x <#> printToken # fold
 
@@ -365,12 +377,12 @@ printTsType x = tokenize x <#> printToken # fold
 printTsDeclarations :: Array DTS.TsDeclaration -> Array TsSource
 printTsDeclarations x = x <#> tokenize <#> map printToken >>> fold
 
-printTsFilePath :: DTS.TsFilePath -> String
-printTsFilePath (DTS.TsFilePath x y) = x <> "." <> y
+printTsPath :: DTS.TsFilePath -> Path
+printTsPath (DTS.TsFilePath x y) = Path (x <> "." <> y)
 
-printTsProgram :: DTS.TsProgram -> Map String TsSource
+printTsProgram :: DTS.TsProgram -> Map Path TsSource
 printTsProgram (DTS.TsProgram xs) = xs
   # (Map.toUnfoldable :: _ -> Array _)
-  <#> (\(k /\ v) -> printTsFilePath k /\ printTsModule v)
+  <#> (\(k /\ v) -> printTsPath k /\ printTsModule v)
   # Map.fromFoldable
 

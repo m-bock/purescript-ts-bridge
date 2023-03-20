@@ -2,7 +2,6 @@ module TsBridge.Monad
   ( Scope(..)
   , TsBridgeAccum(..)
   , TsBridgeM(..)
-  , defaultTsBridgeAccum
   , runTsBridgeM
   ) where
 
@@ -24,12 +23,6 @@ newtype TsBridgeM a = TsBridgeM (Writer TsBridgeAccum a)
 newtype TsBridgeAccum = TsBridgeAccum
   { typeDefs :: Array TsModuleFile
   , scope :: Scope
-  }
-
-defaultTsBridgeAccum :: TsBridgeAccum
-defaultTsBridgeAccum = TsBridgeAccum
-  { typeDefs: mempty
-  , scope: mempty
   }
 
 newtype Scope = Scope

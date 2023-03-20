@@ -19,7 +19,7 @@ import Data.Variant (Variant)
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Util (shouldEqual)
-import TsBridge (class DefaultRecord, class DefaultVariant, class TsBridgeBy, TsDeclaration, TsProgram, TsSource(..), TsType, Var(..), runTsBridgeM, tsModuleFile, tsProgram, tsValue)
+import TsBridge (class DefaultRecord, class DefaultVariant, class TsBridgeBy, Path(..), TsDeclaration, TsProgram, TsSource(..), TsType, Var(..), runTsBridgeM, tsModuleFile, tsProgram, tsValue)
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
@@ -177,9 +177,9 @@ testTypePrint x s =
       )
       (TsSource s)
 
-textFile :: String -> Array String -> String /\ Array String
-textFile n lines = n /\ lines
+textFile :: String -> Array String -> Path /\ Array String
+textFile n lines = Path n /\ lines
 
-printTsProgram :: TsProgram -> Map String (Array String)
+printTsProgram :: TsProgram -> Map Path (Array String)
 printTsProgram x = TSB.printTsProgram x
   <#> un TsSource >>> String.split (Pattern "\n")
