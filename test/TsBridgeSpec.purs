@@ -12,7 +12,7 @@ import Data.Nullable (Nullable)
 import Data.String (Pattern(..))
 import Data.String as String
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (fst)
+import Data.Tuple (Tuple, fst)
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Variant (Variant)
 import Effect (Effect)
@@ -58,8 +58,10 @@ instance (DefaultVariant Tok r) => TsBridge (Variant r) where
   tsBridge = TSB.defaultVariant Tok
 
 instance TsBridge a => TsBridge (Maybe a) where
-  tsBridge = TSB.defaultOpaqueType "Data.Maybe" "Maybe" [ "A" ]
-    [ tsBridge (Proxy :: _ a) ]
+  tsBridge = TSB.defaultMaybe Tok
+
+instance (TsBridge a, TsBridge b) => TsBridge (Tuple a b) where
+  tsBridge = TSB.defaultTuple Tok
 
 instance (TsBridge a, TsBridge b) => TsBridge (Either a b) where
   tsBridge = TSB.defaultOpaqueType "Data.Either" "Either" [ "A", "B" ]
@@ -131,6 +133,10 @@ spec = do
       describe "Function" do
         testTypePrint (tsBridge (Proxy :: _ (String -> Number -> Boolean)))
           "(_: string) => (_: number) => boolean"
+
+      describe "Function" do
+        testTypePrint (tsBridge (Proxy :: _ (Array (Var "A") -> Array (Var "B") -> Array (Tuple (Var "A") (Var "B")))))
+          "<A>(_: Array<A>) => <B>(_: Array<B>) => Array<import('../Data.Tuple').Tuple<A, B>>"
 
       describe "Record" do
         testTypePrint (tsBridge (Proxy :: _ { bar :: String, foo :: Number }))

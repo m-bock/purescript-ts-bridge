@@ -9,8 +9,7 @@ module TsBridge.Core
   , tsValue
   , tsValues
   , tsValuesRL
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -30,6 +29,25 @@ import Safe.Coerce (coerce)
 import TsBridge.DTS (TsBridge_DTS_Wrap(..), TsDeclVisibility(..), TsDeclaration(..), TsModule(..), TsModuleFile(..), TsName(..), TsProgram(..), TsType, dtsFilePath)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, runTsBridgeM)
 import Type.Proxy (Proxy(..))
+
+-- | Type Class that is used by the type generator to recursively traverse
+-- | types.
+-- | Instances for the specific types will be defined on the user's side with a
+-- | typeclass like this:
+-- | ```
+-- | class TsBridge a where
+-- |   tsBridge :: a -> TsBridgeM TsType
+-- | ```
+-- | Then the internal type class is forwarded to the
+-- | one of the user. For this you need to define a token data type and an
+-- | instance like this:
+-- | ```
+-- | data Tok = Tok
+-- |
+-- | instance TsBridge a => TsBridgeBy Tok a where
+-- |   tsBridgeBy _ = tsBridge
+-- | ```
+-- | The token will then be passed to all generic functions of the library.
 
 class TsBridgeBy tok a where
   tsBridgeBy :: tok -> a -> TsBridgeM TsType
@@ -68,7 +86,6 @@ tsTypeAlias mp n x = ado
   where
   t = tsBridgeBy mp x
 
-
 -- TODO: Check if this is still needed:
 -- tsOpaqueType :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
 -- tsOpaqueType mp n x = do
@@ -82,6 +99,7 @@ tsTypeAlias mp n x = ado
 --       pure decls
 --     _ -> pure []
 
+-- | Exports a single PureScript value to TypeScript. `tsValues` may be better choice. 
 tsValue :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
 tsValue mp n x = do
   t <- tsBridgeBy mp x
@@ -92,6 +110,9 @@ tsValue mp n x = do
 --------------------------------------------------------------------------------
 
 class TsValues tok r where
+  -- | Useful for declaring multiple PureScript values to be used by TypeScript.
+  -- | Through record punning the risk of exporting them with wrong names can be eliminated.  
+  -- | ```tsValues Tok { foo, bar, baz }```
   tsValues :: tok -> Record r -> TsBridgeM (Array TsDeclaration)
 
 instance (TsValuesRL tok r rl, RowToList r rl) => TsValues tok r where

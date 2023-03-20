@@ -9,8 +9,10 @@ module TsBridge.DefaultImpls
   , defaultBrandedType
   , defaultChar
   , defaultEffect
+  , defaultEither
   , defaultFunction
   , defaultInt
+  , defaultMaybe
   , defaultNullable
   , defaultNumber
   , defaultOpaqueType
@@ -19,12 +21,12 @@ module TsBridge.DefaultImpls
   , defaultRecord
   , defaultRecordRL
   , defaultString
+  , defaultTuple
   , defaultTypeVar
   , defaultUnit
   , defaultVariant
   , defaultVariantRL
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -40,6 +42,7 @@ import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (sequence)
+import Data.Tuple (Tuple)
 import Data.Tuple.Nested ((/\))
 import Data.Typelevel.Undefined (undefined)
 import Data.Variant (Variant)
@@ -51,7 +54,6 @@ import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.DTS as DTS
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, defaultTsBridgeAccum)
 import Type.Proxy (Proxy(..))
-
 
 data Var (s :: Symbol) = Var
 
@@ -140,6 +142,48 @@ defaultArray
   -> Array a
   -> TsBridgeM DTS.TsType
 defaultArray f _ = DTS.TsTypeArray <$> tsBridgeBy f (Proxy :: _ a)
+
+-- | Default type class method implementation for the `Tuple a b` type
+-- | Generates a TypeScript opaque type
+defaultTuple
+  :: forall tok a b
+   . TsBridgeBy tok (Proxy a)
+  => TsBridgeBy tok (Proxy b)
+  => tok
+  -> Tuple a b
+  -> TsBridgeM DTS.TsType
+defaultTuple tok =
+  defaultOpaqueType "Data.Tuple" "Tuple" [ "A", "B" ]
+    [ tsBridgeBy tok (Proxy :: _ a)
+    , tsBridgeBy tok (Proxy :: _ b)
+    ]
+
+-- | Default type class method implementation for the `Either a b` type
+-- | Generates a TypeScript opaque type
+defaultEither
+  :: forall tok a b
+   . TsBridgeBy tok (Proxy a)
+  => TsBridgeBy tok (Proxy b)
+  => tok
+  -> Tuple a b
+  -> TsBridgeM DTS.TsType
+defaultEither tok =
+  defaultOpaqueType "Data.Either" "Either" [ "A", "B" ]
+    [ tsBridgeBy tok (Proxy :: _ a)
+    , tsBridgeBy tok (Proxy :: _ b)
+    ]
+
+-- | Default type class method implementation for the `Maybe a` type
+-- | Generates a TypeScript opaque type
+defaultMaybe
+  :: forall tok a
+   . TsBridgeBy tok (Proxy a)
+  => tok
+  -> Maybe a
+  -> TsBridgeM DTS.TsType
+defaultMaybe tok =
+  defaultOpaqueType "Data.Maybe" "Maybe" [ "A" ]
+    [ tsBridgeBy tok (Proxy :: _ a) ]
 
 -- | Default type class method implementation for the `Promise a` type
 -- | Generates a TypeScript `Promise<A>` type

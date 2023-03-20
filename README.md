@@ -1,13 +1,14 @@
 # purescript-typescript-bridge
 
-- A PureScript library for type class based TypeScript type generation.
+- A PureScript library for type class based TypeScript type generation (.d.ts Files).
 
-[sample-project](https://github.com/thought2/purescript-typescript-bridge.sample-project)
+The best way to get started is to have a look at the 
+[sample-project](https://github.com/thought2/purescript-typescript-bridge.sample-project).
 
-Features
+## Features
 
-- fully customizable. It's type class based, but you own the type class
-- many default implementations to pick from
+- Fully customizable. It's type class based, but the type class is defined on your side to ease instance implementations.
+- Many default implementations to pick from
   - Number
   - Int
   - Char
@@ -21,6 +22,9 @@ Features
   - Variants
   - Effect
   - Unit
+  - Maybe
+  - Either
+  - Tuple
 
 - Supports opaque types (implemented as branded types in TypeScript)
 - Supports easily accessible Newtypes (implemented as branded types in TypeScript)
