@@ -16,5 +16,8 @@
   ],
   "dependencies": {
     "prettier": "^2.7.1"
+  },
+  "devDependencies": {
+    "markdown-magic": "^2.6.1"
   }
 }

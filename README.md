@@ -1,29 +1,41 @@
 # purescript-typescript-bridge
 
-- A PureScript library for type class based TypeScript type generation (.d.ts Files).
+A PureScript library for type class based TypeScript type generation (.d.ts Files).
+
+<!-- AUTO-GENERATED-CONTENT:START (TOC) -->
+- [Getting started](#getting-started)
+- [Features](#features)
+- [Types](#types)
+  - [Number](#number)
+  - [String](#string)
+  - [Boolean](#boolean)
+  - [Array](#array)
+  - [Int](#int)
+  - [Maybe](#maybe)
+  - [Nullable](#nullable)
+  - [Records](#records)
+<!-- AUTO-GENERATED-CONTENT:END -->
+
+<h2>Getting started</h2>
+
+```
+spago install typescript-bridge
+```
 
 The best way to get started is to have a look at the
 [sample-project](https://github.com/thought2/purescript-typescript-bridge.sample-project).
 
-## Features
+
+<h2>Features</h2>
 
 - Fully customizable. It's type class based, but the type class is defined on your side to ease instance implementations.
 - Many default implementations to pick from
+- Supports opaque types (implemented as branded types in TypeScript)
+- Supports easily accessible Newtypes (implemented as branded types in TypeScript)
+- Module resolution
+- Polymorphic types
 
-  - Char
-
-  - Function
-
-  - Promise
-  - Nullable
-  - Records
-  - Variants
-  - Effect
-  - Unit
-  - Maybe
-  - Either
-  - Tuple
-
+<h2>Types</h2>
 
 <table>
 
@@ -331,7 +343,16 @@ export type Nullable&lt;A&gt; = null | A;
 
 </table>
 
-- Supports opaque types (implemented as branded types in TypeScript)
-- Supports easily accessible Newtypes (implemented as branded types in TypeScript)
-- Module resolution
-- Polymorphic types
+
+  - Char
+  - Function
+  - Promise
+  - Nullable
+  - Records
+  - Variants
+  - Effect
+  - Unit
+  - Maybe
+  - Either
+  - Tuple
+
