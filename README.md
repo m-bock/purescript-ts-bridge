@@ -29,7 +29,7 @@ The best way to get started is to have a look at the
 
   <tr>
     <td colspan=3>
-      <h2>Number</h2>
+      <h3>Number</h3>
       <code>Number</code> is represented as TypeScript builtin <code>number</code> type
     </td>
   </tr>
@@ -64,7 +64,7 @@ The best way to get started is to have a look at the
 
   <tr>
     <td colspan=3>
-      <h2>String</h2>
+      <h3>String</h3>
       <code>String</code> is represented as TypeScript builtin <code>string</code> type
     </td>
   </tr>
@@ -99,7 +99,7 @@ The best way to get started is to have a look at the
 
   <tr>
     <td colspan=3>
-      <h2>Boolean</h2>
+      <h3>Boolean</h3>
       <code>Boolean</code> is represented as TypeScript builtin <code>boolean</code> type
     </td>
   </tr>
@@ -134,7 +134,7 @@ The best way to get started is to have a look at the
 
   <tr>
     <td colspan=3>
-      <h2>Array</h2>
+      <h3>Array</h3>
       <code>Array</code> is represented as TypeScript builtin <code>ReadonlyArray</code> type
     </td>
   </tr>
@@ -169,7 +169,7 @@ The best way to get started is to have a look at the
 
   <tr>
     <td colspan=3>
-      <h2>Int</h2>
+      <h3>Int</h3>
       <code>Int</code> is represented as opaque type using TypeScript branded types.
     </td>
   </tr>
@@ -207,7 +207,7 @@ type Int = {
 
   <tr>
     <td colspan=3>
-      <h2>Maybe</h2>
+      <h3>Maybe</h3>
       <code>Maybe</code> is represented as opaque type using TypeScript branded types.
     </td>
   </tr>
@@ -251,7 +251,7 @@ export type Maybe&lt;A&gt; = {
 
   <tr>
     <td colspan=3>
-      <h2>Nullable</h2>
+      <h3>Nullable</h3>
       <code>Nullable</code> is represented as TypeScript untagged union.
     </td>
   </tr>
@@ -293,8 +293,8 @@ export type Nullable&lt;A&gt; = null | A;
 
   <tr>
     <td colspan=3>
-      <h2>Records</h2>
-      Records are represented as TypeScript records with `readonly` fields.
+      <h3>Records</h3>
+      Records are represented as TypeScript records with readonly fields.
     </td>
   </tr>
   <tr></tr>
