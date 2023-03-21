@@ -102,11 +102,13 @@ type Int = {
       <code>Int</code> is represented as opque type using TypeScript branded types.
     </td>
   </tr>
+  <tr></tr>
   <tr>
     <th></th>
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
+  <tr></tr>
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
@@ -116,6 +118,7 @@ type Int = {
       <code>import('../Prim.Int').Int</code>
     </td>
   </tr>
+  <tr></tr>
   <tr>
     <td valign="top">Def</td>
     <td valign="top">
@@ -131,17 +134,20 @@ type Int = {
 };
 </pre></code></td>
   </tr>
+  <tr></tr>
   <tr>
     <td colspan=3>
       <h2>Maybe</h2>
       Maybe is represented as opaque type using TypeScript branded types.
     </td>
   </tr>
+  <tr></tr>
   <tr>
     <th></th>
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
+  <tr></tr>
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
@@ -151,6 +157,7 @@ type Int = {
       <pre>import('../Data.Maybe').Maybe&lt;A&gt;</pre>
     </td>
   </tr>
+  <tr></tr>
   <tr>
     <td valign="top">Def</td>
     <td valign="top">
@@ -170,6 +177,7 @@ export type Maybe&lt;A&gt; = {
 };
 </pre></td>
   </tr>
+  <tr></tr>
 </table>
 
 - Supports opaque types (implemented as branded types in TypeScript)
