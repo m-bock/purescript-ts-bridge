@@ -30,72 +30,45 @@ The best way to get started is to have a look at the
   - Either
   - Tuple
 
-### Number
-
-|     | PureScript  |     | TypeScript  |
-| --- | ----------- | --- | ----------- |
-| Ref | `Number`    | <>  | `number`    |
-| Def | `<builtin>` | <>  | `<builtin>` |
-
-### String
-
-|     | PureScript  |     | TypeScript  |
-| --- | ----------- | --- | ----------- |
-| Ref | `String`    | <>  | `string`    |
-| Def | `<builtin>` | <>  | `<builtin>` |
-
-### Boolean
-
-|     | PureScript  |     | TypeScript  |
-| --- | ----------- | --- | ----------- |
-| Ref | `Boolean`   | <>  | `boolean`   |
-| Def | `<builtin>` | <>  | `<builtin>` |
-
-### Array
-
-|     | PureScript  |     | TypeScript  |
-| --- | ----------- | --- | ----------- |
-| Ref | `Array a`   | <>  | `Array<A>`  |
-| Def | `<builtin>` | <>  | `<builtin>` |
-
-### Int
 
 <table>
+
+
+  <tr>
+    <td colspan=3>
+      <h2>Number</h2>
+      <code>Number</code> is represented as TypeScript builtin <code>number</code> type
+    </td>
+  </tr>
+  <tr></tr>
   <tr>
     <th></th>
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
+  <tr></tr>
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
-      <pre>Int</pre>
+      <pre>Number</pre>
     </td>
     <td valign="top">
-      <pre>import('../Prim.Int').Int</pre>
+      <pre>number</pre>
     </td>
   </tr>
+  <tr></tr>
   <tr>
     <td valign="top">Def</td>
     <td valign="top">
-<pre>
 &lt;builtin&gt;
-</pre>
     </td>
     <td valign="top">
-output/Prim.Int/index.d.ts
-<pre>
-type Int = {
-  readonly brand: unique symbol;
-};
-</pre></td>
+&lt;builtin&gt;
+</td>
   </tr>
-</table>
+  <tr></tr>
 
 
-### Maybe
-
-<table>
   <tr>
     <td colspan=3>
       <h2>Int</h2>
@@ -115,30 +88,29 @@ type Int = {
       <pre>Int</pre>
     </td>
     <td valign="top">
-      <code>import('../Prim.Int').Int</code>
+      <pre>import('../Prim.Int').Int</pre>
     </td>
   </tr>
   <tr></tr>
   <tr>
     <td valign="top">Def</td>
     <td valign="top">
-<pre>
 &lt;builtin&gt;
-</pre>
     </td>
     <td valign="top">
 output/Prim.Int/index.d.ts
-<code><pre>
+<pre>
 type Int = {
   readonly brand: unique symbol;
 };
-</pre></code></td>
+</pre></td>
   </tr>
   <tr></tr>
+
   <tr>
     <td colspan=3>
       <h2>Maybe</h2>
-      Maybe is represented as opaque type using TypeScript branded types.
+      <code>Maybe</code> is represented as opaque type using TypeScript branded types.
     </td>
   </tr>
   <tr></tr>
@@ -161,6 +133,7 @@ type Int = {
   <tr>
     <td valign="top">Def</td>
     <td valign="top">
+~/Data/Maybe.purs
 <pre>
 module Data.Maybe where
 
