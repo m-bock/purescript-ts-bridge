@@ -247,7 +247,7 @@ export type Maybe&lt;A&gt; = {
 };
 </pre></td>
   </tr>
-
+  <tr></tr>
 
   <tr>
     <td colspan=3>
@@ -289,7 +289,45 @@ output/Data.Nullable/index.d.ts
 export type Nullable&lt;A&gt; = null | A;
 </pre></td>
   </tr>
+  <tr></tr>
 
+  <tr>
+    <td colspan=3>
+      <h2>Records</h2>
+      Records are represented as TypeScript records with `readonly` fields.
+    </td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th>PureScript</th>
+    <th>TypeScript</th>
+  </tr>
+  <tr></tr>
+  <tr>
+    <td valign="top">Ref</td>
+    <td valign="top">
+<pre>
+{ name :: String
+, loggedIn :: Boolean
+}
+</pre>
+    </td>
+    <td valign="top">
+<pre>
+{
+  readonly name: string;
+  readonly loggedIn: boolean;
+}
+</pre>
+    </td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <td valign="top">Def</td>
+    <td valign="top">&lt;builtin&gt;</td>
+    <td valign="top">&lt;builtin&gt;</td>
+  </tr>
 
 </table>
 
