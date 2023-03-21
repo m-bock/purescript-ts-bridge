@@ -47,6 +47,7 @@ data TsType
   | TsTypeBoolean
   | TsTypeNull
   | TsTypeArray TsType
+  | TsTypeReadonlyArray TsType
   | TsTypeIntersection (Array TsType)
   | TsTypeUnion (Array TsType)
   | TsTypeRecord (Array TsRecordField)
@@ -104,6 +105,7 @@ mapQuantifier f = case _ of
   TsTypeBoolean -> TsTypeBoolean
   TsTypeNull -> TsTypeNull
   TsTypeArray x -> TsTypeArray $ mapQuantifier f x
+  TsTypeReadonlyArray x -> TsTypeReadonlyArray $ mapQuantifier f x
   TsTypeIntersection xs -> TsTypeIntersection
     (mapQuantifier f <$> xs)
   TsTypeUnion xs -> TsTypeUnion

@@ -135,7 +135,7 @@ The best way to get started is to have a look at the
   <tr>
     <td colspan=3>
       <h2>Array</h2>
-      <code>Array</code> is represented as TypeScript builtin <code>Array</code> type
+      <code>Array</code> is represented as TypeScript builtin <code>ReadonlyArray</code> type
     </td>
   </tr>
   <tr></tr>
@@ -151,7 +151,7 @@ The best way to get started is to have a look at the
       <pre>Array a</pre>
     </td>
     <td valign="top">
-      <pre>Array&lt;A&gt;</pre>
+      <pre>ReadonlyArray&lt;A&gt;</pre>
     </td>
   </tr>
   <tr></tr>

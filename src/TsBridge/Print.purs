@@ -174,6 +174,9 @@ instance Tokenize DTS.TsType where
     DTS.TsTypeArray x ->
       [ TsTokIdentifier "Array" ] <> wrapAngles (tokenize x)
 
+    DTS.TsTypeReadonlyArray x ->
+      [ TsTokIdentifier "ReadonlyArray" ] <> wrapAngles (tokenize x)
+
     DTS.TsTypeIntersection xs ->
       join $ intersperse [ TsTokAmpersand ] $ (wrapParens <<< tokenize) <$> xs
 
