@@ -293,7 +293,7 @@ Char
 import('../Prim').Char
 ```
 
-    </td>
+</td>
   </tr>
   <tr></tr>
   <tr>
