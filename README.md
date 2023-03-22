@@ -287,25 +287,27 @@ type Char = {
     <td valign="top">Def</td>
     <td valign="top">
 ~/Data/Maybe.purs
-<code class="language-haskell">
-<pre>
+
+```hs
 module Data.Maybe where
 &nbsp;
 data Maybe a
   = Just a
   | Nothing
-</pre>
-</code>
-    </td>
+```
+
+</td>
     <td valign="top">
 output/Data.Maybe/index.d.ts
-<code class="language-typescript">
-<pre>
+
+```ts
 export type Maybe&lt;A&gt; = {
   readonly __brand: unique symbol;
   readonly __arg0: A;
 };
-</pre></code></td>
+```
+
+</td>
   </tr>
   <tr></tr>
 
