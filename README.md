@@ -11,9 +11,14 @@ A PureScript library for type class based TypeScript type generation (.d.ts File
   - [Boolean](#boolean)
   - [Array](#array)
   - [Int](#int)
+  - [Char](#char)
   - [Maybe](#maybe)
+  - [Tuple](#tuple)
+  - [Either](#either)
   - [Nullable](#nullable)
   - [Records](#records)
+- [FAQ](#faq)
+- [Similar Projects](#similar-projects)
 - [Support](#support)
 <!-- AUTO-GENERATED-CONTENT:END -->
 
@@ -457,32 +462,49 @@ export type Tuple<A, B> = {
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
-      <pre>Either a</pre>
-    </td>
+
+```hs
+Either a b
+```
+
+</td>
     <td valign="top">
-      <pre>import('../Data.Either').Either&lt;A&gt;</pre>
-    </td>
+
+```ts
+import('../Data.Either').Either<A, B>
+```
+
+</td>
   </tr>
   <tr></tr>
   <tr>
     <td valign="top">Def</td>
     <td valign="top">
-~/Data/Either.purs
-<pre>
+
+`~/Data/Either.purs`
+
+```hs
 module Data.Either where
-&nbsp;
-data Either a b = Left a | Right b
-</pre>
-    </td>
+
+data Either a b 
+  = Left a
+  | Right b
+```
+
+</td>
     <td valign="top">
-output/Data.Either/index.d.ts
-<pre>
-export type Either&lt;A, B&gt; = {
+
+`output/Data.Either/index.d.ts`
+
+```ts
+export type Either<A, B> = {
   readonly __brand: unique symbol;
   readonly __arg0: A;
   readonly __arg1: B;
 };
-</pre></td>
+```
+
+</td>
   </tr>
   <tr></tr>
 
@@ -503,29 +525,44 @@ export type Either&lt;A, B&gt; = {
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
-      <pre>Nullable a</pre>
-    </td>
+
+```hs
+Nullable a
+```
+
+</td>
     <td valign="top">
-      <pre>import('../Data.Nullable').Nullable&lt;A&gt;</pre>
-    </td>
+
+```ts
+import('../Data.Nullable').Nullable<A>
+```
+
+</td>
   </tr>
   <tr></tr>
   <tr>
     <td valign="top">Def</td>
     <td valign="top">
-~/Data/Nullable.purs
-<pre>
+
+`~/Data/Nullable.purs`
+
+```hs
 module Data.Nullable where
-&nbsp;
+
 foreign import data Nullable 
   :: Type -> Type
-</pre>
-    </td>
+```
+
+</td>
     <td valign="top">
-output/Data.Nullable/index.d.ts
-<pre>
-export type Nullable&lt;A&gt; = null | A;
-</pre></td>
+
+`output/Data.Nullable/index.d.ts`
+
+```ts
+export type Nullable<A> = null | A;
+```
+
+</td>
   </tr>
   <tr></tr>
 
@@ -545,20 +582,24 @@ export type Nullable&lt;A&gt; = null | A;
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
-<pre>
+
+```hs
 { name :: String
 , loggedIn :: Boolean
 }
-</pre>
-    </td>
+```
+
+</td>
     <td valign="top">
-<pre>
+
+```ts
 {
   readonly name: string;
   readonly loggedIn: boolean;
 }
-</pre>
-    </td>
+```
+
+</td>
   </tr>
   <tr></tr>
   <tr>
