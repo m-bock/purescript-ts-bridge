@@ -290,7 +290,7 @@ type Char = {
 
 ```hs
 module Data.Maybe where
-&nbsp;
+
 data Maybe a
   = Just a
   | Nothing
@@ -301,7 +301,7 @@ data Maybe a
 output/Data.Maybe/index.d.ts
 
 ```ts
-export type Maybe&lt;A&gt; = {
+export type Maybe<A> = {
   readonly __brand: unique symbol;
   readonly __arg0: A;
 };
