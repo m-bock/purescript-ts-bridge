@@ -45,7 +45,7 @@ The following is a list of default implementations for types that are provided i
   <tr>
     <td colspan=3>
       <h3>Number</h3>
-      <code>Number</code> is represented as TypeScript builtin <code>number</code> type
+      <code class="language-hs">Number</code> is represented as TypeScript builtin <code class="language-hs">number</code> type
     </td>
   </tr>
   <tr></tr>
@@ -80,7 +80,7 @@ The following is a list of default implementations for types that are provided i
   <tr>
     <td colspan=3>
       <h3>String</h3>
-      <code>String</code> is represented as TypeScript builtin <code>string</code> type.
+      <code class="language-hs">String</code> is represented as TypeScript builtin <code class="language-hs">string</code> type.
     </td>
   </tr>
   <tr></tr>
@@ -115,7 +115,7 @@ The following is a list of default implementations for types that are provided i
   <tr>
     <td colspan=3>
       <h3>Boolean</h3>
-      <code>Boolean</code> is represented as TypeScript builtin <code>boolean</code> type.
+      <code class="language-hs">Boolean</code> is represented as TypeScript builtin <code class="language-hs">boolean</code> type.
     </td>
   </tr>
   <tr></tr>
@@ -150,7 +150,7 @@ The following is a list of default implementations for types that are provided i
   <tr>
     <td colspan=3>
       <h3>Array</h3>
-      <code>Array</code> is represented as TypeScript builtin <code>ReadonlyArray</code> type.
+      <code class="language-hs">Array</code> is represented as TypeScript builtin <code class="language-hs">ReadonlyArray</code> type.
     </td>
   </tr>
   <tr></tr>
@@ -185,7 +185,7 @@ The following is a list of default implementations for types that are provided i
   <tr>
     <td colspan=3>
       <h3>Int</h3>
-      <code>Int</code> is represented as opaque type using TypeScript branded types. So there is no way to create an `Int` directly in TypeScript, you need to export a functions like <code>round :: Number -> Int</code> and <code>toNumber :: Int -> Number</code> to construct and deconstruct an `Int`.
+      <code class="language-hs">Int</code> is represented as opaque type using TypeScript branded types. So there is no way to create an `Int` directly in TypeScript, you need to export a functions like <code class="language-hs">round :: Number -> Int</code> and <code class="language-hs">toNumber :: Int -> Number</code> to construct and deconstruct an `Int`.
     </td>
   </tr>
   <tr></tr>
@@ -224,7 +224,7 @@ type Int = {
   <tr>
     <td colspan=3>
       <h3>Char</h3>
-      <code>Char</code> is represented as opaque type using TypeScript branded types. So there is no way to create a `Char` directly in TypeScript, you need to export a constructor and destructor functions, similar to <code>Int</code>. 
+      <code class="language-hs">Char</code> is represented as opaque type using TypeScript branded types. So there is no way to create a `Char` directly in TypeScript, you need to export a constructor and destructor functions, similar to <code class="language-hs">Int</code>. 
     </td>
   </tr>
   <tr></tr>
@@ -263,7 +263,7 @@ type Char = {
   <tr>
     <td colspan=3>
       <h3>Maybe</h3>
-      <code>Maybe</code> is represented as opaque type using TypeScript branded types. so there is no direct way to create a <code>Maybe</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
+      <code class="language-hs">Maybe</code> is represented as opaque type using TypeScript branded types. so there is no direct way to create a <code class="language-hs">Maybe</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
     </td>
   </tr>
   <tr></tr>
@@ -308,7 +308,7 @@ export type Maybe&lt;A&gt; = {
   <tr>
     <td colspan=3>
       <h3>Tuple</h3>
-      <code>Tuple</code> is represented as opaque type using TypeScript __branded types. so there is no direct way to create a <code>Tuple</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
+      <code class="language-hs">Tuple</code> is represented as opaque type using TypeScript __branded types. so there is no direct way to create a <code class="language-hs">Tuple</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
     </td>
   </tr>
   <tr></tr>
@@ -355,7 +355,7 @@ export type Tuple&lt;A, B&gt; = {
   <tr>
     <td colspan=3>
       <h3>Either</h3>
-      <code>Either</code> is represented as opaque type using TypeScript __branded types. so there is no direct way to create a <code>Either</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
+      <code class="language-hs">Either</code> is represented as opaque type using TypeScript __branded types. so there is no direct way to create a <code class="language-hs">Either</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
     </td>
   </tr>
   <tr></tr>
@@ -401,7 +401,7 @@ export type Either&lt;A, B&gt; = {
   <tr>
     <td colspan=3>
       <h3>Nullable</h3>
-      <code>Nullable</code> is represented as TypeScript untagged union.
+      <code class="language-hs">Nullable</code> is represented as TypeScript untagged union.
     </td>
   </tr>
   <tr></tr>
