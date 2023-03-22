@@ -18,13 +18,10 @@ A PureScript library for type class based TypeScript type generation (.d.ts File
   - [Nullable](#nullable)
   - [Records](#records)
   - [Functions](#functions)
-- [Future features
-FAQ](#future-features%0Afaq)
+- [Future features](#future-features)
+- [FAQ](#faq)
 - [Similar Projects](#similar-projects)
-- [
-Support](#support)
-- [](#)
-- [](#-1)
+- [Support](#support)
 <!-- AUTO-GENERATED-CONTENT:END -->
 
 <h2>Getting started</h2>
@@ -682,7 +679,7 @@ forall a b c. a -> b -> c
   - Effect
   - Unit
 
-<h2>Future features<h2>
+<h2>Future features</h2>
 
 - Uncurried Functions
 
