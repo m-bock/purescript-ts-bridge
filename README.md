@@ -647,7 +647,7 @@ Number -> String -> Boolean
     <td valign="top">
 
 ```hs
-a -> b -> c
+forall a b c. a -> b -> c
 ```
 
 </td>
