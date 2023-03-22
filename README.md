@@ -58,11 +58,19 @@ The following is a list of default implementations for types that are provided i
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
-      <pre>Number</pre>
-    </td>
+
+```hs
+Number
+```
+
+</td>
     <td valign="top">
-      <pre>number</pre>
-    </td>
+
+```ts
+number
+```
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -93,11 +101,19 @@ The following is a list of default implementations for types that are provided i
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
-      <pre>String</pre>
-    </td>
+
+```hs
+String
+```
+
+</td>
     <td valign="top">
-      <pre>string</pre>
-    </td>
+
+```ts
+string
+```
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -128,11 +144,19 @@ The following is a list of default implementations for types that are provided i
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
-      <pre>Boolean</pre>
-    </td>
+
+```hs
+Boolean
+```
+
+</td>
     <td valign="top">
-      <pre>boolean</pre>
-    </td>
+
+```ts
+boolean
+```
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -163,11 +187,20 @@ The following is a list of default implementations for types that are provided i
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
-      <pre>Array a</pre>
-    </td>
+
+```hs
+Array a
+```
+
+</td>
     <td valign="top">
-      <pre>ReadonlyArray&lt;A&gt;</pre>
-    </td>
+
+```ts
+ReadonlyArray<A>
+```
+
+</td>
+
   </tr>
   <tr></tr>
   <tr>
@@ -198,11 +231,18 @@ The following is a list of default implementations for types that are provided i
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
-      <pre>Int</pre>
-    </td>
-    <td valign="top">
-      <pre>import('../Prim').Int</pre>
-    </td>
+
+```hs
+Int
+```
+
+</td><td valign="top">
+
+```ts
+import('../Prim').Int
+```
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -211,12 +251,16 @@ The following is a list of default implementations for types that are provided i
 &lt;builtin&gt;
     </td>
     <td valign="top">
-output/Prim/index.d.ts
-<pre>
+
+`output/Prim/index.d.ts`
+
+```ts
 type Int = {
   readonly __brand: unique symbol;
 };
-</pre></td>
+```
+
+</td>
   </tr>
   <tr></tr>
 
@@ -237,10 +281,18 @@ type Int = {
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
-      <pre>Char</pre>
-    </td>
+
+```hs
+Char
+```
+
+</td>
     <td valign="top">
-      <pre>import('../Prim').Int</pre>
+
+```ts
+import('../Prim').Char
+```
+
     </td>
   </tr>
   <tr></tr>
@@ -250,12 +302,16 @@ type Int = {
 &lt;builtin&gt;
     </td>
     <td valign="top">
-output/Prim/index.d.ts
-<pre>
+
+`output/Prim/index.d.ts`
+
+```ts
 type Char = {
   readonly __brand: unique symbol;
 };
-</pre></td>
+```
+
+</td>
   </tr>
   <tr></tr>
 
