@@ -307,6 +307,7 @@ data Maybe a
 
 </td>
     <td valign="top">
+
 `output/Data.Maybe/index.d.ts`
 
 ```ts
