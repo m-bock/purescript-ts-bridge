@@ -396,11 +396,11 @@ mkBrandedTypeDecl name args type_ = DTS.TsDeclTypeDef name DTS.Public (coerce ar
     Just t -> \x -> DTS.TsTypeIntersection [ x, t ]
 
   opaqueField = DTS.TsRecordField
-    (DTS.TsName $ "brand")
+    (DTS.TsName $ "__brand")
     { optional: false, readonly: true }
     DTS.TsTypeUniqueSymbol
 
   mkArgFields idx name' = DTS.TsRecordField
-    (DTS.TsName ("arg" <> show idx))
+    (DTS.TsName ("__arg" <> show idx))
     { optional: false, readonly: true }
     (DTS.TsTypeVar name')

@@ -1,4 +1,4 @@
-{ name = "typescript-bridge"
+{ name = "ts-bridge"
 , dependencies =
   [ "aff"
   , "aff-promise"

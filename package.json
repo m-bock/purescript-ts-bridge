@@ -1,8 +1,8 @@
 {
-  "name": "purescript-typescript-bridge",
+  "name": "purescript-ts-bridge",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "git@github.com:thought2/purescript-typescript-bridge.git",
+  "repository": "git@github.com:thought2/purescript-ts-bridge.git",
   "author": "Michael Bock <no-day@posteo.net>",
   "license": "MIT",
   "bin": {

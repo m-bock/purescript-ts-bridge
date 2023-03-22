@@ -1,5 +1,5 @@
 {
-  description = "purescript-typescript-bridge";
+  description = "purescript-ts-bridge";
 
   inputs.nixpkgs.url = "nixpkgs";
 
