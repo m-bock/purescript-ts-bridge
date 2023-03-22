@@ -608,6 +608,68 @@ export type Nullable<A> = null | A;
     <td valign="top">&lt;builtin&gt;</td>
   </tr>
 
+  <tr></tr>
+
+
+  <tr>
+    <td colspan=3>
+      <h3>Functions</h3>
+      Functions are represented as TypeScript functions.
+    </td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th>PureScript</th>
+    <th>TypeScript</th>
+  </tr>
+  <tr></tr>
+  <tr>
+    <td valign="top">Ref</td>
+    <td valign="top">
+
+```hs
+Number -> String -> Boolean
+```
+
+</td>
+    <td valign="top">
+
+```ts
+(_: number) => (_: string) => boolean
+```
+
+</td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <td valign="top">Ref</td>
+    <td valign="top">
+
+```hs
+a -> b -> c
+```
+
+</td>
+    <td valign="top">
+
+```ts
+<A>(_: A) => <B, C>(_: B) => C
+```
+
+</td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <td valign="top">Def</td>
+    <td valign="top">
+&lt;builtin&gt;
+</td>
+    <td valign="top">
+&lt;builtin&gt;
+</td>
+  </tr>
+
 </table>
 
   - Function
