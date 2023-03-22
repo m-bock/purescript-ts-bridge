@@ -678,6 +678,10 @@ forall a b c. a -> b -> c
   - Effect
   - Unit
 
+<h2>Future features<h2>
+
+- Uncurried Functions
+
 <h2>FAQ</h2>
 
 - Q: Why are ADTs exported as opaque types. They're actually not opaque and it
