@@ -18,9 +18,13 @@ A PureScript library for type class based TypeScript type generation (.d.ts File
   - [Nullable](#nullable)
   - [Records](#records)
   - [Functions](#functions)
-- [FAQ](#faq)
+- [Future features
+FAQ](#future-features%0Afaq)
 - [Similar Projects](#similar-projects)
-- [Support](#support)
+- [
+Support](#support)
+- [](#)
+- [](#-1)
 <!-- AUTO-GENERATED-CONTENT:END -->
 
 <h2>Getting started</h2>
