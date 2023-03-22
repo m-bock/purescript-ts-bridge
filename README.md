@@ -276,11 +276,19 @@ type Char = {
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
-      <pre>Maybe a</pre>
-    </td>
+
+```
+Maybe a
+```
+
+</td>
     <td valign="top">
-      <pre>import('../Data.Maybe').Maybe&lt;A&gt;</pre>
-    </td>
+
+```ts
+import('../Data.Maybe').Maybe<A>
+```
+
+</td>
   </tr>
   <tr></tr>
   <tr>
