@@ -17,6 +17,7 @@ A PureScript library for type class based TypeScript type generation (.d.ts File
   - [Either](#either)
   - [Nullable](#nullable)
   - [Records](#records)
+  - [Functions](#functions)
 - [FAQ](#faq)
 - [Similar Projects](#similar-projects)
 - [Support](#support)
@@ -672,7 +673,6 @@ forall a b c. a -> b -> c
 
 </table>
 
-  - Function
   - Promise
   - Variants
   - Effect
