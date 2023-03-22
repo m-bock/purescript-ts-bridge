@@ -277,7 +277,7 @@ type Char = {
     <td valign="top">Ref</td>
     <td valign="top">
 
-```
+```hs
 Maybe a
 ```
 
@@ -294,9 +294,10 @@ import('../Data.Maybe').Maybe<A>
   <tr>
     <td valign="top">Def</td>
     <td valign="top">
-~/Data/Maybe.purs
 
 ```hs
+-- ~/Data/Maybe.purs
+
 module Data.Maybe where
 
 data Maybe a
@@ -306,9 +307,10 @@ data Maybe a
 
 </td>
     <td valign="top">
-output/Data.Maybe/index.d.ts
 
 ```ts
+// output/Data.Maybe/index.d.ts
+
 export type Maybe<A> = {
   readonly __brand: unique symbol;
   readonly __arg0: A;
