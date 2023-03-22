@@ -319,7 +319,7 @@ type Char = {
   <tr>
     <td colspan=3>
       <h3>Maybe</h3>
-      <code>Maybe</code> is represented as opaque type using TypeScript branded types. so there is no direct way to create a <code>Maybe</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
+      <code>Maybe</code> is represented as opaque type using TypeScript branded types. So there is no direct way to create a <code>Maybe</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
     </td>
   </tr>
   <tr></tr>
@@ -381,7 +381,7 @@ export type Maybe<A> = {
   <tr>
     <td colspan=3>
       <h3>Tuple</h3>
-      <code>Tuple</code> is represented as opaque type using TypeScript __branded types. so there is no direct way to create a <code>Tuple</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
+      <code>Tuple</code> is represented as opaque type using TypeScript __branded types. So there is no direct way to create a <code>Tuple</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
     </td>
   </tr>
   <tr></tr>
@@ -394,32 +394,48 @@ export type Maybe<A> = {
   <tr>
     <td valign="top">Ref</td>
     <td valign="top">
-      <pre>Tuple a</pre>
-    </td>
+
+```hs
+Tuple a
+```
+
+</td>
     <td valign="top">
-      <pre>import('../Data.Tuple').Tuple&lt;A&gt;</pre>
-    </td>
+
+```ts
+import('../Data.Tuple').Tuple<A>
+```
+
+</td>
   </tr>
   <tr></tr>
   <tr>
     <td valign="top">Def</td>
     <td valign="top">
-~/Data/Tuple.purs
-<pre>
+
+`~/Data/Tuple.purs`
+
+```hs
 module Data.Tuple where
-&nbsp;
-data Tuple a b = Tuple a b
-</pre>
-    </td>
+
+data Tuple a b
+  = Tuple a b
+```
+
+</td>
     <td valign="top">
-output/Data.Tuple/index.d.ts
-<pre>
-export type Tuple&lt;A, B&gt; = {
+
+`output/Data.Tuple/index.d.ts`
+
+```ts
+export type Tuple<A, B> = {
   readonly __brand: unique symbol;
   readonly __arg0: A;
   readonly __arg1: B;
 };
-</pre></td>
+```
+
+</td>
   </tr>
   <tr></tr>
 
@@ -428,7 +444,7 @@ export type Tuple&lt;A, B&gt; = {
   <tr>
     <td colspan=3>
       <h3>Either</h3>
-      <code>Either</code> is represented as opaque type using TypeScript __branded types. so there is no direct way to create a <code>Either</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
+      <code>Either</code> is represented as opaque type using TypeScript __branded types. So there is no direct way to create a <code>Either</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
     </td>
   </tr>
   <tr></tr>
