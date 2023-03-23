@@ -28,7 +28,6 @@
   , "spec-discovery"
   , "strings"
   , "sunde"
-  , "tidy"
   , "transformers"
   , "tuples"
   , "typelevel"

@@ -18,7 +18,7 @@ import Data.Tuple.Nested (type (/\), (/\))
 import Data.Variant (Variant)
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
-import Test.Util (shouldEqual)
+import Test.Spec.Assertions (shouldEqual)
 import TsBridge (class DefaultRecord, class DefaultVariant, class TsBridgeBy, Path(..), TsDeclaration, TsProgram, TsSource(..), TsType, Var(..), runTsBridgeM, tsModuleFile, tsProgram, tsValue)
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
@@ -100,7 +100,7 @@ spec = do
                     [ "export const a : import('../Data.Either').Either<string, boolean>"
                     ]
                 , textFile "Data.Either/index.d.ts"
-                    [ "export type Either<A, B> = { readonly brand: unique symbol; readonly arg0: A; readonly arg1: B; }"
+                    [ "export type Either<A, B> = { readonly __brand: unique symbol; readonly __arg0: A; readonly __arg1: B; }"
                     ]
                 ]
 
