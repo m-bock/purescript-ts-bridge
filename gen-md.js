@@ -68,7 +68,7 @@ ${
 
 ${
   codeTs === null
-    ? "builtin"
+    ? "`builtin`"
     : typeof codeTs === "string"
     ? ["```ts", codeTs, "```"].join(
         "\n"

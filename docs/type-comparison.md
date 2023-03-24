@@ -64,7 +64,7 @@ number
 <td valign="top">
 
 
-builtin
+`builtin`
 
 
   </td>
@@ -120,7 +120,7 @@ string
 <td valign="top">
 
 
-builtin
+`builtin`
 
 
   </td>
@@ -176,7 +176,7 @@ boolean
 <td valign="top">
 
 
-builtin
+`builtin`
 
 
   </td>
@@ -232,7 +232,7 @@ ReadonlyArray<A>
 <td valign="top">
 
 
-builtin
+`builtin`
 
 
   </td>
