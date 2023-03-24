@@ -77,36 +77,43 @@ defaultTypeVar _ = do
 -- defaultProxy mp _ = tsBridgeBy mp (undefined :: a)
 
 -- | Default type class method implementation for the `Number` type
+-- |
 -- | Generates a TypeScript `number` type
 defaultNumber :: Proxy Number -> StandaloneTsType
 defaultNumber _ = pure DTS.TsTypeNumber
 
 -- | Default type class method implementation for the `String` type
+-- |
 -- | Generates a TypeScript `string` type
 defaultString :: Proxy String -> StandaloneTsType
 defaultString _ = pure DTS.TsTypeString
 
 -- | Default type class method implementation for the `Boolean` type
+-- |
 -- | Generates a TypeScript `boolean` type
 defaultBoolean :: Proxy Boolean -> StandaloneTsType
 defaultBoolean _ = pure DTS.TsTypeBoolean
 
 -- | Default type class method implementation for the `Int` type
+-- |
 -- | Generates a TypeScript opaque type
 defaultInt :: Proxy Int -> StandaloneTsType
 defaultInt = defaultOpaqueType "Prim" "Int" [] []
 
 -- | Default type class method implementation for the `Char` type
+-- |
 -- | Generates a TypeScript opaque type
 defaultChar :: Proxy Char -> StandaloneTsType
 defaultChar = defaultOpaqueType "Prim" "Char" [] []
 
 -- | Default type class method implementation for the `Unit` type
+-- |
 -- | Generates a TypeScript `void` type
 defaultUnit :: Proxy Unit -> StandaloneTsType
 defaultUnit _ = pure DTS.TsTypeVoid
 
 -- | Default type class method implementation for the `Effect` type
+-- |
 -- | Generates a TypeScript `() => void` type
 defaultEffect
   :: forall a tok
@@ -132,11 +139,13 @@ defaultEffect tok _ = censor mapAccum ado
   mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
 
 -- | Default type class method implementation for the `Array a` type
+-- |
 -- | Generates a TypeScript `Array<A>` type
 defaultArray :: forall a f. TsBridgeBy f a => f -> Proxy (Array a) -> StandaloneTsType
 defaultArray f _ = DTS.TsTypeArray <$> tsBridgeBy f (Proxy :: _ a)
 
 -- | Default type class method implementation for the `Tuple a b` type
+-- |
 -- | Generates a TypeScript opaque type
 defaultTuple
   :: forall tok a b
@@ -152,6 +161,7 @@ defaultTuple tok =
     ]
 
 -- | Default type class method implementation for the `Either a b` type
+-- |
 -- | Generates a TypeScript opaque type
 defaultEither
   :: forall tok a b
@@ -167,6 +177,7 @@ defaultEither tok =
     ]
 
 -- | Default type class method implementation for the `Maybe a` type
+-- |
 -- | Generates a TypeScript opaque type
 defaultMaybe
   :: forall tok a
@@ -178,7 +189,8 @@ defaultMaybe tok =
   defaultOpaqueType "Data.Maybe" "Maybe" [ "A" ]
     [ tsBridgeBy tok (Proxy :: _ a) ]
 
--- | Default type class method implementation for the `Promise a` type
+-- | Default type class method implementation for the `Promise a` type.
+-- |
 -- | Generates a TypeScript `Promise<A>` type
 defaultPromise
   :: forall a f
@@ -192,7 +204,8 @@ defaultPromise f _ = do
     (DTS.TsQualName Nothing (DTS.TsName "Promise"))
     (DTS.TsTypeArgs [ x ])
 
--- | Default type class method implementation for the `Nullable a` type
+-- | Default type class method implementation for the `Nullable a` type. 
+-- |
 -- | Generates a TypeScript `A | null` type
 defaultNullable
   :: forall a tok
@@ -206,6 +219,7 @@ defaultNullable tok _ = do
     [ DTS.TsTypeNull, x ]
 
 -- | Default type class method implementation for the `a -> b` (Function) type
+-- |
 -- | Generates a TypeScript `(_ : A) => B` type
 defaultFunction
   :: forall f a b

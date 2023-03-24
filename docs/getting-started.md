@@ -76,11 +76,27 @@ We've defined a small set of types that we want to be able to generate
 TypeScript equivalents from. Now we define some values of those types. 
 
 ```hs
-foo :: Number
-foo = 1.0
+gravity :: Number
+gravity = 9.81
 
-bar :: { x :: Number, y :: Number } -> String
-bar _ = ""
+points :: Array { x :: Number, y :: Number }
+points = [ { x: 0.0, y: 0.0 }, { x: 3.0, y: 2.0 } ]
+
+greet :: String -> String
+greet name = "Hello, " <> name <> "!"
+
+type Person =
+  { name :: String
+  , hobbies :: Array String
+  , coordinates :: { x :: Number, y :: Number }
+  }
+
+person :: Person
+person =
+  { name: "Santa"
+  , hobbies: [ "running", "swimming" ]
+  , coordinates: { x: 13.2, y: 0.7 }
+  }
 ```
 </li>
 <li>
@@ -95,8 +111,10 @@ myTsProgram =
   TSB.tsProgram
     [ TSB.tsModuleFile "Sample"
         [ TSB.tsValues Tok
-            { bar
-            , foo
+            { gravity
+            , points
+            , greet
+            , person
             }
         ]
 
@@ -124,9 +142,17 @@ Thereafter the file `output/Sample/index.d.ts` should contain the generated type
 
 <!-- AUTO-GENERATED-CONTENT:START (SAMPLE_OUTPUT) -->
 ```ts
-export const bar: (_: { readonly x: number; readonly y: number }) => string;
+export const gravity: number;
 
-export const foo: number;
+export const greet: (_: string) => string;
+
+export const person: {
+  readonly coordinates: { readonly x: number; readonly y: number };
+  readonly hobbies: Array<string>;
+  readonly name: string;
+};
+
+export const points: Array<{ readonly x: number; readonly y: number }>;
 ```
 
 <!-- AUTO-GENERATED-CONTENT:END -->

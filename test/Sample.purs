@@ -68,11 +68,27 @@ instance (TSB.DefaultRecord Tok r) => TsBridge (Record r) where
 -- TypeScript equivalents from. Now we define some values of those types. 
 --
 
-foo :: Number
-foo = 1.0
+gravity :: Number
+gravity = 9.81
 
-bar :: { x :: Number, y :: Number } -> String
-bar _ = ""
+points :: Array { x :: Number, y :: Number }
+points = [ { x: 0.0, y: 0.0 }, { x: 3.0, y: 2.0 } ]
+
+greet :: String -> String
+greet name = "Hello, " <> name <> "!"
+
+type Person =
+  { name :: String
+  , hobbies :: Array String
+  , coordinates :: { x :: Number, y :: Number }
+  }
+
+person :: Person
+person =
+  { name: "Santa"
+  , hobbies: [ "running", "swimming" ]
+  , coordinates: { x: 13.2, y: 0.7 }
+  }
 
 -- </li>
 -- <li>
@@ -87,8 +103,10 @@ myTsProgram =
   TSB.tsProgram
     [ TSB.tsModuleFile "Sample"
         [ TSB.tsValues Tok
-            { bar
-            , foo
+            { gravity
+            , points
+            , greet
+            , person
             }
         ]
 
