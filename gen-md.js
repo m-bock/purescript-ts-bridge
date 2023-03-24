@@ -20,7 +20,7 @@ const Table = (_, children) => `
 `;
 
 const Row = (
-  { title, text },
+  { title, text, isLast },
   children
 ) => `
   <tr>
@@ -36,7 +36,7 @@ ${text}
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
-  <tr></tr>
+  ${isLast ? "" : "<tr></tr>"}
 `;
 
 const Row_ = (
@@ -232,7 +232,7 @@ const config = {
               [
                 "output/Data.Either/index.d.ts",
                 [
-                  "type Either<A> = {",
+                  "type Either<A, B> = {",
                   "  readonly __brand: unique symbol;",
                   "  readonly __arg0: A;",
                   "  readonly __arg1: B;",
@@ -288,10 +288,20 @@ const config = {
         {},
         data
           .map(
-            ([title, text, samples]) =>
+            (
+              [title, text, samples],
+              ix,
+              all
+            ) =>
               [
                 Row(
-                  { title, text },
+                  {
+                    title,
+                    text,
+                    isLast:
+                      ix ===
+                      all.length - 1,
+                  },
                   ""
                 ),
                 samples

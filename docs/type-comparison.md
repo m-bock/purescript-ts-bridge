@@ -384,7 +384,7 @@ type Maybe<A> = {
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
-  <tr></tr>
+  
 
 
 <tr>
@@ -428,7 +428,7 @@ data Either a b
 
 `output/Data.Either/index.d.ts`
 ```ts
-type Either<A> = {
+type Either<A, B> = {
   readonly __brand: unique symbol;
   readonly __arg0: A;
   readonly __arg1: B;
