@@ -42,8 +42,8 @@ import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (sequence)
-import Data.Tuple (Tuple)
-import Data.Tuple.Nested ((/\))
+import Data.Tuple (Tuple, fst, snd)
+import Data.Tuple.Nested (type (/\), (/\))
 import Data.Variant (Variant)
 import Effect (Effect)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
@@ -99,13 +99,13 @@ defaultBoolean _ = pure DTS.TsTypeBoolean
 -- |
 -- | Generates a TypeScript opaque type
 defaultInt :: Proxy Int -> StandaloneTsType
-defaultInt = defaultOpaqueType "Prim" "Int" [] []
+defaultInt = defaultOpaqueType "Prim" "Int" []
 
 -- | Default type class method implementation for the `Char` type
 -- |
 -- | Generates a TypeScript opaque type
 defaultChar :: Proxy Char -> StandaloneTsType
-defaultChar = defaultOpaqueType "Prim" "Char" [] []
+defaultChar = defaultOpaqueType "Prim" "Char" []
 
 -- | Default type class method implementation for the `Unit` type
 -- |
@@ -156,9 +156,9 @@ defaultTuple
   -> Proxy (Tuple a b)
   -> StandaloneTsType
 defaultTuple tok =
-  defaultOpaqueType "Data.Tuple" "Tuple" [ "A", "B" ]
-    [ tsBridgeBy tok (Proxy :: _ a)
-    , tsBridgeBy tok (Proxy :: _ b)
+  defaultOpaqueType "Data.Tuple" "Tuple"
+    [ "A" /\ tsBridgeBy tok (Proxy :: _ a)
+    , "B" /\ tsBridgeBy tok (Proxy :: _ b)
     ]
 
 -- | Default type class method implementation for the `Either a b` type
@@ -172,9 +172,9 @@ defaultEither
   -> Proxy (Either a b)
   -> StandaloneTsType
 defaultEither tok =
-  defaultOpaqueType "Data.Either" "Either" [ "A", "B" ]
-    [ tsBridgeBy tok (Proxy :: _ a)
-    , tsBridgeBy tok (Proxy :: _ b)
+  defaultOpaqueType "Data.Either" "Either"
+    [ "A" /\ tsBridgeBy tok (Proxy :: _ a)
+    , "B" /\ tsBridgeBy tok (Proxy :: _ b)
     ]
 
 -- | Default type class method implementation for the `Maybe a` type
@@ -187,8 +187,8 @@ defaultMaybe
   -> Proxy (Maybe a)
   -> StandaloneTsType
 defaultMaybe tok =
-  defaultOpaqueType "Data.Maybe" "Maybe" [ "A" ]
-    [ tsBridgeBy tok (Proxy :: _ a) ]
+  defaultOpaqueType "Data.Maybe" "Maybe"
+    [ "A" /\ tsBridgeBy tok (Proxy :: _ a) ]
 
 -- | Default type class method implementation for the `Promise a` type.
 -- |
@@ -330,14 +330,17 @@ instance
 
 -------------------------------------------------------------------------------
 
-defaultOpaqueType :: forall a. String -> String -> Array String -> Array (StandaloneTsType) -> a -> StandaloneTsType
-defaultOpaqueType pursModuleName pursTypeName targNames targs _ = brandedType
+defaultOpaqueType :: forall a. String -> String -> Array (String /\ StandaloneTsType) -> a -> StandaloneTsType
+defaultOpaqueType pursModuleName pursTypeName args _ = brandedType
   (DTS.TsFilePath (pursModuleName <> "/index") "d.ts")
   (DTS.TsModuleAlias pursModuleName)
   (DTS.TsName pursTypeName)
   (OSet.fromFoldable $ DTS.TsName <$> targNames)
   targs
   Nothing
+  where
+  targNames = map fst args
+  targs = map snd args
 
 defaultNewtype
   :: forall mp a t
@@ -346,11 +349,14 @@ defaultNewtype
   => mp
   -> String
   -> String
-  -> Array String
-  -> Array (StandaloneTsType)
+  -> Array (String /\ StandaloneTsType)
   -> Proxy a
   -> StandaloneTsType
-defaultNewtype mp pursModuleName pursTypeName targNames targs t = do
+defaultNewtype mp pursModuleName pursTypeName args_ t = do
+  let
+    targNames = map fst args_
+    targs = map snd args_
+
   args <- sequence targs
   x <- tsBridgeBy mp (Proxy :: _ t)
   let

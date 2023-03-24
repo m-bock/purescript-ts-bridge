@@ -63,8 +63,7 @@ instance (TsBridge a, TsBridge b) => TsBridge (Tuple a b) where
   tsBridge = TSB.defaultTuple Tok
 
 instance (TsBridge a, TsBridge b) => TsBridge (Either a b) where
-  tsBridge = TSB.defaultOpaqueType "Data.Either" "Either" [ "A", "B" ]
-    [ tsBridge (Proxy :: _ a), tsBridge (Proxy :: _ b) ]
+  tsBridge = TSB.defaultEither Tok
 
 instance IsSymbol sym => TsBridge (Var sym) where
   tsBridge _ = TSB.defaultTypeVar (Var :: _ sym)
@@ -77,7 +76,7 @@ newtype MyNT = MyNT Number
 derive instance Newtype MyNT _
 
 instance TsBridge MyNT where
-  tsBridge = TSB.defaultNewtype Tok "Foo.Bar" "MyNT" [] []
+  tsBridge = TSB.defaultNewtype Tok "Foo.Bar" "MyNT" []
 
 --
 
