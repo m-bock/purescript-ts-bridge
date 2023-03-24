@@ -14,7 +14,7 @@ A **PureScript** library for type class based **TypeScript** type generation (`.
 - [Getting Started Guide](https://pursuit.purescript.org/packages/purescript-ts-bridge)
 - [API Docs on Pursuit](https://pursuit.purescript.org/packages/purescript-ts-bridge)
 - [FAQs](docs/faq.md)
-- [Type Comparison](docs/type-comparison.md)
+- [Type Comparison PureScript vs. TypeScript](docs/type-comparison.md)
 - [Demo repo](https://github.com/thought2/purescript-ts-bridge.demo)
 
 ## Installation
@@ -45,6 +45,6 @@ spago install ts-bridge
 
 # Support
 
-If you find a bug or have a feature idea feel free to make a PR or file an issue.
+If you find a bug or have a feature idea feel free to make a PR or file an issue. Or just...
 
 <a href='https://ko-fi.com/C0C3HQFRF' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi4.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>

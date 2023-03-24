@@ -8,7 +8,7 @@ import Data.Either (Either)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe)
-import Data.Newtype (un)
+import Data.Newtype (class Newtype, un)
 import Data.Nullable (Nullable)
 import Data.String (Pattern(..))
 import Data.String as String
@@ -72,6 +72,13 @@ instance IsSymbol sym => TsBridge (Var sym) where
 instance TsBridge Unit where
   tsBridge = TSB.defaultUnit
 
+newtype MyNT = MyNT Number
+
+derive instance Newtype MyNT _
+
+instance TsBridge MyNT where
+  tsBridge = TSB.defaultNewtype Tok "Foo.Bar" "MyNT" [] []
+
 --
 
 data Tok = Tok
@@ -99,6 +106,22 @@ spec = do
                     ]
                 , textFile "Data.Either/index.d.ts"
                     [ "export type Either<A, B> = { readonly __brand: unique symbol; readonly __arg0: A; readonly __arg1: B; }"
+                    ]
+                ]
+
+      describe "Newtype" do
+        it "generates a type and adds the type module" do
+          tsProgram
+            [ tsModuleFile "Foo.Bar"
+                [ tsValue' Tok "a" (Proxy :: _ MyNT) ]
+            ]
+            # printTsProgram
+            # shouldEqual
+            $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export const a : import('../Foo.Bar').MyNT"
+                    , ""
+                    , "export type MyNT = number"
                     ]
                 ]
 

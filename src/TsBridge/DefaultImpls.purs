@@ -6,7 +6,7 @@ module TsBridge.DefaultImpls
   , class DefaultVariantRL
   , defaultArray
   , defaultBoolean
-  , defaultBrandedType
+  , defaultNewtype
   , defaultChar
   , defaultEffect
   , defaultEither
@@ -34,7 +34,7 @@ import Control.Promise (Promise)
 import Data.Array (mapWithIndex, (:))
 import Data.Array as A
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, over, unwrap)
+import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable)
 import Data.Set as Set
 import Data.Set.Ordered (OSet)
@@ -43,7 +43,6 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
 import Data.Tuple.Nested ((/\))
-import Data.Typelevel.Undefined (undefined)
 import Data.Variant (Variant)
 import Effect (Effect)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
@@ -325,7 +324,7 @@ defaultOpaqueType pursModuleName pursTypeName targNames targs _ = brandedType
   targs
   Nothing
 
-defaultBrandedType
+defaultNewtype
   :: forall mp a t
    . Newtype a t
   => TsBridgeBy mp t
@@ -336,15 +335,31 @@ defaultBrandedType
   -> Array (StandaloneTsType)
   -> Proxy a
   -> StandaloneTsType
-defaultBrandedType mp pursModuleName pursTypeName targNames targs t = do
+defaultNewtype mp pursModuleName pursTypeName targNames targs t = do
+  args <- sequence targs
   x <- tsBridgeBy mp (Proxy :: _ t)
-  brandedType
-    (DTS.TsFilePath (pursModuleName <> "/index") "d.ts")
-    (DTS.TsModuleAlias pursModuleName)
-    (DTS.TsName pursTypeName)
-    (OSet.fromFoldable $ DTS.TsName <$> targNames)
-    targs
-    (Just x)
+  let
+    filePath = DTS.TsFilePath (pursModuleName <> "/index") "d.ts"
+    alias = DTS.TsModuleAlias pursModuleName
+    name = DTS.TsName pursTypeName
+    args' = OSet.fromFoldable $ DTS.TsName <$> targNames
+
+  let
+    typeDefs =
+      [ DTS.TsModuleFile
+          filePath
+          ( DTS.TsModule pursModuleName Set.empty
+              [ DTS.TsDeclTypeDef name DTS.Public (coerce args') x
+              ]
+          )
+      ]
+
+  tell
+    $ TsBridgeAccum
+    $ R.union mempty { typeDefs }
+
+  pure
+    $ DTS.TsTypeConstructor (DTS.TsQualName (Just alias) name) (DTS.TsTypeArgs args)
 
 -------------------------------------------------------------------------------
 -- Util
