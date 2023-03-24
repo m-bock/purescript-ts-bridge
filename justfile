@@ -7,3 +7,6 @@ format:
 
 test:
     spago test
+
+gen-readme:
+    node gen-md.js

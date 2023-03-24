@@ -1,13 +1,17 @@
-import path from 'path'
-import markdownMagic from 'markdown-magic'
-import { fileURLToPath } from 'url';
-import * as fs from "fs"
-import * as pursToMd from "purs-to-md"
+import path from "path";
+import markdownMagic from "markdown-magic";
+import { fileURLToPath } from "url";
+import * as fs from "fs";
+import * as child_process from "child_process";
 
-const __filename = fileURLToPath(import.meta.url);
+import * as pursToMd from "purs-to-md";
 
-const __dirname = path.dirname(__filename);
+const __filename = fileURLToPath(
+  import.meta.url
+);
 
+const __dirname =
+  path.dirname(__filename);
 
 const Table = (_, children) => `
 <table>
@@ -21,10 +25,7 @@ const Row = (
 ) => `
   <tr>
     <td colspan=3>
-      <h3>
-
-${title}
-      </h3>
+      <h3>${title}</h3>
 
 ${text}
       </td>
@@ -46,16 +47,16 @@ const Row_ = (
   <td valign="top">${type_}</td>
   <td valign="top">
 
-  \`\`\`hs
-  ${codePurs}
-  \`\`\`
+\`\`\`hs
+${codePurs}
+\`\`\`
 
-  </td>
-  <td valign="top">
+</td>
+<td valign="top">
 
-  \`\`\`ts
-  ${codeTs}
-  \`\`\`
+\`\`\`ts
+${codeTs}
+\`\`\`
 
   </td>
 </tr>
@@ -66,8 +67,20 @@ const config = {
   matchWord: "AUTO-GENERATED-CONTENT",
   transforms: {
     SAMPLE() {
-      const src = fs.readFileSync("test/Sample.purs").toString();
+      const src = fs
+        .readFileSync(
+          "test/Sample.purs"
+        )
+        .toString();
       return pursToMd.convert(src);
+    },
+    SAMPLE_OUTPUT() {
+      child_process.execSync(
+        "spago run --main Sample -a '--prettier node_modules/.bin/prettier'"
+      );
+
+      const tgt = fs.readFileSync("./output/Sample/index.d.ts").toString();
+      return "```ts\n" + tgt + "```\n";
     },
     TYPES(content, options) {
       var data = [
@@ -139,7 +152,8 @@ const config = {
 
 export default config;
 
-const markdownPath = path.join(__dirname, 'README.md')
-markdownMagic(markdownPath, config)
-
-
+const markdownPath = path.join(
+  __dirname,
+  "README.md"
+);
+markdownMagic(markdownPath, config);
