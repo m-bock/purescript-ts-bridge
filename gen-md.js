@@ -67,7 +67,7 @@ ${
 
 ${
   codeTs === null
-    ? "<builtin>"
+    ? "builtin"
     : typeof codeTs === "string"
     ? ["```ts", codeTs, "```"].join(
         "\n"
@@ -314,7 +314,8 @@ const config = {
                           codeTs,
                           isLast:
                             ix ===
-                            (all.length - 1),
+                            all.length -
+                              1,
                         },
                         ""
                       )
