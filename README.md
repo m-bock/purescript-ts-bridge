@@ -2,16 +2,12 @@
 
 <img
 src="https://media.tenor.com/MRCIli40TYoAAAAi/under-construction90s-90s.gif" width="30">
-<img
-src="https://media.tenor.com/MRCIli40TYoAAAAi/under-construction90s-90s.gif" width="30">
-<img
-src="https://media.tenor.com/MRCIli40TYoAAAAi/under-construction90s-90s.gif" width="30">
 
 A **PureScript** library for type class based **TypeScript** type generation (`.d.ts` files).
 
 ## Documentation
 
-- [Getting Started Guide](https://pursuit.purescript.org/packages/purescript-ts-bridge)
+- [Getting Started Guide](docs/getting-started.md)
 - [API Docs on Pursuit](https://pursuit.purescript.org/packages/purescript-ts-bridge)
 - [FAQs](docs/faq.md)
 - [Type Comparison PureScript vs. TypeScript](docs/type-comparison.md)
