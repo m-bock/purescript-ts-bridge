@@ -47,16 +47,36 @@ const Row_ = (
   <td valign="top">${type_}</td>
   <td valign="top">
 
-\`\`\`hs
-${codePurs}
-\`\`\`
+${
+  codePurs == null
+    ? "<builtin>"
+    : typeof codePurs === "string"
+    ? "`" + codePurs + "`"
+    : [
+        "`" + codePurs[0] + "`",
+        "```hs",
+        codePurs[1],
+        "```",
+      ].join("\n")
+}
 
 </td>
 <td valign="top">
 
-\`\`\`ts
-${codeTs}
-\`\`\`
+
+${
+  codeTs === null
+    ? "<builtin>"
+    : typeof codeTs === "string"
+    ? "`" + codeTs + "`"
+    : [
+        "`" + codeTs[0] + "`",
+        "```ts",
+        codeTs[1],
+        "```",
+      ].join("\n")
+}
+
 
   </td>
 </tr>
@@ -90,26 +110,113 @@ const config = {
       var data = [
         [
           "Number",
-          "Number is represented as TypeScript builtin `number` type.",
+          "`Number` is represented as TypeScript builtin `number` type.",
           [
             ["Ref", "Number", "number"],
-            [
-              "Def",
-              "<builtin>",
-              "<builtin>",
-            ],
+            ["Def", null, null],
           ],
         ],
         [
           "String",
-          "String is represented as TypeScript builtin string type.",
+          "`String` is represented as TypeScript builtin `string` type.",
           [
             ["Ref", "String", "string"],
+            ["Def", null, null],
+          ],
+        ],
+        [
+          "Boolean",
+          "`Boolean` is represented as TypeScript builtin `boolean`.",
+          [
+            [
+              "Ref",
+              "Boolean",
+              "boolean",
+            ],
+            ["Def", null, null],
+          ],
+        ],
+        [
+          "Array",
+          "`Array` is represented as TypeScript builtin `ReadonlyArray` type.",
+          [
+            [
+              "Ref",
+              "Array a",
+              "ReadonlyArray<A>",
+            ],
+            ["Def", null, null],
+          ],
+        ],
+        [
+          "Int",
+          "`Int` is represented as opaque type using TypeScript branded types. So there is no way to create an `Int` directly in TypeScript, you need to export a functions like `round :: Number -> Int` and `toNumber :: Int -> Number` to construct and deconstruct an `Int`.",
+          [
+            [
+              "Ref",
+              "Int",
+              "import('../Prim').Int",
+            ],
             [
               "Def",
-              "<builtin>",
-              "<builtin>",
+              null,
+              [
+                "output/Prim/index.d.ts",
+                [
+                  "type Int = {",
+                  "  readonly __brand: unique symbol;",
+                  "}",
+                ].join("\n"),
+              ],
             ],
+          ],
+        ],
+        [
+          "",
+          "",
+          [
+            ["Ref", "", ""],
+            ["Def", "", ""],
+          ],
+        ],
+        [
+          "",
+          "",
+          [
+            ["Ref", "", ""],
+            ["Def", "", ""],
+          ],
+        ],
+        [
+          "",
+          "",
+          [
+            ["Ref", "", ""],
+            ["Def", "", ""],
+          ],
+        ],
+        [
+          "",
+          "",
+          [
+            ["Ref", "", ""],
+            ["Def", "", ""],
+          ],
+        ],
+        [
+          "",
+          "",
+          [
+            ["Ref", "", ""],
+            ["Def", "", ""],
+          ],
+        ],
+        [
+          "",
+          "",
+          [
+            ["Ref", "", ""],
+            ["Def", "", ""],
           ],
         ],
       ];

@@ -1,6 +1,0 @@
-{
-    "purescript.formatter": "purs-tidy",
-    "purescript.censorWarnings": [
-        "WildcardInferredType"
-    ]
-}
