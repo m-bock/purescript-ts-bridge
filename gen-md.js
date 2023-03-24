@@ -49,7 +49,7 @@ const Row_ = (
 
 ${
   codePurs == null
-    ? "builtin"
+    ? "`builtin`"
     : typeof codePurs === "string"
     ? ["```ts", codePurs, "```"].join(
         "\n"
@@ -189,8 +189,6 @@ const config = {
               [
                 "~/Data/Maybe.purs",
                 [
-                  "module Data.Maybe where",
-                  "",
                   "data Maybe a",
                   "  = Just a",
                   "  | Nothing",
@@ -222,8 +220,6 @@ const config = {
               [
                 "~/Data/Either.purs",
                 [
-                  "module Data.Either where",
-                  "",
                   "data Either a b",
                   "  = Left a",
                   "  | Right b",

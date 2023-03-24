@@ -58,7 +58,7 @@ number
   <td valign="top">Def</td>
   <td valign="top">
 
-builtin
+`builtin`
 
 </td>
 <td valign="top">
@@ -114,7 +114,7 @@ string
   <td valign="top">Def</td>
   <td valign="top">
 
-builtin
+`builtin`
 
 </td>
 <td valign="top">
@@ -170,7 +170,7 @@ boolean
   <td valign="top">Def</td>
   <td valign="top">
 
-builtin
+`builtin`
 
 </td>
 <td valign="top">
@@ -226,7 +226,7 @@ ReadonlyArray<A>
   <td valign="top">Def</td>
   <td valign="top">
 
-builtin
+`builtin`
 
 </td>
 <td valign="top">
@@ -282,7 +282,7 @@ import('../Prim').Int
   <td valign="top">Def</td>
   <td valign="top">
 
-builtin
+`builtin`
 
 </td>
 <td valign="top">
@@ -345,8 +345,6 @@ import('../Data.Maybe').Maybe<A>
 
 `~/Data/Maybe.purs`
 ```hs
-module Data.Maybe where
-
 data Maybe a
   = Just a
   | Nothing
@@ -414,8 +412,6 @@ import('../Data.Either').Either<A, B>
 
 `~/Data/Either.purs`
 ```hs
-module Data.Either where
-
 data Either a b
   = Left a
   | Right b
