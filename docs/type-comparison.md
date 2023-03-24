@@ -59,13 +59,13 @@ number
   <td valign="top">Def</td>
   <td valign="top">
 
-`builtin`
+`<builtin>`
 
 </td>
 <td valign="top">
 
 
-`builtin`
+`<builtin>`
 
 
   </td>
@@ -115,13 +115,13 @@ string
   <td valign="top">Def</td>
   <td valign="top">
 
-`builtin`
+`<builtin>`
 
 </td>
 <td valign="top">
 
 
-`builtin`
+`<builtin>`
 
 
   </td>
@@ -171,13 +171,13 @@ boolean
   <td valign="top">Def</td>
   <td valign="top">
 
-`builtin`
+`<builtin>`
 
 </td>
 <td valign="top">
 
 
-`builtin`
+`<builtin>`
 
 
   </td>
@@ -227,13 +227,13 @@ ReadonlyArray<A>
   <td valign="top">Def</td>
   <td valign="top">
 
-`builtin`
+`<builtin>`
 
 </td>
 <td valign="top">
 
 
-`builtin`
+`<builtin>`
 
 
   </td>
@@ -283,7 +283,7 @@ import('../Prim').Int
   <td valign="top">Def</td>
   <td valign="top">
 
-`builtin`
+`<builtin>`
 
 </td>
 <td valign="top">

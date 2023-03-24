@@ -49,7 +49,7 @@ const Row_ = (
 
 ${
   codePurs == null
-    ? "`builtin`"
+    ? "`<builtin>`"
     : typeof codePurs === "string"
     ? ["```ts", codePurs, "```"].join(
         "\n"
@@ -68,7 +68,7 @@ ${
 
 ${
   codeTs === null
-    ? "`builtin`"
+    ? "`<builtin>`"
     : typeof codeTs === "string"
     ? ["```ts", codeTs, "```"].join(
         "\n"
