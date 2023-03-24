@@ -8,6 +8,7 @@
 - [Int](#int)
 - [Maybe](#maybe)
 - [Either](#either)
+- [Tuple](#tuple)
 <!-- AUTO-GENERATED-CONTENT:END -->
 
 The following is a list of default implementations for types that are provided in this library. Since the generation typeclass is defined on your side, you can choose a subset of the provided implementations.
@@ -403,7 +404,7 @@ import('../Data.Either').Either<A, B>
 
   </td>
 </tr>
-
+<tr></tr>
 
 
 <tr>
@@ -424,6 +425,73 @@ data Either a b
 `output/Data.Either/index.d.ts`
 ```ts
 type Either<A, B> = {
+  readonly __brand: unique symbol;
+  readonly __arg0: A;
+  readonly __arg1: B;
+}
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+  <tr>
+    <td colspan=3>
+      <h2>Tuple</h2>
+
+`Tuple` is represented as opaque type using TypeScript __branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.
+      </td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th align="left">PureScript</th>
+    <th align="left">TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+Tuple a b
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+import('../Data.Tuple').Tuple<A, B>
+```
+
+
+  </td>
+</tr>
+
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+`~/Data/Tuple.purs`
+```hs
+data Tuple a b
+  = Tuple a b
+```
+
+</td>
+<td valign="top">
+
+
+`output/Data.Tuple/index.d.ts`
+```ts
+type Tuple<A, B> = {
   readonly __brand: unique symbol;
   readonly __arg0: A;
   readonly __arg1: B;

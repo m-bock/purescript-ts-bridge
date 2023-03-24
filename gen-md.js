@@ -238,6 +238,37 @@ const config = {
             ],
           ],
         ],
+        [
+          "Tuple",
+          "`Tuple` is represented as opaque type using TypeScript __branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.",
+          [
+            [
+              "Ref",
+              "Tuple a b",
+              "import('../Data.Tuple').Tuple<A, B>",
+            ],
+            [
+              "Def",
+              [
+                "~/Data/Tuple.purs",
+                [
+                  "data Tuple a b",
+                  "  = Tuple a b",
+                ].join("\n"),
+              ],
+              [
+                "output/Data.Tuple/index.d.ts",
+                [
+                  "type Tuple<A, B> = {",
+                  "  readonly __brand: unique symbol;",
+                  "  readonly __arg0: A;",
+                  "  readonly __arg1: B;",
+                  "}",
+                ].join("\n"),
+              ],
+            ],
+          ],
+        ],
         // [
         //   "",
         //   "",
