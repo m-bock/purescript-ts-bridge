@@ -30,7 +30,6 @@ The following is a list of default implementations for types that are provided i
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
-  <tr></tr>
 
 
 <tr>
@@ -86,7 +85,6 @@ builtin
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
-  <tr></tr>
 
 
 <tr>
@@ -142,7 +140,6 @@ builtin
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
-  <tr></tr>
 
 
 <tr>
@@ -198,7 +195,6 @@ builtin
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
-  <tr></tr>
 
 
 <tr>
@@ -254,7 +250,6 @@ builtin
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
-  <tr></tr>
 
 
 <tr>
@@ -315,7 +310,6 @@ type Int = {
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
-  <tr></tr>
 
 
 <tr>
@@ -384,7 +378,6 @@ type Maybe<A> = {
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
-  
 
 
 <tr>
@@ -406,7 +399,7 @@ import('../Data.Either').Either<A, B>
 
   </td>
 </tr>
-<tr></tr>
+
 
 
 <tr>
@@ -438,7 +431,7 @@ type Either<A, B> = {
 
   </td>
 </tr>
-<tr></tr>
+
 
 </table>
 

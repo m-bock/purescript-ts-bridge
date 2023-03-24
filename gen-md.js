@@ -20,7 +20,7 @@ const Table = (_, children) => `
 `;
 
 const Row = (
-  { title, text, isLast },
+  { title, text },
   children
 ) => `
   <tr>
@@ -36,11 +36,10 @@ ${text}
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
-  ${isLast ? "" : "<tr></tr>"}
 `;
 
 const Row_ = (
-  { type_, codePurs, codeTs },
+  { type_, codePurs, codeTs, isLast },
   children
 ) => `
 <tr>
@@ -84,7 +83,7 @@ ${
 
   </td>
 </tr>
-<tr></tr>
+${isLast ? "" : "<tr></tr>"}
 `;
 
 const config = {
@@ -298,9 +297,6 @@ const config = {
                   {
                     title,
                     text,
-                    isLast:
-                      ix ===
-                      all.length - 1,
                   },
                   ""
                 ),
@@ -316,6 +312,10 @@ const config = {
                           type_,
                           codePurs,
                           codeTs,
+                          isLast:
+                            ix ===
+                            all.length -
+                              1,
                         },
                         ""
                       )
