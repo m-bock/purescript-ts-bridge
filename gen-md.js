@@ -190,9 +190,11 @@ const config = {
                 "~/Data/Maybe.purs",
                 [
                   "module Data.Maybe where",
+                  "",
+                  "data Maybe a",
                   "  = Just a",
                   "  | Nothing",
-                ].join(),
+                ].join("\n"),
               ],
               [
                 "output/Data.Maybe/index.d.ts",
@@ -201,51 +203,85 @@ const config = {
                   "  readonly __brand: unique symbol;",
                   "  readonly __arg0: A;",
                   "}",
-                ].join(),
+                ].join("\n"),
               ],
             ],
           ],
         ],
         [
-          "",
-          "",
+          "Either",
+          "`Either` is represented as opaque type using TypeScript __branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.",
           [
-            ["Ref", "", ""],
-            ["Def", "", ""],
+            [
+              "Ref",
+              "Either a b",
+              "import('../Data.Either').Either<A, B>",
+            ],
+            [
+              "Def",
+              [
+                "~/Data/Either.purs",
+                [
+                  "module Data.Either where",
+                  "",
+                  "data Either a b",
+                  "  = Left a",
+                  "  | Right b",
+                ].join("\n"),
+              ],
+              [
+                "output/Data.Either/index.d.ts",
+                [
+                  "type Either<A> = {",
+                  "  readonly __brand: unique symbol;",
+                  "  readonly __arg0: A;",
+                  "  readonly __arg1: B;",
+                  "}",
+                ].join("\n"),
+              ],
+            ],
           ],
         ],
-        [
-          "",
-          "",
-          [
-            ["Ref", "", ""],
-            ["Def", "", ""],
-          ],
-        ],
-        [
-          "",
-          "",
-          [
-            ["Ref", "", ""],
-            ["Def", "", ""],
-          ],
-        ],
-        [
-          "",
-          "",
-          [
-            ["Ref", "", ""],
-            ["Def", "", ""],
-          ],
-        ],
-        [
-          "",
-          "",
-          [
-            ["Ref", "", ""],
-            ["Def", "", ""],
-          ],
-        ],
+        // [
+        //   "",
+        //   "",
+        //   [
+        //     ["Ref", "", ""],
+        //     ["Def", "", ""],
+        //   ],
+        // ],
+        // [
+        //   "",
+        //   "",
+        //   [
+        //     ["Ref", "", ""],
+        //     ["Def", "", ""],
+        //   ],
+        // ],
+        // [
+        //   "",
+        //   "",
+        //   [
+        //     ["Ref", "", ""],
+        //     ["Def", "", ""],
+        //   ],
+        // ],
+        // [
+        //   "",
+        //   "",
+        //   [
+        //     ["Ref", "", ""],
+        //     ["Def", "", ""],
+        //   ],
+        // ],
+        // [
+        //   "",
+        //   "",
+        //   [
+        //     ["Ref", "", ""],
+        //     ["Def", "", ""],
+        //   ],
+        // ],
       ];
 
       return Table(
