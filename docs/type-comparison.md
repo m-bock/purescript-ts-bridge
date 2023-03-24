@@ -8,6 +8,7 @@
   - [Array](#array)
   - [Int](#int)
   - [Maybe](#maybe)
+  - [Either](#either)
 <!-- AUTO-GENERATED-CONTENT:END -->
 
 The following is a list of default implementations for types that are provided in this library. Since the generation typeclass is defined on your side, you can choose a subset of the provided implementations.
@@ -346,6 +347,8 @@ import('../Data.Maybe').Maybe<A>
 `~/Data/Maybe.purs`
 ```hs
 module Data.Maybe where
+
+data Maybe a
   = Just a
   | Nothing
 ```
@@ -359,6 +362,76 @@ module Data.Maybe where
 type Maybe<A> = {
   readonly __brand: unique symbol;
   readonly __arg0: A;
+}
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+  <tr>
+    <td colspan=3>
+      <h3>Either</h3>
+
+`Either` is represented as opaque type using TypeScript __branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.
+      </td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th>PureScript</th>
+    <th>TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+Either a b
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+import('../Data.Either').Either<A, B>
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+`~/Data/Either.purs`
+```hs
+module Data.Either where
+
+data Either a b
+  = Left a
+  | Right b
+```
+
+</td>
+<td valign="top">
+
+
+`output/Data.Either/index.d.ts`
+```ts
+type Either<A> = {
+  readonly __brand: unique symbol;
+  readonly __arg0: A;
+  readonly __arg1: B;
 }
 ```
 
