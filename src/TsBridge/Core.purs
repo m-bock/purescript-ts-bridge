@@ -1,5 +1,6 @@
 module TsBridge.Core
-  ( class TsBridgeBy
+  ( StandaloneTsType
+  , class TsBridgeBy
   , class TsValues
   , class TsValuesRL
   , tsBridgeBy
@@ -7,9 +8,11 @@ module TsBridge.Core
   , tsProgram
   , tsTypeAlias
   , tsValue
+  , tsValue'
   , tsValues
   , tsValuesRL
-  ) where
+  )
+  where
 
 import Prelude
 
@@ -21,6 +24,7 @@ import Data.Set as Set
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (sequence)
 import Data.Tuple.Nested ((/\))
+import Data.Typelevel.Undefined (undefined)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
@@ -49,8 +53,15 @@ import Type.Proxy (Proxy(..))
 -- | ```
 -- | The token will then be passed to all generic functions of the library.
 
+class TsBridgeBy :: Type -> Type -> Constraint
 class TsBridgeBy tok a where
-  tsBridgeBy :: tok -> a -> TsBridgeM TsType
+  tsBridgeBy :: tok -> Proxy a -> StandaloneTsType
+
+-- | A `StandaloneTsType` represents a TypeScript type with everything it needs
+-- | to be placed inside complete TS program: If the type references nominal
+-- | types from other modules, all information is contained that is needed to
+-- | render those references.
+type StandaloneTsType = TsBridgeM TsType
 
 tsModuleFile :: String -> Array (TsBridgeM (Array TsDeclaration)) -> Array TsModuleFile
 tsModuleFile n xs =
@@ -79,7 +90,7 @@ tsProgram xs = mergeModules $ join xs
 -- | For cases where you want to export a type alias. References to this type
 -- | alias will be fully resolved in the generated code. So it is more practical
 -- | to use a newtype instead, which can be references by name.
-tsTypeAlias :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
+tsTypeAlias :: forall mp a. TsBridgeBy mp a => mp -> String -> Proxy a -> TsBridgeM (Array TsDeclaration)
 tsTypeAlias mp n x = ado
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
   in [ TsDeclTypeDef (TsName n) Public (coerce scope.floating) x ]
@@ -101,8 +112,11 @@ tsTypeAlias mp n x = ado
 
 -- | Exports a single PureScript value to TypeScript. `tsValues` may be better choice. 
 tsValue :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
-tsValue mp n x = do
-  t <- tsBridgeBy mp x
+tsValue mp n x = tsValue' mp n (Proxy :: _ a)
+
+tsValue' :: forall mp a. TsBridgeBy mp a => mp -> String -> Proxy a -> TsBridgeM (Array TsDeclaration)
+tsValue' mp n x = do
+  t <- tsBridgeBy mp (Proxy :: _ a)
   pure [ TsDeclValueDef (TsName n) Public t ]
 
 --------------------------------------------------------------------------------
@@ -139,4 +153,4 @@ instance
   tsValuesRL tok r _ = (<>) <$> head <*> tail
     where
     tail = tsValuesRL tok r (Proxy :: _ rl)
-    head = tsValue tok (reflectSymbol (Proxy :: _ sym)) (Record.get (Proxy :: _ sym) r)
+    head = tsValue' tok (reflectSymbol (Proxy :: _ sym)) (Proxy :: _ a)

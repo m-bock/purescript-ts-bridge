@@ -853,6 +853,10 @@ promise@^8.0.0:
   dependencies:
     asap "~2.0.6"
 
+"purs-to-md@https://github.com/thought2/purs-to-md":
+  version "1.0.0"
+  resolved "https://github.com/thought2/purs-to-md#445b1a07e17c0d26051d5be0cfabcb4f24cebee5"
+
 qs@^6.4.0:
   version "6.11.1"
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.11.1.tgz#6c29dff97f0c0060765911ba65cbc9764186109f"

@@ -1,7 +1,7 @@
 module TsBridge.Monad
   ( Scope(..)
   , TsBridgeAccum(..)
-  , TsBridgeM(..)
+  , TsBridgeM
   , runTsBridgeM
   ) where
 

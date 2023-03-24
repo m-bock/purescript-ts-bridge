@@ -1,4 +1,4 @@
-module TsBridgeSpec
+module Test.TsBridgeSpec
   ( spec
   ) where
 
@@ -19,17 +19,15 @@ import Data.Variant (Variant)
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-import TsBridge (class DefaultRecord, class DefaultVariant, class TsBridgeBy, Path(..), TsDeclaration, TsProgram, TsSource(..), TsType, Var(..), runTsBridgeM, tsModuleFile, tsProgram, tsValue)
+import TsBridge (class DefaultRecord, class DefaultVariant, class TsBridgeBy, Path(..), TsDeclaration, TsProgram, TsSource(..), TsType, Var(..), StandaloneTsType, runTsBridgeM, tsModuleFile, tsProgram, tsValue)
 import TsBridge as TSB
+import TsBridge.Core (tsValue')
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
 import Type.Proxy (Proxy(..))
 
 class TsBridge a where
-  tsBridge :: a -> TsBridgeM TsType
-
-instance TsBridge a => TsBridge (Proxy a) where
-  tsBridge = TSB.defaultProxy Tok
+  tsBridge :: Proxy a -> StandaloneTsType
 
 instance TsBridge Number where
   tsBridge = TSB.defaultNumber
@@ -91,7 +89,7 @@ spec = do
         it "generates a type and adds the type module" do
           tsProgram
             [ tsModuleFile "Foo.Bar"
-                [ tsValue Tok "a" (Proxy :: _ (Either String Boolean)) ]
+                [ tsValue' Tok "a" (Proxy :: _ (Either String Boolean)) ]
             ]
             # printTsProgram
             # shouldEqual

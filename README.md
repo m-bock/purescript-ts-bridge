@@ -5,6 +5,9 @@ A PureScript library for type class based TypeScript type generation (.d.ts File
 <!-- AUTO-GENERATED-CONTENT:START (TOC) -->
 - [Getting started](#getting-started)
 - [Features](#features)
+  - [](#)
+  - [
+  ](#-1)
 - [Types](#types)
   - [Number](#number)
   - [String](#string)
@@ -22,26 +25,240 @@ A PureScript library for type class based TypeScript type generation (.d.ts File
 - [FAQ](#faq)
 - [Similar Projects](#similar-projects)
 - [Support](#support)
+- [Imports](#imports)
 <!-- AUTO-GENERATED-CONTENT:END -->
 
 <h2>Getting started</h2>
 
+1. Installation
 ```
 spago install ts-bridge
 ```
 
+<!-- AUTO-GENERATED-CONTENT:START (SAMPLE) -->
+A
+```hs
+module Sample where
+```
+## Imports
+```hs
+import Prelude
+
+import Effect (Effect)
+import TsBridge as TSB
+import TsBridge as TsBridge
+import Type.Proxy (Proxy)
+```
+Define a type class
+```hs
+class TsBridge a where
+  tsBridge :: Proxy a -> TSB.StandaloneTsType
+```
+Define
+```hs
+data Tok = Tok
+
+instance TsBridge a => TSB.TsBridgeBy Tok a where
+  tsBridgeBy _ = tsBridge
+```
+Define instances
+```hs
+instance TsBridge Number where
+  tsBridge = TSB.defaultNumber
+
+instance TsBridge String where
+  tsBridge = TSB.defaultString
+
+instance TsBridge a => TsBridge (Array a) where
+  tsBridge = TSB.defaultArray Tok
+
+instance (TsBridge a, TsBridge b) => TsBridge (a -> b) where
+  tsBridge = TSB.defaultFunction Tok
+
+instance (TSB.DefaultRecord Tok r) => TsBridge (Record r) where
+  tsBridge = TSB.defaultRecord Tok
+```
+Add some PureScript values
+```hs
+foo :: Number
+foo = 1.0
+
+bar :: { x :: Number, y :: Number } -> String
+bar _ = ""
+```
+Define a TypeScript program with one module
+```hs
+myTsProgram :: TSB.TsProgram
+myTsProgram =
+  TSB.tsProgram
+    [ TSB.tsModuleFile "Sample"
+        [ TSB.tsValues Tok
+            { bar
+            , foo
+            }
+        ]
+
+    ]
+```
+Define an entry point for the code generator.
+```hs
+main :: Effect Unit
+main = TsBridge.mkTypeGenCli myTsProgram
+```
+
+<!-- AUTO-GENERATED-CONTENT:END -->
+
+
+```
+spago run --main App -a '--prettier "node_modules/.bin/prettier"'
+```
+
+`output/App/index.d.ts`
+```ts
+export const bar: (_: { readonly x: number; readonly y: number }) => string;
+
+export const foo: number;
+
+```
+
 The best way to get started is to have a look at the
-[demo-project](https://github.com/thought2/purescript-ts-bridge.demo-project).
+[demo-project](https://github.com/thought2/purescript-ts-bridge.demo).
 
 
 <h2>Features</h2>
 
-- Fully customizable. It's type class based, but the type class is defined on your side to ease instance implementations.
+- Fully customizable. It's type class based, but the type class is defined on your side to ease selective instance implementations.
 - Many default implementations to pick from
 - Supports opaque types (implemented as branded types in TypeScript)
-- Supports easily accessible Newtypes (implemented as branded types in TypeScript)
+- Supports easily accessible Newtypes
 - Module resolution
 - Polymorphic types
+
+<!-- AUTO-GENERATED-CONTENT:START (TYPES) -->
+
+<table>
+  
+  <tr>
+    <td colspan=3>
+      <h3>
+
+Number
+      </h3>
+
+Number is represented as TypeScript builtin `number` type.
+      </td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th>PureScript</th>
+    <th>TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+  ```hs
+  Number
+  ```
+
+  </td>
+  <td valign="top">
+
+  ```ts
+  number
+  ```
+
+  </td>
+</tr>
+<tr></tr>
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+  ```hs
+  <builtin>
+  ```
+
+  </td>
+  <td valign="top">
+
+  ```ts
+  <builtin>
+  ```
+
+  </td>
+</tr>
+<tr></tr>
+
+
+  <tr>
+    <td colspan=3>
+      <h3>
+
+String
+      </h3>
+
+String is represented as TypeScript builtin string type.
+      </td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th>PureScript</th>
+    <th>TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+  ```hs
+  String
+  ```
+
+  </td>
+  <td valign="top">
+
+  ```ts
+  string
+  ```
+
+  </td>
+</tr>
+<tr></tr>
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+  ```hs
+  <builtin>
+  ```
+
+  </td>
+  <td valign="top">
+
+  ```ts
+  <builtin>
+  ```
+
+  </td>
+</tr>
+<tr></tr>
+
+</table>
+
+<!-- AUTO-GENERATED-CONTENT:END -->
+
 
 <h2>Types</h2>
 

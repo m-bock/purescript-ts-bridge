@@ -19,7 +19,7 @@ import Node.Encoding (Encoding(..))
 import Node.FS.Aff (mkdir', writeTextFile)
 import Node.FS.Perms (all, mkPerms)
 import Node.Path (dirname)
-import Options.Applicative (help, helper, info, long, metavar, strOption, (<**>))
+import Options.Applicative (help, helper, info, long, metavar, strOption, value, (<**>))
 import Options.Applicative as O
 import Options.Applicative.Types (optional)
 import Sunde as Sun
@@ -46,6 +46,7 @@ parserTsBridgeCliOpts = ado
               [ long "output-dir"
               , metavar "OUTPUT_DIR"
               , help "Dictionary the CLI will write the output d.ts files to."
+              , value $ "output"
               ]
       )
   prettier <- optional

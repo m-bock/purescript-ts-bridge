@@ -1,6 +1,7 @@
 {
   "name": "purescript-ts-bridge",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "repository": "git@github.com:thought2/purescript-ts-bridge.git",
   "author": "Michael Bock <no-day@posteo.net>",
@@ -8,7 +9,6 @@
   "bin": {
     "ts-bridge": "bin/index.js"
   },
-  "type": "module",
   "files": [
     "bin/index.js",
     "output/**/*.js",
@@ -18,6 +18,7 @@
     "prettier": "^2.7.1"
   },
   "devDependencies": {
-    "markdown-magic": "^2.6.1"
+    "markdown-magic": "^2.6.1",
+    "purs-to-md": "https://github.com/thought2/purs-to-md"
   }
 }
