@@ -25,7 +25,7 @@ const Row = (
 ) => `
   <tr>
     <td colspan=3>
-      <h3>${title}</h3>
+      <h2>${title}</h2>
 
 ${text}
       </td>
