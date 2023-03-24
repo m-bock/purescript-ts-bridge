@@ -33,6 +33,7 @@ import Control.Monad.Writer (censor, listen, tell)
 import Control.Promise (Promise)
 import Data.Array (mapWithIndex, (:))
 import Data.Array as A
+import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable)
@@ -168,7 +169,7 @@ defaultEither
    . TsBridgeBy tok a
   => TsBridgeBy tok b
   => tok
-  -> Proxy (Tuple a b)
+  -> Proxy (Either a b)
   -> StandaloneTsType
 defaultEither tok =
   defaultOpaqueType "Data.Either" "Either" [ "A", "B" ]
