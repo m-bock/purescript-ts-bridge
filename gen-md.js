@@ -49,9 +49,11 @@ const Row_ = (
 
 ${
   codePurs == null
-    ? "<builtin>"
+    ? "builtin"
     : typeof codePurs === "string"
-    ? "`" + codePurs + "`"
+    ? ["```ts", codePurs, "```"].join(
+        "\n"
+      )
     : [
         "`" + codePurs[0] + "`",
         "```hs",
@@ -68,7 +70,9 @@ ${
   codeTs === null
     ? "<builtin>"
     : typeof codeTs === "string"
-    ? "`" + codeTs + "`"
+    ? ["```ts", codeTs, "```"].join(
+        "\n"
+      )
     : [
         "`" + codeTs[0] + "`",
         "```ts",
@@ -172,11 +176,34 @@ const config = {
           ],
         ],
         [
-          "",
-          "",
+          "Maybe",
+          "`Maybe` is represented as opaque type using TypeScript branded types. So there is no direct way to create a `Maybe` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.",
           [
-            ["Ref", "", ""],
-            ["Def", "", ""],
+            [
+              "Ref",
+              "Maybe a",
+              "import('../Data.Maybe').Maybe<A>",
+            ],
+            [
+              "Def",
+              [
+                "~/Data/Maybe.purs",
+                [
+                  "module Data.Maybe where",
+                  "  = Just a",
+                  "  | Nothing",
+                ].join(),
+              ],
+              [
+                "output/Data.Maybe/index.d.ts",
+                [
+                  "type Maybe<A> = {",
+                  "  readonly __brand: unique symbol;",
+                  "  readonly __arg0: A;",
+                  "}",
+                ].join(),
+              ],
+            ],
           ],
         ],
         [

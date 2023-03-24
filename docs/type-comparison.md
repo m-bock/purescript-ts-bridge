@@ -7,12 +7,12 @@
   - [Boolean](#boolean)
   - [Array](#array)
   - [Int](#int)
+  - [Maybe](#maybe)
   - [](#)
   - [](#-1)
   - [](#-2)
   - [](#-3)
   - [](#-4)
-  - [](#-5)
 <!-- AUTO-GENERATED-CONTENT:END -->
 
 The following is a list of default implementations for types that are provided in this library. Since the generation typeclass is defined on your side, you can choose a subset of the provided implementations.
@@ -41,13 +41,17 @@ The following is a list of default implementations for types that are provided i
   <td valign="top">Ref</td>
   <td valign="top">
 
-`Number`
+```ts
+Number
+```
 
 </td>
 <td valign="top">
 
 
-`number`
+```ts
+number
+```
 
 
   </td>
@@ -59,7 +63,7 @@ The following is a list of default implementations for types that are provided i
   <td valign="top">Def</td>
   <td valign="top">
 
-<builtin>
+builtin
 
 </td>
 <td valign="top">
@@ -93,13 +97,17 @@ The following is a list of default implementations for types that are provided i
   <td valign="top">Ref</td>
   <td valign="top">
 
-`String`
+```ts
+String
+```
 
 </td>
 <td valign="top">
 
 
-`string`
+```ts
+string
+```
 
 
   </td>
@@ -111,7 +119,7 @@ The following is a list of default implementations for types that are provided i
   <td valign="top">Def</td>
   <td valign="top">
 
-<builtin>
+builtin
 
 </td>
 <td valign="top">
@@ -145,13 +153,17 @@ The following is a list of default implementations for types that are provided i
   <td valign="top">Ref</td>
   <td valign="top">
 
-`Boolean`
+```ts
+Boolean
+```
 
 </td>
 <td valign="top">
 
 
-`boolean`
+```ts
+boolean
+```
 
 
   </td>
@@ -163,7 +175,7 @@ The following is a list of default implementations for types that are provided i
   <td valign="top">Def</td>
   <td valign="top">
 
-<builtin>
+builtin
 
 </td>
 <td valign="top">
@@ -197,13 +209,17 @@ The following is a list of default implementations for types that are provided i
   <td valign="top">Ref</td>
   <td valign="top">
 
-`Array a`
+```ts
+Array a
+```
 
 </td>
 <td valign="top">
 
 
-`ReadonlyArray<A>`
+```ts
+ReadonlyArray<A>
+```
 
 
   </td>
@@ -215,7 +231,7 @@ The following is a list of default implementations for types that are provided i
   <td valign="top">Def</td>
   <td valign="top">
 
-<builtin>
+builtin
 
 </td>
 <td valign="top">
@@ -249,13 +265,17 @@ The following is a list of default implementations for types that are provided i
   <td valign="top">Ref</td>
   <td valign="top">
 
-`Int`
+```ts
+Int
+```
 
 </td>
 <td valign="top">
 
 
-`import('../Prim').Int`
+```ts
+import('../Prim').Int
+```
 
 
   </td>
@@ -267,7 +287,7 @@ The following is a list of default implementations for types that are provided i
   <td valign="top">Def</td>
   <td valign="top">
 
-<builtin>
+builtin
 
 </td>
 <td valign="top">
@@ -278,6 +298,68 @@ The following is a list of default implementations for types that are provided i
 type Int = {
   readonly __brand: unique symbol;
 }
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+  <tr>
+    <td colspan=3>
+      <h3>Maybe</h3>
+
+`Maybe` is represented as opaque type using TypeScript branded types. So there is no direct way to create a `Maybe` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.
+      </td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th>PureScript</th>
+    <th>TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+Maybe a
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+import('../Data.Maybe').Maybe<A>
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+`~/Data/Maybe.purs`
+```hs
+module Data.Maybe where,  = Just a,  | Nothing
+```
+
+</td>
+<td valign="top">
+
+
+`output/Data.Maybe/index.d.ts`
+```ts
+type Maybe<A> = {,  readonly __brand: unique symbol;,  readonly __arg0: A;,}
 ```
 
 
@@ -306,13 +388,17 @@ type Int = {
   <td valign="top">Ref</td>
   <td valign="top">
 
-``
+```ts
+
+```
 
 </td>
 <td valign="top">
 
 
-``
+```ts
+
+```
 
 
   </td>
@@ -324,13 +410,17 @@ type Int = {
   <td valign="top">Def</td>
   <td valign="top">
 
-``
+```ts
+
+```
 
 </td>
 <td valign="top">
 
 
-``
+```ts
+
+```
 
 
   </td>
@@ -358,13 +448,17 @@ type Int = {
   <td valign="top">Ref</td>
   <td valign="top">
 
-``
+```ts
+
+```
 
 </td>
 <td valign="top">
 
 
-``
+```ts
+
+```
 
 
   </td>
@@ -376,13 +470,17 @@ type Int = {
   <td valign="top">Def</td>
   <td valign="top">
 
-``
+```ts
+
+```
 
 </td>
 <td valign="top">
 
 
-``
+```ts
+
+```
 
 
   </td>
@@ -410,13 +508,17 @@ type Int = {
   <td valign="top">Ref</td>
   <td valign="top">
 
-``
+```ts
+
+```
 
 </td>
 <td valign="top">
 
 
-``
+```ts
+
+```
 
 
   </td>
@@ -428,13 +530,17 @@ type Int = {
   <td valign="top">Def</td>
   <td valign="top">
 
-``
+```ts
+
+```
 
 </td>
 <td valign="top">
 
 
-``
+```ts
+
+```
 
 
   </td>
@@ -462,13 +568,17 @@ type Int = {
   <td valign="top">Ref</td>
   <td valign="top">
 
-``
+```ts
+
+```
 
 </td>
 <td valign="top">
 
 
-``
+```ts
+
+```
 
 
   </td>
@@ -480,13 +590,17 @@ type Int = {
   <td valign="top">Def</td>
   <td valign="top">
 
-``
+```ts
+
+```
 
 </td>
 <td valign="top">
 
 
-``
+```ts
+
+```
 
 
   </td>
@@ -514,13 +628,17 @@ type Int = {
   <td valign="top">Ref</td>
   <td valign="top">
 
-``
+```ts
+
+```
 
 </td>
 <td valign="top">
 
 
-``
+```ts
+
+```
 
 
   </td>
@@ -532,65 +650,17 @@ type Int = {
   <td valign="top">Def</td>
   <td valign="top">
 
-``
+```ts
+
+```
 
 </td>
 <td valign="top">
 
 
-``
+```ts
 
-
-  </td>
-</tr>
-<tr></tr>
-
-
-  <tr>
-    <td colspan=3>
-      <h3></h3>
-
-
-      </td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <th></th>
-    <th>PureScript</th>
-    <th>TypeScript</th>
-  </tr>
-  <tr></tr>
-
-
-<tr>
-  <td valign="top">Ref</td>
-  <td valign="top">
-
-``
-
-</td>
-<td valign="top">
-
-
-``
-
-
-  </td>
-</tr>
-<tr></tr>
-
-
-<tr>
-  <td valign="top">Def</td>
-  <td valign="top">
-
-``
-
-</td>
-<td valign="top">
-
-
-``
+```
 
 
   </td>
