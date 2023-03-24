@@ -7,16 +7,7 @@ src="https://media.tenor.com/MRCIli40TYoAAAAi/under-construction90s-90s.gif" wid
 <img
 src="https://media.tenor.com/MRCIli40TYoAAAAi/under-construction90s-90s.gif" width="30">
 
-A __PureScript__ library for type class based __TypeScript__ type generation (`.d.ts` files).
-
-<!-- AUTO-GENERATED-CONTENT:START (TOC) -->
-- [Documentation](#documentation)
-- [Installation](#installation)
-- [Features](#features)
-- [Future features](#future-features)
-- [Similar Projects](#similar-projects)
-- [Support](#support)
-<!-- AUTO-GENERATED-CONTENT:END -->
+A **PureScript** library for type class based **TypeScript** type generation (`.d.ts` files).
 
 ## Documentation
 
@@ -26,7 +17,6 @@ A __PureScript__ library for type class based __TypeScript__ type generation (`.
 - [Type Comparison](docs/type-comparison.md)
 - [Demo repo](https://github.com/thought2/purescript-ts-bridge.demo)
 
-
 ## Installation
 
 ```
@@ -35,13 +25,12 @@ spago install ts-bridge
 
 ## Features
 
- - Fully customizable. It's type class based, but the type class is defined on your side to ease selective instance implementations.
- - Many default implementations to pick from
- - Supports opaque types (implemented as branded types in TypeScript)
- - Supports easily accessible Newtypes
- - Module resolution
- - Polymorphic types
-
+- Fully customizable. It's type class based, but the type class is defined on your side to ease selective instance implementations.
+- Many default implementations to pick from
+- Supports opaque types (implemented as branded types in TypeScript)
+- Supports easily accessible Newtypes
+- Module resolution
+- Polymorphic types
 
 ## Future features
 

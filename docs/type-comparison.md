@@ -1,11 +1,10 @@
 <h2>Types Reference</h2>
 
 <!-- AUTO-GENERATED-CONTENT:START (TOC) -->
-
 - [Types Reference](#types-reference)
   - [Number](#number)
   - [String](#string)
-  <!-- AUTO-GENERATED-CONTENT:END -->
+<!-- AUTO-GENERATED-CONTENT:END -->
 
 The following is a list of default implementations for types that are provided in this library. Since the generation typeclass is defined on your side, you can choose a subset of the provided implementations.
 
@@ -23,8 +22,7 @@ The following is a list of default implementations for types that are provided i
       <h3>Number</h3>
 
 Number is represented as TypeScript builtin `number` type.
-</td>
-
+      </td>
   </tr>
   <tr></tr>
   <tr>
@@ -33,6 +31,7 @@ Number is represented as TypeScript builtin `number` type.
     <th>TypeScript</th>
   </tr>
   <tr></tr>
+
 
 <tr>
   <td valign="top">Ref</td>
@@ -46,12 +45,13 @@ Number
 <td valign="top">
 
 ```ts
-number;
+number
 ```
 
   </td>
 </tr>
 <tr></tr>
+
 
 <tr>
   <td valign="top">Def</td>
@@ -72,13 +72,13 @@ number;
 </tr>
 <tr></tr>
 
+
   <tr>
     <td colspan=3>
       <h3>String</h3>
 
 String is represented as TypeScript builtin string type.
-</td>
-
+      </td>
   </tr>
   <tr></tr>
   <tr>
@@ -87,6 +87,7 @@ String is represented as TypeScript builtin string type.
     <th>TypeScript</th>
   </tr>
   <tr></tr>
+
 
 <tr>
   <td valign="top">Ref</td>
@@ -100,12 +101,13 @@ String
 <td valign="top">
 
 ```ts
-string;
+string
 ```
 
   </td>
 </tr>
 <tr></tr>
+
 
 <tr>
   <td valign="top">Def</td>
