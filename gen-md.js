@@ -36,6 +36,7 @@ ${text}
     <th>PureScript</th>
     <th>TypeScript</th>
   </tr>
+  <tr></tr>
 `;
 
 const Row_ = (
