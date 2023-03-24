@@ -7,70 +7,79 @@ src="https://media.tenor.com/MRCIli40TYoAAAAi/under-construction90s-90s.gif" wid
 <img
 src="https://media.tenor.com/MRCIli40TYoAAAAi/under-construction90s-90s.gif" width="30">
 
-A PureScript library for type class based TypeScript type generation (.d.ts Files).
+A __PureScript__ library for type class based __TypeScript__ type generation (`.d.ts` files).
 
 <!-- AUTO-GENERATED-CONTENT:START (TOC) -->
-- [Getting started](#getting-started)
 - [Features](#features)
+- [Getting started](#getting-started)
+- [Types](#types)
   - [Number](#number)
   - [String](#string)
-- [Types](#types)
-  - [Number](#number-1)
-  - [String](#string-1)
-  - [Boolean](#boolean)
-  - [Array](#array)
-  - [Int](#int)
-  - [Char](#char)
-  - [Maybe](#maybe)
-  - [Tuple](#tuple)
-  - [Either](#either)
-  - [Nullable](#nullable)
-  - [Records](#records)
-  - [Functions](#functions)
 - [Future features](#future-features)
 - [FAQ](#faq)
 - [Similar Projects](#similar-projects)
 - [Support](#support)
 <!-- AUTO-GENERATED-CONTENT:END -->
 
+<h2>Features</h2>
+
+ - Fully customizable. It's type class based, but the type class is defined on your side to ease selective instance implementations.
+ - Many default implementations to pick from
+ - Supports opaque types (implemented as branded types in TypeScript)
+ - Supports easily accessible Newtypes
+ - Module resolution
+ - Polymorphic types
+
+
 <h2>Getting started</h2>
 
-1. Installation
+The best way to get started is to have a look at the
+[demo-project](https://github.com/thought2/purescript-ts-bridge.demo).
 
-```
-spago install ts-bridge
-```
 
-2. 
-
+<ol>
 <!-- AUTO-GENERATED-CONTENT:START (SAMPLE) -->
+<li>
 Create a new module inside the spago project.
+
 ```hs
 module Sample where
 ```
+</li>
+<li>
 The folowing imports are needed for this example:
+
 ```hs
 import Prelude
 import Effect (Effect)
 import TsBridge as TSB
 import Type.Proxy (Proxy)
 ```
+</li>
+<li>
 Then you should define a typeclass that looks like this: 
+
 ```hs
 class TsBridge a where
   tsBridge :: Proxy a -> TSB.StandaloneTsType
 ```
+</li>
+<li>
 Now we need to tell `ts-bridge` that it should use your typeclass for the type
 generation. We do this by defining a simple data type `Tok` which we use in the following instance
 for the library's internal type class `TsBridgeBy`.
+
 ```hs
 data Tok = Tok
 
 instance TsBridge a => TSB.TsBridgeBy Tok a where
   tsBridgeBy _ = tsBridge
 ```
+</li>
+<li>
 Now we can define instances for types. As you can see below `ts-bridge`
 provides some useful default implementations thay you can use:
+
 ```hs
 instance TsBridge Number where
   tsBridge = TSB.defaultNumber
@@ -94,8 +103,11 @@ As you can see, this even works for something generic like records:
 instance (TSB.DefaultRecord Tok r) => TsBridge (Record r) where
   tsBridge = TSB.defaultRecord Tok
 ```
+</li>
+<li>
 We've defined a small set of types that we want to be able to generate
 TypeScript equivalents from. Now we define some values of those types. 
+
 ```hs
 foo :: Number
 foo = 1.0
@@ -103,10 +115,13 @@ foo = 1.0
 bar :: { x :: Number, y :: Number } -> String
 bar _ = ""
 ```
+</li>
+<li>
 Then we define a program that has one module. Note that the name of the
 module must match the real name of the PureScript module.
 The same for the values that we want to expose. However, we're making use of
-record puns to eliminate the risk of spelling mistakes:
+record puns to eliminate the risk of speling mistakes:
+
 ```hs
 myTsProgram :: TSB.TsProgram
 myTsProgram =
@@ -120,14 +135,18 @@ myTsProgram =
 
     ]
 ```
+</li>
+<li>
 Finaly we define an entry point for the code generator:
+
 ```hs
 main :: Effect Unit
 main = TSB.mkTypeGenCli myTsProgram
 ```
-
+</li>
 <!-- AUTO-GENERATED-CONTENT:END -->
 
+<li>
 And we can run this CLI with `spago`:
 
 ```
@@ -145,17 +164,20 @@ export const foo: number;
 
 <!-- AUTO-GENERATED-CONTENT:END -->
 
-The best way to get started is to have a look at the
-[demo-project](https://github.com/thought2/purescript-ts-bridge.demo).
+</li>
+</ol>
 
-<h2>Features</h2>
 
- - Fully customizable. It's type class based, but the type class is defined on your side to ease selective instance implementations.
- - Many default implementations to pick from
- - Supports opaque types (implemented as branded types in TypeScript)
- - Supports easily accessible Newtypes
- - Module resolution
- - Polymorphic types
+<h2>Types</h2>
+
+The following is a list of default implementations for types that are provided in this library. Since the generation typeclass is defined on your side, you can choose a subset of the provided implementations.
+
+
+- Promise
+- Variants
+- Effect
+- Unit
+
 
 <!-- AUTO-GENERATED-CONTENT:START (TYPES) -->
 
@@ -276,632 +298,6 @@ string
 
 <!-- AUTO-GENERATED-CONTENT:END -->
 
-<h2>Types</h2>
-
-The following is a list of default implementations for types that are provided in this library. Since the generation typeclass is defined on your side, you can choose a subset of the provided implementations.
-
-<table>
-
-  <tr>
-    <td colspan=3>
-      <h3>Number</h3>
-      <code>Number</code> is represented as TypeScript builtin <code>number</code> type
-    </td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <th></th>
-    <th>PureScript</th>
-    <th>TypeScript</th>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Ref</td>
-    <td valign="top">
-
-```hs
-Number
-```
-
-</td>
-    <td valign="top">
-
-```ts
-number;
-```
-
-</td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Def</td>
-    <td valign="top">
-&lt;builtin&gt;
-    </td>
-    <td valign="top">
-&lt;builtin&gt;
-</td>
-  </tr>
-  <tr></tr>
-
-  <tr>
-    <td colspan=3>
-      <h3>String</h3>
-      <code>String</code> is represented as TypeScript builtin <code>string</code> type.
-    </td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <th></th>
-    <th>PureScript</th>
-    <th>TypeScript</th>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Ref</td>
-    <td valign="top">
-
-```hs
-String
-```
-
-</td>
-    <td valign="top">
-
-```ts
-string;
-```
-
-</td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Def</td>
-    <td valign="top">
-&lt;builtin&gt;
-    </td>
-    <td valign="top">
-&lt;builtin&gt;
-</td>
-  </tr>
-  <tr></tr>
-
-  <tr>
-    <td colspan=3>
-      <h3>Boolean</h3>
-      <code>Boolean</code> is represented as TypeScript builtin <code>boolean</code> type.
-    </td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <th></th>
-    <th>PureScript</th>
-    <th>TypeScript</th>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Ref</td>
-    <td valign="top">
-
-```hs
-Boolean
-```
-
-</td>
-    <td valign="top">
-
-```ts
-boolean;
-```
-
-</td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Def</td>
-    <td valign="top">
-&lt;builtin&gt;
-    </td>
-    <td valign="top">
-&lt;builtin&gt;
-</td>
-  </tr>
-  <tr></tr>
-
-  <tr>
-    <td colspan=3>
-      <h3>Array</h3>
-      <code>Array</code> is represented as TypeScript builtin <code>ReadonlyArray</code> type.
-    </td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <th></th>
-    <th>PureScript</th>
-    <th>TypeScript</th>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Ref</td>
-    <td valign="top">
-
-```hs
-Array a
-```
-
-</td>
-    <td valign="top">
-
-```ts
-ReadonlyArray<A>;
-```
-
-</td>
-
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Def</td>
-    <td valign="top">
-&lt;builtin&gt;
-    </td>
-    <td valign="top">
-&lt;builtin&gt;
-</td>
-  </tr>
-  <tr></tr>
-
-  <tr>
-    <td colspan=3>
-      <h3>Int</h3>
-      <code>Int</code> is represented as opaque type using TypeScript branded types. So there is no way to create an `Int` directly in TypeScript, you need to export a functions like <code>round :: Number -> Int</code> and <code>toNumber :: Int -> Number</code> to construct and deconstruct an `Int`.
-    </td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <th></th>
-    <th>PureScript</th>
-    <th>TypeScript</th>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Ref</td>
-    <td valign="top">
-
-```hs
-Int
-```
-
-</td><td valign="top">
-
-```ts
-import("../Prim").Int;
-```
-
-</td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Def</td>
-    <td valign="top">
-&lt;builtin&gt;
-    </td>
-    <td valign="top">
-
-`output/Prim/index.d.ts`
-
-```ts
-type Int = {
-  readonly __brand: unique symbol;
-};
-```
-
-</td>
-  </tr>
-  <tr></tr>
-
-  <tr>
-    <td colspan=3>
-      <h3>Char</h3>
-      <code>Char</code> is represented as opaque type using TypeScript branded types. So there is no way to create a `Char` directly in TypeScript, you need to export a constructor and destructor functions, similar to <code>Int</code>. 
-    </td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <th></th>
-    <th>PureScript</th>
-    <th>TypeScript</th>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Ref</td>
-    <td valign="top">
-
-```hs
-Char
-```
-
-</td>
-    <td valign="top">
-
-```ts
-import("../Prim").Char;
-```
-
-</td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Def</td>
-    <td valign="top">
-&lt;builtin&gt;
-    </td>
-    <td valign="top">
-
-`output/Prim/index.d.ts`
-
-```ts
-type Char = {
-  readonly __brand: unique symbol;
-};
-```
-
-</td>
-  </tr>
-  <tr></tr>
-
-  <tr>
-    <td colspan=3>
-      <h3>Maybe</h3>
-      <code>Maybe</code> is represented as opaque type using TypeScript branded types. So there is no direct way to create a <code>Maybe</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
-    </td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <th></th>
-    <th>PureScript</th>
-    <th>TypeScript</th>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Ref</td>
-    <td valign="top">
-
-```hs
-Maybe a
-```
-
-</td>
-    <td valign="top">
-
-```ts
-import("../Data.Maybe").Maybe<A>;
-```
-
-</td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Def</td>
-    <td valign="top">
-
-`~/Data/Maybe.purs`
-
-```hs
-module Data.Maybe where
-
-data Maybe a
-  = Just a
-  | Nothing
-```
-
-</td>
-    <td valign="top">
-
-`output/Data.Maybe/index.d.ts`
-
-```ts
-export type Maybe<A> = {
-  readonly __brand: unique symbol;
-  readonly __arg0: A;
-};
-```
-
-</td>
-  </tr>
-  <tr></tr>
-
-  <tr>
-    <td colspan=3>
-      <h3>Tuple</h3>
-      <code>Tuple</code> is represented as opaque type using TypeScript __branded types. So there is no direct way to create a <code>Tuple</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
-    </td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <th></th>
-    <th>PureScript</th>
-    <th>TypeScript</th>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Ref</td>
-    <td valign="top">
-
-```hs
-Tuple a
-```
-
-</td>
-    <td valign="top">
-
-```ts
-import("../Data.Tuple").Tuple<A>;
-```
-
-</td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Def</td>
-    <td valign="top">
-
-`~/Data/Tuple.purs`
-
-```hs
-module Data.Tuple where
-
-data Tuple a b
-  = Tuple a b
-```
-
-</td>
-    <td valign="top">
-
-`output/Data.Tuple/index.d.ts`
-
-```ts
-export type Tuple<A, B> = {
-  readonly __brand: unique symbol;
-  readonly __arg0: A;
-  readonly __arg1: B;
-};
-```
-
-</td>
-  </tr>
-  <tr></tr>
-
-  <tr>
-    <td colspan=3>
-      <h3>Either</h3>
-      <code>Either</code> is represented as opaque type using TypeScript __branded types. So there is no direct way to create a <code>Either</code> in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.  
-    </td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <th></th>
-    <th>PureScript</th>
-    <th>TypeScript</th>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Ref</td>
-    <td valign="top">
-
-```hs
-Either a b
-```
-
-</td>
-    <td valign="top">
-
-```ts
-import("../Data.Either").Either<A, B>;
-```
-
-</td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Def</td>
-    <td valign="top">
-
-`~/Data/Either.purs`
-
-```hs
-module Data.Either where
-
-data Either a b
-  = Left a
-  | Right b
-```
-
-</td>
-    <td valign="top">
-
-`output/Data.Either/index.d.ts`
-
-```ts
-export type Either<A, B> = {
-  readonly __brand: unique symbol;
-  readonly __arg0: A;
-  readonly __arg1: B;
-};
-```
-
-</td>
-  </tr>
-  <tr></tr>
-
-  <tr>
-    <td colspan=3>
-      <h3>Nullable</h3>
-      <code>Nullable</code> is represented as TypeScript untagged union.
-    </td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <th></th>
-    <th>PureScript</th>
-    <th>TypeScript</th>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Ref</td>
-    <td valign="top">
-
-```hs
-Nullable a
-```
-
-</td>
-    <td valign="top">
-
-```ts
-import("../Data.Nullable").Nullable<A>;
-```
-
-</td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Def</td>
-    <td valign="top">
-
-`~/Data/Nullable.purs`
-
-```hs
-module Data.Nullable where
-
-foreign import data Nullable
-  :: Type -> Type
-```
-
-</td>
-    <td valign="top">
-
-`output/Data.Nullable/index.d.ts`
-
-```ts
-export type Nullable<A> = null | A;
-```
-
-</td>
-  </tr>
-  <tr></tr>
-
-  <tr>
-    <td colspan=3>
-      <h3>Records</h3>
-      Records are represented as TypeScript records with readonly fields.
-    </td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <th></th>
-    <th>PureScript</th>
-    <th>TypeScript</th>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Ref</td>
-    <td valign="top">
-
-```hs
-{ name :: String
-, loggedIn :: Boolean
-}
-```
-
-</td>
-    <td valign="top">
-
-```ts
-{
-  readonly name: string;
-  readonly loggedIn: boolean;
-}
-```
-
-</td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Def</td>
-    <td valign="top">&lt;builtin&gt;</td>
-    <td valign="top">&lt;builtin&gt;</td>
-  </tr>
-
-  <tr></tr>
-
-  <tr>
-    <td colspan=3>
-      <h3>Functions</h3>
-      Functions are represented as TypeScript functions.
-    </td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <th></th>
-    <th>PureScript</th>
-    <th>TypeScript</th>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Ref</td>
-    <td valign="top">
-
-```hs
-Number -> String -> Boolean
-```
-
-</td>
-    <td valign="top">
-
-```ts
-(_: number) => (_: string) => boolean;
-```
-
-</td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Ref</td>
-    <td valign="top">
-
-```hs
-forall a b c. a -> b -> c
-```
-
-</td>
-    <td valign="top">
-
-```ts
-<A>(_: A) =>
-  <B, C>(_: B) =>
-    C;
-```
-
-</td>
-  </tr>
-  <tr></tr>
-  <tr>
-    <td valign="top">Def</td>
-    <td valign="top">
-&lt;builtin&gt;
-</td>
-    <td valign="top">
-&lt;builtin&gt;
-</td>
-  </tr>
-
-</table>
-
-- Promise
-- Variants
-- Effect
-- Unit
 
 <h2>Future features</h2>
 
@@ -913,6 +309,7 @@ forall a b c. a -> b -> c
 - Q: Why are ADTs exported as opaque types. They're actually not opaque and it
   would be nice if they could be created and pattern matched on at the
   TypeScript side.
+
   A: The underlying representation of ADTs is not set in stone. Compilation
   backends differ in this point. For instance the official JS backend compiles
   them to OOP-ish structures in JavaScript. The newer optimized JS backend
