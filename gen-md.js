@@ -79,7 +79,11 @@ const config = {
         "spago run --main Sample -a '--prettier node_modules/.bin/prettier'"
       );
 
-      const tgt = fs.readFileSync("./output/Sample/index.d.ts").toString();
+      const tgt = fs
+        .readFileSync(
+          "./output/Sample/index.d.ts"
+        )
+        .toString();
       return "```ts\n" + tgt + "```\n";
     },
     TYPES(content, options) {
@@ -152,8 +156,10 @@ const config = {
 
 export default config;
 
-const markdownPath = path.join(
-  __dirname,
-  "README.md"
+markdownMagic(
+  [
+    path.join(__dirname, "README.md"),
+    path.join(__dirname, "docs/*.md"),
+  ],
+  config
 );
-markdownMagic(markdownPath, config);
