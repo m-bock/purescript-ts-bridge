@@ -34,7 +34,7 @@ ${text}
   <tr>
     <th></th>
     <th align="left">PureScript</th>
-    <th>TypeScript</th>
+    <th align="left">TypeScript</th>
   </tr>
   <tr></tr>
 `;

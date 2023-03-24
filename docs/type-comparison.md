@@ -27,7 +27,7 @@ The following is a list of default implementations for types that are provided i
   <tr>
     <th></th>
     <th align="left">PureScript</th>
-    <th>TypeScript</th>
+    <th align="left">TypeScript</th>
   </tr>
   <tr></tr>
 
@@ -83,7 +83,7 @@ number
   <tr>
     <th></th>
     <th align="left">PureScript</th>
-    <th>TypeScript</th>
+    <th align="left">TypeScript</th>
   </tr>
   <tr></tr>
 
@@ -139,7 +139,7 @@ string
   <tr>
     <th></th>
     <th align="left">PureScript</th>
-    <th>TypeScript</th>
+    <th align="left">TypeScript</th>
   </tr>
   <tr></tr>
 
@@ -195,7 +195,7 @@ boolean
   <tr>
     <th></th>
     <th align="left">PureScript</th>
-    <th>TypeScript</th>
+    <th align="left">TypeScript</th>
   </tr>
   <tr></tr>
 
@@ -251,7 +251,7 @@ ReadonlyArray<A>
   <tr>
     <th></th>
     <th align="left">PureScript</th>
-    <th>TypeScript</th>
+    <th align="left">TypeScript</th>
   </tr>
   <tr></tr>
 
@@ -312,7 +312,7 @@ type Int = {
   <tr>
     <th></th>
     <th align="left">PureScript</th>
-    <th>TypeScript</th>
+    <th align="left">TypeScript</th>
   </tr>
   <tr></tr>
 
@@ -379,7 +379,7 @@ type Maybe<A> = {
   <tr>
     <th></th>
     <th align="left">PureScript</th>
-    <th>TypeScript</th>
+    <th align="left">TypeScript</th>
   </tr>
   <tr></tr>
 
