@@ -5,20 +5,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2.4.0
-    - uses: cachix/install-nix-action@v15
-      with:
-        extra_nix_config: |
-          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-    
-    - run: nix develop --command just ci
-
-    - name: Deploy Docs 🚀
-      uses: JamesIves/github-pages-deploy-action@v4
-      with:
-        folder: generated-docs
-
-    - name: Deploy Dist 🚀
-      uses: JamesIves/github-pages-deploy-action@v4
-      with:
-        branch: dist
-        folder: dist
+    - uses: cachix/install-nix-action@v15    
+    - run: nix develop --command just test
