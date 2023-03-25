@@ -11,8 +11,7 @@ module TsBridge.Core
   , tsValue
   , tsValues
   , tsValuesRL
-  )
-  where
+  ) where
 
 import Prelude
 

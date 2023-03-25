@@ -9,6 +9,8 @@
 - [Maybe](#maybe)
 - [Either](#either)
 - [Tuple](#tuple)
+- [Nullable](#nullable)
+- [Records](#records)
 <!-- AUTO-GENERATED-CONTENT:END -->
 
 The following is a list of default implementations for types that are provided in this library. Since the generation typeclass is defined on your side, you can choose a subset of the provided implementations.
@@ -472,7 +474,7 @@ import('../Data.Tuple').Tuple<A, B>
 
   </td>
 </tr>
-
+<tr></tr>
 
 
 <tr>
@@ -497,6 +499,130 @@ type Tuple<A, B> = {
   readonly __arg1: B;
 }
 ```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+  <tr>
+    <td colspan=3>
+      <h2>Nullable</h2>
+
+`Nullable` is represented as TypeScript untagged union.
+      </td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th align="left">PureScript</th>
+    <th align="left">TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+Nullable a
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+import('../Data.Nullable').Nullable<A>
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+`~/Data/Nullable.purs`
+```hs
+foreign import data Nullable
+  :: Type -> Type
+```
+
+</td>
+<td valign="top">
+
+
+`output/Data.Nullable/index.d.ts`
+```ts
+export type Nullable<A> = null | A
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+  <tr>
+    <td colspan=3>
+      <h2>Records</h2>
+
+Records are represented as TypeScript records with readonly fields.
+      </td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th align="left">PureScript</th>
+    <th align="left">TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+{ name :: String
+, loggedIn :: Boolean
+}
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+{
+  readonly name: string;
+  readonly loggedIn: boolean;
+}
+```
+
+
+  </td>
+</tr>
+
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+`<builtin>`
+
+</td>
+<td valign="top">
+
+
+`<builtin>`
 
 
   </td>
