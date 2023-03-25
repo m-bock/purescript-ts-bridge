@@ -226,7 +226,7 @@ instance Tokenize DTS.TsTypeArgsQuant where
 instance Tokenize DTS.TsRecordField where
   tokenize (DTS.TsRecordField k { readonly, optional } v) =
     (if readonly then [ TsTokReadonly, TsTokWhitespace ] else [])
-      <> tokenize k
+      <> [ TsTokStringLiteral k ]
       <> (if optional then [ TsTokWhitespace ] else [])
       <> [ TsTokColon, TsTokWhitespace ]
       <> tokenize v

@@ -22,7 +22,7 @@ import Data.Variant (Variant)
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-import TsBridge (TsSource(..))
+import TsBridge (TsNameError(..), TsSource(..))
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
@@ -112,7 +112,7 @@ spec = do
                       [ "export const a : import('../Data.Either').Either<string, boolean>"
                       ]
                   , textFile "Data.Either/index.d.ts"
-                      [ "export type Either<A, B> = { readonly __brand: unique symbol; readonly __arg1: A; readonly __arg2: B; }"
+                      [ "export type Either<A, B> = { readonly '__brand': unique symbol; readonly '__arg1': A; readonly '__arg2': B; }"
                       ]
                   ]
               )
@@ -141,6 +141,14 @@ spec = do
           testDeclPrint
             (TSB.tsValue Tok "foo" 13.0)
             [ "export const foo : number" ]
+
+        describe "Number" do
+          it "prints the correct declaration" do
+            ( TSB.tsValue Tok "foo'" 0.0
+                # TSB.runTsBridgeM
+                <#> (fst >>> printTsDeclarations)
+            )
+              `shouldEqual` (Left $ TSB.ErrTsName $ ErrInvalidCharacter '\'')
 
         describe "Number" do
           it "prints the correct declaration" do
@@ -181,15 +189,19 @@ spec = do
 
       describe "Record" do
         testTypePrint (tsBridge (Proxy :: _ { bar :: String, foo :: Number }))
-          "{ readonly bar: string; readonly foo: number; }"
+          "{ readonly 'bar': string; readonly 'foo': number; }"
 
       describe "Maybe" do
         testTypePrint (tsBridge (Proxy :: _ (Maybe Boolean)))
           "import('../Data.Maybe').Maybe<boolean>"
 
       describe "Either" do
-        testTypePrint (tsBridge (Proxy :: _ (Either String Boolean)))
-          "import('../Data.Either').Either<string, boolean>"
+        it "prints the correct declaration" do
+          ( tsBridge (Proxy :: _ (Either String Boolean))
+              # TSB.runTsBridgeM
+              <#> (fst >>> printTsType)
+          )
+            `shouldEqual` (Right $ TSB.TsSource "import('../Data.Either').Either<string, boolean>")
 
       describe "Nullable" do
         testTypePrint (tsBridge (Proxy :: _ (Nullable String)))
@@ -197,7 +209,7 @@ spec = do
 
       describe "Variant" do
         testTypePrint (tsBridge (Proxy :: _ (Variant (a :: String, b :: Boolean))))
-          "({ readonly type: 'a'; readonly value: string; }) | ({ readonly type: 'b'; readonly value: boolean; })"
+          "({ readonly 'type': 'a'; readonly 'value': string; }) | ({ readonly 'type': 'b'; readonly 'value': boolean; })"
 
 testDeclPrint :: TsBridgeM (Array TSB.TsDeclaration) -> Array String -> Spec Unit
 testDeclPrint x s =

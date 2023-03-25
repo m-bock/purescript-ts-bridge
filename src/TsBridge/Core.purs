@@ -97,7 +97,8 @@ tsProgram xs = xs # sequence <#> join >>> mergeModules
 tsTypeAlias :: forall tok a. TsBridgeBy tok a => tok -> String -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
 tsTypeAlias tok n x = ado
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
-  in [ DTS.TsDeclTypeDef (DTS.unsafeTsName n) DTS.Public (coerce scope.floating) x ]
+  name <- DTS.mkTsName n
+  in [ DTS.TsDeclTypeDef name DTS.Public (coerce scope.floating) x ]
   where
   t = tsBridgeBy tok x
 
@@ -125,13 +126,15 @@ tsValue' tok n _ = do
   let t = tsBridgeBy tok (Proxy :: _ a)
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
 
+  name <- DTS.mkTsName n
+
   when (OSet.length scope.floating /= 0)
     $ throwError
     $ DTS.ErrUnquantifiedTypeVariables
     $ (Set.fromFoldable :: Array _ -> _)
     $ OSet.toUnfoldable scope.floating
 
-  pure [ DTS.TsDeclValueDef (DTS.unsafeTsName n) DTS.Public x ]
+  pure [ DTS.TsDeclValueDef name DTS.Public x ]
 
 --------------------------------------------------------------------------------
 -- class TsValues

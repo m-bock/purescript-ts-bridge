@@ -40,7 +40,7 @@ import Data.Nullable (Nullable)
 import Data.Set as Set
 import Data.Set.Ordered as OSet
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Traversable (sequence)
+import Data.Traversable (sequence, traverse)
 import Data.Tuple (Tuple, fst, snd)
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Variant (Variant)
@@ -292,7 +292,7 @@ instance
   tsBridgeRecordRL tok _ = do
     x <- tsBridgeBy tok (Proxy :: _ t)
     xs <- tsBridgeRecordRL tok (Proxy :: _ rl)
-    let k = DTS.unsafeTsName $ reflectSymbol (Proxy :: _ s)
+    let k = reflectSymbol (Proxy :: _ s)
     pure $
       A.cons (DTS.TsRecordField k { optional: false, readonly: true } x) xs
 
@@ -336,10 +336,10 @@ instance
       pure $
         A.cons
           ( DTS.TsTypeRecord
-              [ DTS.TsRecordField (DTS.unsafeTsName "type")
+              [ DTS.TsRecordField "type"
                   { readonly: true, optional: false }
                   (DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ s))
-              , DTS.TsRecordField (DTS.unsafeTsName "value")
+              , DTS.TsRecordField "value"
                   { readonly: true, optional: false }
                   x
               ]
@@ -350,13 +350,16 @@ instance
 
 -- | `tsBridge` type class method implementation for opaque types
 tsBridgeOpaqueType :: forall a. String -> String -> Array (String /\ StandaloneTsType) -> a -> StandaloneTsType
-tsBridgeOpaqueType pursModuleName pursTypeName args _ = brandedType
-  (DTS.TsFilePath (pursModuleName <> "/index") "d.ts")
-  (DTS.TsModuleAlias pursModuleName)
-  (DTS.unsafeTsName pursTypeName)
-  (coerce $ OSet.fromFoldable $ DTS.unsafeTsName <$> targNames)
-  targs
-  Nothing
+tsBridgeOpaqueType pursModuleName pursTypeName args _ = do
+  name <- DTS.mkTsName pursTypeName
+  args' <- traverse DTS.mkTsName targNames
+  brandedType
+    (DTS.TsFilePath (pursModuleName <> "/index") "d.ts")
+    (DTS.TsModuleAlias pursModuleName)
+    name
+    (coerce $ OSet.fromFoldable $ args')
+    targs
+    Nothing
   where
   targNames = map fst args
   targs = map snd args
@@ -382,8 +385,9 @@ tsBridgeNewtype tok pursModuleName pursTypeName args_ _ = do
   let
     filePath = DTS.TsFilePath (pursModuleName <> "/index") "d.ts"
     alias = DTS.TsModuleAlias pursModuleName
-    name = DTS.unsafeTsName pursTypeName
-    args' = OSet.fromFoldable $ DTS.unsafeTsName <$> targNames
+
+  name <- DTS.mkTsName pursTypeName
+  args' <- OSet.fromFoldable <$> traverse DTS.mkTsName targNames
 
   let
     typeDefs =
@@ -446,11 +450,11 @@ mkBrandedTypeDecl name args type_ = DTS.TsDeclTypeDef name DTS.Public (coerce ar
     Just t -> \x -> DTS.TsTypeIntersection [ x, t ]
 
   opaqueField = DTS.TsRecordField
-    (DTS.unsafeTsName "__brand")
+    "__brand"
     { optional: false, readonly: true }
     DTS.TsTypeUniqueSymbol
 
   mkArgFields idx name' = DTS.TsRecordField
-    (DTS.unsafeTsName ("__arg" <> show (idx + 1)))
+    ("__arg" <> show (idx + 1))
     { optional: false, readonly: true }
     (DTS.TsTypeVar name')

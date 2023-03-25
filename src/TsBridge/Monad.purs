@@ -17,7 +17,6 @@ import Data.Set.Ordered as OSet
 import Data.Tuple.Nested (type (/\))
 import TsBridge.DTS (TsModuleFile, TsName, Error)
 
-
 -------------------------------------------------------------------------------
 -- Types / TsBridge
 -------------------------------------------------------------------------------
