@@ -96,7 +96,7 @@ export const data = [
   ],
   [
     "Either",
-    "`Either` is represented as opaque type using TypeScript __branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.",
+    "`Either` is represented as opaque type using TypeScript branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.",
     [
       [
         "Ref",
@@ -128,7 +128,7 @@ export const data = [
   ],
   [
     "Tuple",
-    "`Tuple` is represented as opaque type using TypeScript __branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.",
+    "`Tuple` is represented as opaque type using TypeScript branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.",
     [
       [
         "Ref",
@@ -324,43 +324,37 @@ export const data = [
         [
           "~/Effect.purs",
           [
-            "foreign import data Effect :: Type -> Type",
+            "foreign import data Effect",
+            "  :: Type -> Type"
           ].join("\n"),
         ],
         null,
       ],
     ],
   ],
-  // [
-  //   "",
-  //   "",
-  //   [
-  //     ["Ref", "", ""],
-  //     ["Def", "", ""],
-  //   ],
-  // ],
-  // [
-  //   "",
-  //   "",
-  //   [
-  //     ["Ref", "", ""],
-  //     ["Def", "", ""],
-  //   ],
-  // ],
-  // [
-  //   "",
-  //   "",
-  //   [
-  //     ["Ref", "", ""],
-  //     ["Def", "", ""],
-  //   ],
-  // ],
-  // [
-  //   "",
-  //   "",
-  //   [
-  //     ["Ref", "", ""],
-  //     ["Def", "", ""],
-  //   ],
-  // ],
+  [
+    "Unit",
+    [
+      "`Unit` is represented as TypeScript's `void`",
+      "",
+    ].join("\n"),
+    [
+      [
+        "Ref",
+        ["Unit"].join("\n"),
+        ["void"].join("\n"),
+      ],
+      [
+        "Def",
+        [
+          "~/Data/Unit.purs",
+          [
+            "foreign import data Unit",
+            "  :: Type"
+          ].join("\n"),
+        ],
+        null,
+      ],
+    ],
+  ],
 ];

@@ -15,6 +15,7 @@
 - [Function](#function)
 - [Promise](#promise)
 - [Effect](#effect)
+- [Unit](#unit)
 <!-- AUTO-GENERATED-CONTENT:END -->
 
 The following is a list of default implementations for types that are provided in this library. Since the generation typeclass is defined on your side, you can choose a subset of the provided implementations.
@@ -412,7 +413,7 @@ type Maybe<A> = {
     <td colspan=3>
       <h2>Either</h2>
 
-`Either` is represented as opaque type using TypeScript __branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.
+`Either` is represented as opaque type using TypeScript branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.
 
 </td>
   </tr>
@@ -481,7 +482,7 @@ type Either<A, B> = {
     <td colspan=3>
       <h2>Tuple</h2>
 
-`Tuple` is represented as opaque type using TypeScript __branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.
+`Tuple` is represented as opaque type using TypeScript branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.
 
 </td>
   </tr>
@@ -940,7 +941,70 @@ Effect a
 
 `~/Effect.purs`
 ```hs
-foreign import data Effect :: Type -> Type
+foreign import data Effect
+  :: Type -> Type
+```
+
+</td>
+<td valign="top">
+
+
+`<builtin>`
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+  <tr>
+    <td colspan=3>
+      <h2>Unit</h2>
+
+`Unit` is represented as TypeScript's `void`
+
+
+</td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th align="left">PureScript</th>
+    <th align="left">TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+Unit
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+void
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+`~/Data/Unit.purs`
+```hs
+foreign import data Unit
+  :: Type
 ```
 
 </td>
