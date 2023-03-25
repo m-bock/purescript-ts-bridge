@@ -264,7 +264,7 @@ class TsBridgeRecord tok r where
   -- | `tsBridge` type class method implementation for the Record type
   -- |
   -- | See [this
-  -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#records)
+  -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#record)
   -- | for details.
   tsBridgeRecord :: tok -> Proxy (Record r) -> StandaloneTsType
 
@@ -304,7 +304,7 @@ class TsBridgeVariant tok r where
   -- | `tsBridge` type class method implementation for the Variant type
   -- |
   -- | See [this
-  -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#variants)
+  -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#variant)
   -- | for details.
   tsBridgeVariant :: tok -> Proxy (Variant r) -> StandaloneTsType
 

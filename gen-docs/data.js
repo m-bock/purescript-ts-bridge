@@ -181,7 +181,7 @@ export const data = [
     ],
   ],
   [
-    "Records",
+    "Record",
     "Records are represented as TypeScript records with readonly fields.",
     [
       [
@@ -198,7 +198,55 @@ export const data = [
           "}",
         ].join("\n"),
       ],
-      ["Def", null, null, ,],
+      ["Def", null, null],
+    ],
+  ],
+  [
+    "Function",
+    "Functions are represented as TypeScript curried functions.",
+    [
+      [
+        "Ref",
+        [
+          "Number -> String -> Boolean",
+        ].join("\n"),
+        [
+          "(_: number) => (_: string) => boolean",
+        ].join("\n"),
+      ],
+      [
+        "Ref",
+        [
+          "forall a b c. a -> b -> c",
+        ].join("\n"),
+        [
+          "<A>(_: A) =>",
+          "  <B, C>(_: B) =>",
+          "    C",
+        ].join("\n"),
+      ],
+      ["Def", null, null],
+    ],
+  ],
+  [
+    "Promise",
+    "Promises are represented as TypeScript Promises.",
+    [
+      [
+        "Ref",
+        ["Promise a"].join("\n"),
+        ["Promise<A>"].join("\n"),
+      ],
+      [
+        "Def",
+        [
+          "~/Control/Promise.purs",
+          [
+            "foreign import data Promise :: Type -> Type",
+          ].join("\n"),
+        ],
+        null,
+      ],
     ],
   ],
   // [

@@ -10,7 +10,9 @@
 - [Either](#either)
 - [Tuple](#tuple)
 - [Nullable](#nullable)
-- [Records](#records)
+- [Record](#record)
+- [Function](#function)
+- [Promise](#promise)
 <!-- AUTO-GENERATED-CONTENT:END -->
 
 The following is a list of default implementations for types that are provided in this library. Since the generation typeclass is defined on your side, you can choose a subset of the provided implementations.
@@ -571,7 +573,7 @@ export type Nullable<A> = null | A
 
   <tr>
     <td colspan=3>
-      <h2>Records</h2>
+      <h2>Record</h2>
 
 Records are represented as TypeScript records with readonly fields.
       </td>
@@ -609,7 +611,7 @@ Records are represented as TypeScript records with readonly fields.
 
   </td>
 </tr>
-
+<tr></tr>
 
 
 <tr>
@@ -617,6 +619,145 @@ Records are represented as TypeScript records with readonly fields.
   <td valign="top">
 
 `<builtin>`
+
+</td>
+<td valign="top">
+
+
+`<builtin>`
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+  <tr>
+    <td colspan=3>
+      <h2>Function</h2>
+
+Functions are represented as TypeScript curried functions.
+      </td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th align="left">PureScript</th>
+    <th align="left">TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+Number -> String -> Boolean
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+(_: number) => (_: string) => boolean
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+forall a b c. a -> b -> c
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+<A>(_: A) =>
+  <B, C>(_: B) =>
+    C
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+`<builtin>`
+
+</td>
+<td valign="top">
+
+
+`<builtin>`
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+  <tr>
+    <td colspan=3>
+      <h2>Promise</h2>
+
+Promises are represented as TypeScript Promises.
+      </td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th align="left">PureScript</th>
+    <th align="left">TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+Promise a
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+Promise<A>
+```
+
+
+  </td>
+</tr>
+
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+`~/Control/Promise.purs`
+```hs
+foreign import data Promise :: Type -> Type
+```
 
 </td>
 <td valign="top">
