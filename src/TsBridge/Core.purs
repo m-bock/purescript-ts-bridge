@@ -5,10 +5,10 @@ module TsBridge.Core
   , class TsValuesRL
   , tsBridgeBy
   , tsModuleFile
+  , tsOpaqueType
   , tsProgram
   , tsTypeAlias
   , tsValue
-  , tsValue'
   , tsValues
   , tsValuesRL
   )
@@ -16,19 +16,19 @@ module TsBridge.Core
 
 import Prelude
 
-import Control.Monad.Writer (listens)
+import Control.Monad.Writer (listens, tell)
+import Data.Array as A
 import Data.Array as Array
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Newtype (un)
 import Data.Set as Set
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (sequence)
 import Data.Tuple.Nested ((/\))
-import Data.Typelevel.Undefined (undefined)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
-import Record as Record
 import Safe.Coerce (coerce)
 import TsBridge.DTS (TsBridge_DTS_Wrap(..), TsDeclVisibility(..), TsDeclaration(..), TsModule(..), TsModuleFile(..), TsName(..), TsProgram(..), TsType, dtsFilePath)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, runTsBridgeM)
@@ -40,7 +40,7 @@ import Type.Proxy (Proxy(..))
 -- | typeclass like this:
 -- | ```
 -- | class TsBridge a where
--- |   tsBridge :: a -> TsBridgeM TsType
+-- |   tsBridge :: a -> StandaloneTsType
 -- | ```
 -- | Then the internal type class is forwarded to the
 -- | one of the user. For this you need to define a token data type and an
@@ -87,36 +87,38 @@ mergeModule (TsModule _ is1 ds1) (TsModule n2 is2 ds2) =
 tsProgram :: Array (Array TsModuleFile) -> TsProgram
 tsProgram xs = mergeModules $ join xs
 
--- | For cases where you want to export a type alias. References to this type
+-- | For rare cases where you want to export a type alias. References to this type
 -- | alias will be fully resolved in the generated code. So it is more practical
 -- | to use a newtype instead, which can be references by name.
-tsTypeAlias :: forall mp a. TsBridgeBy mp a => mp -> String -> Proxy a -> TsBridgeM (Array TsDeclaration)
-tsTypeAlias mp n x = ado
+tsTypeAlias :: forall tok a. TsBridgeBy tok a => tok -> String -> Proxy a -> TsBridgeM (Array TsDeclaration)
+tsTypeAlias tok n x = ado
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
   in [ TsDeclTypeDef (TsName n) Public (coerce scope.floating) x ]
   where
-  t = tsBridgeBy mp x
+  t = tsBridgeBy tok x
 
--- TODO: Check if this is still needed:
--- tsOpaqueType :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
--- tsOpaqueType mp n x = do
---   _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ tsBridgeBy mp x
---   case uncons modules of
---     Just { head: (TsModuleFile _ (TsModule n imports decls)), tail: [] } -> do
---       tell $ TsBridgeAccum
---         { typeDefs: mempty
---         , scope: mempty
---         }
---       pure decls
---     _ -> pure []
+-- | For rare cases where you want to manually export an opaque type. Once you export a
+-- | value that contains a reference to this type, the type will be generated
+-- | and exported automatically. Thus in most cases you don't need this.
+tsOpaqueType :: forall tok a. TsBridgeBy tok a => tok -> Proxy a -> TsBridgeM (Array TsDeclaration)
+tsOpaqueType tok x = do
+  _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ tsBridgeBy tok x
+  case A.uncons modules of
+    Just { head: (TsModuleFile _ (TsModule _ _ decls)), tail: [] } -> do
+      tell $ TsBridgeAccum
+        { typeDefs: mempty
+        , scope: mempty
+        }
+      pure decls
+    _ -> pure []
 
 -- | Exports a single PureScript value to TypeScript. `tsValues` may be better choice. 
-tsValue :: forall mp a. TsBridgeBy mp a => mp -> String -> a -> TsBridgeM (Array TsDeclaration)
-tsValue mp n x = tsValue' mp n (Proxy :: _ a)
+tsValue :: forall tok a. TsBridgeBy tok a => tok -> String -> a -> TsBridgeM (Array TsDeclaration)
+tsValue tok n _ = tsValue' tok n (Proxy :: _ a)
 
-tsValue' :: forall mp a. TsBridgeBy mp a => mp -> String -> Proxy a -> TsBridgeM (Array TsDeclaration)
-tsValue' mp n x = do
-  t <- tsBridgeBy mp (Proxy :: _ a)
+tsValue' :: forall tok a. TsBridgeBy tok a => tok -> String -> Proxy a -> TsBridgeM (Array TsDeclaration)
+tsValue' tok n _ = do
+  t <- tsBridgeBy tok (Proxy :: _ a)
   pure [ TsDeclValueDef (TsName n) Public t ]
 
 --------------------------------------------------------------------------------

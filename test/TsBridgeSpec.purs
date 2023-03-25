@@ -4,7 +4,7 @@ module Test.TsBridgeSpec
 
 import Prelude
 
-import Data.Either (Either)
+import Data.Either (Either(..))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe)
@@ -19,73 +19,76 @@ import Data.Variant (Variant)
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-import TsBridge (class DefaultRecord, class DefaultVariant, class TsBridgeBy, Path(..), TsDeclaration, TsProgram, TsSource(..), TsType, Var(..), StandaloneTsType, runTsBridgeM, tsModuleFile, tsProgram, tsValue)
 import TsBridge as TSB
-import TsBridge.Core (tsValue')
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
 import Type.Proxy (Proxy(..))
 
 class TsBridge a where
-  tsBridge :: Proxy a -> StandaloneTsType
+  tsBridge :: Proxy a -> TSB.StandaloneTsType
 
 instance TsBridge Number where
-  tsBridge = TSB.defaultNumber
+  tsBridge = TSB.tsBridgeNumber
 
 instance TsBridge String where
-  tsBridge = TSB.defaultString
+  tsBridge = TSB.tsBridgeString
 
 instance TsBridge Boolean where
-  tsBridge = TSB.defaultBoolean
+  tsBridge = TSB.tsBridgeBoolean
 
 instance TsBridge a => TsBridge (Array a) where
-  tsBridge = TSB.defaultArray Tok
+  tsBridge = TSB.tsBridgeArray Tok
 
 instance TsBridge a => TsBridge (Effect a) where
-  tsBridge = TSB.defaultEffect Tok
+  tsBridge = TSB.tsBridgeEffect Tok
 
 instance TsBridge a => TsBridge (Nullable a) where
-  tsBridge = TSB.defaultNullable Tok
+  tsBridge = TSB.tsBridgeNullable Tok
 
 instance (TsBridge a, TsBridge b) => TsBridge (a -> b) where
-  tsBridge = TSB.defaultFunction Tok
+  tsBridge = TSB.tsBridgeFunction Tok
 
-instance (DefaultRecord Tok r) => TsBridge (Record r) where
-  tsBridge = TSB.defaultRecord Tok
+instance (TSB.TsBridgeRecord Tok r) => TsBridge (Record r) where
+  tsBridge = TSB.tsBridgeRecord Tok
 
-instance (DefaultVariant Tok r) => TsBridge (Variant r) where
-  tsBridge = TSB.defaultVariant Tok
+instance (TSB.TsBridgeVariant Tok r) => TsBridge (Variant r) where
+  tsBridge = TSB.tsBridgeVariant Tok
 
 instance TsBridge a => TsBridge (Maybe a) where
-  tsBridge = TSB.defaultMaybe Tok
+  tsBridge = TSB.tsBridgeMaybe Tok
 
 instance (TsBridge a, TsBridge b) => TsBridge (Tuple a b) where
-  tsBridge = TSB.defaultTuple Tok
+  tsBridge = TSB.tsBridgeTuple Tok
 
 instance (TsBridge a, TsBridge b) => TsBridge (Either a b) where
-  tsBridge = TSB.defaultEither Tok
+  tsBridge = TSB.tsBridgeEither Tok
 
-instance IsSymbol sym => TsBridge (Var sym) where
-  tsBridge _ = TSB.defaultTypeVar (Var :: _ sym)
+instance IsSymbol sym => TsBridge (TSB.TypeVar sym) where
+  tsBridge = TSB.tsBridgeTypeVar
 
 instance TsBridge Unit where
-  tsBridge = TSB.defaultUnit
+  tsBridge = TSB.tsBridgeUnit
 
 newtype MyNT = MyNT Number
 
 derive instance Newtype MyNT _
 
 instance TsBridge MyNT where
-  tsBridge = TSB.defaultNewtype Tok "Foo.Bar" "MyNT" []
+  tsBridge = TSB.tsBridgeNewtype Tok "Foo.Bar" "MyNT" []
 
 --
 
 data Tok = Tok
 
-instance TsBridge a => TsBridgeBy Tok a where
+instance TsBridge a => TSB.TsBridgeBy Tok a where
   tsBridgeBy _ = tsBridge
 
 --
+
+type A = TSB.TypeVar "A"
+type B = TSB.TypeVar "B"
+type C = TSB.TypeVar "C"
+type D = TSB.TypeVar "D"
 
 spec :: Spec Unit
 spec = do
@@ -93,9 +96,9 @@ spec = do
     describe "Program Printing" do
       describe "Program with imports" do
         it "generates a type and adds the type module" do
-          tsProgram
-            [ tsModuleFile "Foo.Bar"
-                [ tsValue' Tok "a" (Proxy :: _ (Either String Boolean)) ]
+          TSB.tsProgram
+            [ TSB.tsModuleFile "Foo.Bar"
+                [ TSB.tsValue Tok "a" (Left "" :: Either String Boolean) ]
             ]
             # printTsProgram
             # shouldEqual
@@ -110,9 +113,9 @@ spec = do
 
       describe "Newtype" do
         it "generates a type and adds the type module" do
-          tsProgram
-            [ tsModuleFile "Foo.Bar"
-                [ tsValue' Tok "a" (Proxy :: _ MyNT) ]
+          TSB.tsProgram
+            [ TSB.tsModuleFile "Foo.Bar"
+                [ TSB.tsValue Tok "a" (MyNT 0.0) ]
             ]
             # printTsProgram
             # shouldEqual
@@ -127,7 +130,7 @@ spec = do
       describe "tsValue" do
         describe "Number" do
           testDeclPrint
-            (tsValue Tok "foo" 13.0)
+            (TSB.tsValue Tok "foo" 13.0)
             [ "export const foo : number" ]
 
     describe "Type Printing" do
@@ -156,7 +159,7 @@ spec = do
           "(_: string) => (_: number) => boolean"
 
       describe "Function" do
-        testTypePrint (tsBridge (Proxy :: _ (Array (Var "A") -> Array (Var "B") -> Array (Tuple (Var "A") (Var "B")))))
+        testTypePrint (tsBridge (Proxy :: _ (Array A -> Array B -> Array (Tuple A B))))
           "<A>(_: Array<A>) => <B>(_: Array<B>) => Array<import('../Data.Tuple').Tuple<A, B>>"
 
       describe "Record" do
@@ -179,27 +182,27 @@ spec = do
         testTypePrint (tsBridge (Proxy :: _ (Variant (a :: String, b :: Boolean))))
           "({ readonly type: 'a'; readonly value: string; })|({ readonly type: 'b'; readonly value: boolean; })"
 
-testDeclPrint :: TsBridgeM (Array TsDeclaration) -> Array String -> Spec Unit
+testDeclPrint :: TsBridgeM (Array TSB.TsDeclaration) -> Array String -> Spec Unit
 testDeclPrint x s =
   it "prints the correct declaration" do
-    runTsBridgeM x
+    TSB.runTsBridgeM x
       # fst
       # printTsDeclarations
-      # shouldEqual (TsSource <$> s)
+      # shouldEqual (TSB.TsSource <$> s)
 
-testTypePrint :: TsBridgeM TsType -> String -> Spec Unit
+testTypePrint :: TsBridgeM TSB.TsType -> String -> Spec Unit
 testTypePrint x s =
   it "prints the correct type" do
     shouldEqual
-      ( runTsBridgeM x
+      ( TSB.runTsBridgeM x
           # fst
           # printTsType
       )
-      (TsSource s)
+      (TSB.TsSource s)
 
-textFile :: String -> Array String -> Path /\ Array String
-textFile n lines = Path n /\ lines
+textFile :: String -> Array String -> TSB.Path /\ Array String
+textFile n lines = TSB.Path n /\ lines
 
-printTsProgram :: TsProgram -> Map Path (Array String)
+printTsProgram :: TSB.TsProgram -> Map TSB.Path (Array String)
 printTsProgram x = TSB.printTsProgram x
-  <#> un TsSource >>> String.split (Pattern "\n")
+  <#> un TSB.TsSource >>> String.split (Pattern "\n")

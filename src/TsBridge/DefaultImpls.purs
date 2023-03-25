@@ -1,30 +1,30 @@
 module TsBridge.DefaultImpls
-  ( Var(..)
-  , class DefaultRecord
-  , class DefaultRecordRL
-  , class DefaultVariant
-  , class DefaultVariantRL
-  , defaultArray
-  , defaultBoolean
-  , defaultNewtype
-  , defaultChar
-  , defaultEffect
-  , defaultEither
-  , defaultFunction
-  , defaultInt
-  , defaultMaybe
-  , defaultNullable
-  , defaultNumber
-  , defaultOpaqueType
-  , defaultPromise
-  , defaultRecord
-  , defaultRecordRL
-  , defaultString
-  , defaultTuple
-  , defaultTypeVar
-  , defaultUnit
-  , defaultVariant
-  , defaultVariantRL
+  ( TypeVar(..)
+  , class TsBridgeRecord
+  , class TsBridgeRecordRL
+  , class TsBridgeVariant
+  , class TsBridgeVariantRL
+  , tsBridgeArray
+  , tsBridgeBoolean
+  , tsBridgeNewtype
+  , tsBridgeChar
+  , tsBridgeEffect
+  , tsBridgeEither
+  , tsBridgeFunction
+  , tsBridgeInt
+  , tsBridgeMaybe
+  , tsBridgeNullable
+  , tsBridgeNumber
+  , tsBridgeOpaqueType
+  , tsBridgePromise
+  , tsBridgeRecord
+  , tsBridgeRecordRL
+  , tsBridgeString
+  , tsBridgeTuple
+  , tsBridgeTypeVar
+  , tsBridgeUnit
+  , tsBridgeVariant
+  , tsBridgeVariantRL
   ) where
 
 import Prelude
@@ -54,14 +54,17 @@ import TsBridge.DTS as DTS
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM)
 import Type.Proxy (Proxy(..))
 
-data Var (s :: Symbol) = Var
+-- | Represents a monomorphized type variable. E.g. a `Maybe a` can become a
+-- | `Maybe (TypeVar "A")`. It's useful to create some type aliases for
+-- | variables that are used often, like: `type A = TypeVar "A"`.
+data TypeVar (s :: Symbol) = TypeVar
 
--- | Default type class method implementation for type variables.
+-- | `tsBridge` type class method implementation for type variables.
 -- | This is needed because polymorphic values cannot be exported directly.
 -- | They have to be monomorphized: E.g. something of type `Maybe a` needs to be
 -- | typed `Maybe (Var "A")` to be exported.
-defaultTypeVar :: forall s. IsSymbol s => Var s -> StandaloneTsType
-defaultTypeVar _ = do
+tsBridgeTypeVar :: forall s. IsSymbol s => Proxy (TypeVar s) -> StandaloneTsType
+tsBridgeTypeVar _ = do
   let
     tsName = DTS.TsName $ reflectSymbol (Proxy :: _ s)
 
@@ -74,55 +77,61 @@ defaultTypeVar _ = do
     $ over TsBridgeAccum _ { scope = scope } mempty
   pure $ DTS.TsTypeVar tsName
 
--- defaultProxy :: forall f a. TsBridgeBy f a => f -> Proxy a -> StandaloneTsType
--- defaultProxy mp _ = tsBridgeBy mp (undefined :: a)
-
--- | Default type class method implementation for the `Number` type
+-- | `tsBridge` type class method implementation for the `Number` type.
 -- |
--- | Generates a TypeScript `number` type
-defaultNumber :: Proxy Number -> StandaloneTsType
-defaultNumber _ = pure DTS.TsTypeNumber
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#number)
+-- | for details.
+tsBridgeNumber :: Proxy Number -> StandaloneTsType
+tsBridgeNumber _ = pure DTS.TsTypeNumber
 
--- | Default type class method implementation for the `String` type
+-- | `tsBridge` type class method implementation for the `String` type
 -- |
--- | Generates a TypeScript `string` type
-defaultString :: Proxy String -> StandaloneTsType
-defaultString _ = pure DTS.TsTypeString
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#string)
+-- | for details.
+tsBridgeString :: Proxy String -> StandaloneTsType
+tsBridgeString _ = pure DTS.TsTypeString
 
--- | Default type class method implementation for the `Boolean` type
+-- | `tsBridge` type class method implementation for the `Boolean` type
 -- |
--- | Generates a TypeScript `boolean` type
-defaultBoolean :: Proxy Boolean -> StandaloneTsType
-defaultBoolean _ = pure DTS.TsTypeBoolean
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#boolean)
+-- | for details.
+tsBridgeBoolean :: Proxy Boolean -> StandaloneTsType
+tsBridgeBoolean _ = pure DTS.TsTypeBoolean
 
--- | Default type class method implementation for the `Int` type
+-- | `tsBridge` type class method implementation for the `Int` type
 -- |
--- | Generates a TypeScript opaque type
-defaultInt :: Proxy Int -> StandaloneTsType
-defaultInt = defaultOpaqueType "Prim" "Int" []
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#int)
+-- | for details.
+tsBridgeInt :: Proxy Int -> StandaloneTsType
+tsBridgeInt = tsBridgeOpaqueType "Prim" "Int" []
 
--- | Default type class method implementation for the `Char` type
+-- | `tsBridge` type class method implementation for the `Char` type
 -- |
--- | Generates a TypeScript opaque type
-defaultChar :: Proxy Char -> StandaloneTsType
-defaultChar = defaultOpaqueType "Prim" "Char" []
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#char)
+-- | for details.
+tsBridgeChar :: Proxy Char -> StandaloneTsType
+tsBridgeChar = tsBridgeOpaqueType "Prim" "Char" []
 
--- | Default type class method implementation for the `Unit` type
+-- | `tsBridge` type class method implementation for the `Unit` type
 -- |
--- | Generates a TypeScript `void` type
-defaultUnit :: Proxy Unit -> StandaloneTsType
-defaultUnit _ = pure DTS.TsTypeVoid
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#unit)
+-- | for details.
+tsBridgeUnit :: Proxy Unit -> StandaloneTsType
+tsBridgeUnit _ = pure DTS.TsTypeVoid
 
--- | Default type class method implementation for the `Effect` type
+-- | `tsBridge` type class method implementation for the `Effect` type
 -- |
--- | Generates a TypeScript `() => void` type
-defaultEffect
-  :: forall a tok
-   . TsBridgeBy tok a
-  => tok
-  -> Proxy (Effect a)
-  -> StandaloneTsType
-defaultEffect tok _ = censor mapAccum ado
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#number)
+-- | for details.
+tsBridgeEffect :: forall tok a. TsBridgeBy tok a => tok -> Proxy (Effect a) -> StandaloneTsType
+tsBridgeEffect tok _ = censor mapAccum ado
   ret /\ TsBridgeAccum { scope: Scope scopeRet } <- listen $ tsBridgeBy tok (Proxy :: _ a)
   let
     newFixed = (scopeRet.fixed)
@@ -132,106 +141,104 @@ defaultEffect tok _ = censor mapAccum ado
       DTS.mapQuantifier $ OSet.filter (_ `OSet.notElem` newFixed)
 
   in
-    DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
-      [
-      ]
+    DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed) []
       (removeQuant ret)
   where
   mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
 
--- | Default type class method implementation for the `Array a` type
+-- | `tsBridge` type class method implementation for the `Array` type
 -- |
--- | Generates a TypeScript `Array<A>` type
-defaultArray :: forall a f. TsBridgeBy f a => f -> Proxy (Array a) -> StandaloneTsType
-defaultArray f _ = DTS.TsTypeArray <$> tsBridgeBy f (Proxy :: _ a)
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#array)
+-- | for details.
+tsBridgeArray :: forall a tok. TsBridgeBy tok a => tok -> Proxy (Array a) -> StandaloneTsType
+tsBridgeArray tok _ = DTS.TsTypeArray <$> tsBridgeBy tok (Proxy :: _ a)
 
--- | Default type class method implementation for the `Tuple a b` type
+-- | tsBridge type class method implementation for the `Tuple` type
 -- |
--- | Generates a TypeScript opaque type
-defaultTuple
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#tuple)
+-- | for details.
+tsBridgeTuple
   :: forall tok a b
    . TsBridgeBy tok a
   => TsBridgeBy tok b
   => tok
   -> Proxy (Tuple a b)
   -> StandaloneTsType
-defaultTuple tok =
-  defaultOpaqueType "Data.Tuple" "Tuple"
+tsBridgeTuple tok =
+  tsBridgeOpaqueType "Data.Tuple" "Tuple"
     [ "A" /\ tsBridgeBy tok (Proxy :: _ a)
     , "B" /\ tsBridgeBy tok (Proxy :: _ b)
     ]
 
--- | Default type class method implementation for the `Either a b` type
+-- | `tsBridge` type class method implementation for the `Either` type
 -- |
--- | Generates a TypeScript opaque type
-defaultEither
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#either)
+-- | for details.
+-- | 
+tsBridgeEither
   :: forall tok a b
    . TsBridgeBy tok a
   => TsBridgeBy tok b
   => tok
   -> Proxy (Either a b)
   -> StandaloneTsType
-defaultEither tok =
-  defaultOpaqueType "Data.Either" "Either"
+tsBridgeEither tok =
+  tsBridgeOpaqueType "Data.Either" "Either"
     [ "A" /\ tsBridgeBy tok (Proxy :: _ a)
     , "B" /\ tsBridgeBy tok (Proxy :: _ b)
     ]
 
--- | Default type class method implementation for the `Maybe a` type
+-- | `tsBridge` type class method implementation for the `Maybe` type
 -- |
--- | Generates a TypeScript opaque type
-defaultMaybe
-  :: forall tok a
-   . TsBridgeBy tok a
-  => tok
-  -> Proxy (Maybe a)
-  -> StandaloneTsType
-defaultMaybe tok =
-  defaultOpaqueType "Data.Maybe" "Maybe"
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#maybe)
+-- | for details.
+tsBridgeMaybe :: forall tok a. TsBridgeBy tok a => tok -> Proxy (Maybe a) -> StandaloneTsType
+tsBridgeMaybe tok =
+  tsBridgeOpaqueType "Data.Maybe" "Maybe"
     [ "A" /\ tsBridgeBy tok (Proxy :: _ a) ]
 
--- | Default type class method implementation for the `Promise a` type.
+-- | `tsBridge` type class method implementation for the `Promise` type.
 -- |
--- | Generates a TypeScript `Promise<A>` type
-defaultPromise
-  :: forall a f
-   . TsBridgeBy f a
-  => f
-  -> Proxy (Promise a)
-  -> StandaloneTsType
-defaultPromise f _ = do
-  x <- tsBridgeBy f (Proxy :: _ a)
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#promise)
+-- | for details.
+tsBridgePromise :: forall tok a. TsBridgeBy tok a => tok -> Proxy (Promise a) -> StandaloneTsType
+tsBridgePromise tok _ = do
+  x <- tsBridgeBy tok (Proxy :: _ a)
   pure $ DTS.TsTypeConstructor
     (DTS.TsQualName Nothing (DTS.TsName "Promise"))
     (DTS.TsTypeArgs [ x ])
 
--- | Default type class method implementation for the `Nullable a` type. 
+-- | `tsBridge` type class method implementation for the `Nullable` type. 
 -- |
--- | Generates a TypeScript `A | null` type
-defaultNullable
-  :: forall a tok
-   . TsBridgeBy tok a
-  => tok
-  -> Proxy (Nullable a)
-  -> StandaloneTsType
-defaultNullable tok _ = do
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#number)
+-- | for details.
+tsBridgeNullable :: forall a tok. TsBridgeBy tok a => tok -> Proxy (Nullable a) -> StandaloneTsType
+tsBridgeNullable tok _ = do
   x <- tsBridgeBy tok (Proxy :: _ a)
   pure $ DTS.TsTypeUnion
     [ DTS.TsTypeNull, x ]
 
--- | Default type class method implementation for the `a -> b` (Function) type
+-- | `tsBridge` type class method implementation for the `a -> b` (Function) type
 -- |
--- | Generates a TypeScript `(_ : A) => B` type
-defaultFunction
-  :: forall f a b
-   . TsBridgeBy f a
-  => TsBridgeBy f b
-  => f
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#function)
+-- | for details.
+tsBridgeFunction
+  :: forall tok a b
+   . TsBridgeBy tok a
+  => TsBridgeBy tok b
+  => tok
   -> Proxy (a -> b)
   -> StandaloneTsType
-defaultFunction f _ = censor mapAccum ado
-  arg /\ TsBridgeAccum { scope: Scope scopeArg } <- listen $ tsBridgeBy f (Proxy :: _ a)
-  ret /\ TsBridgeAccum { scope: Scope scopeRet } <- listen $ tsBridgeBy f (Proxy :: _ b)
+tsBridgeFunction tok _ = censor mapAccum ado
+  arg /\ TsBridgeAccum { scope: Scope scopeArg } <- listen $ tsBridgeBy tok (Proxy :: _ a)
+  ret /\ TsBridgeAccum { scope: Scope scopeRet } <- listen $ tsBridgeBy tok (Proxy :: _ b)
   let
     newFixed = (OSet.intersect scopeArg.fixed scopeRet.fixed)
       <> scopeArg.floating
@@ -249,72 +256,82 @@ defaultFunction f _ = censor mapAccum ado
   mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
 
 -------------------------------------------------------------------------------
--- Class / DefaultRecord
+-- Class / tsBridgeRecord
 -------------------------------------------------------------------------------
 
-class DefaultRecord :: Type -> Row Type -> Constraint
-class DefaultRecord mp r where
-  defaultRecord :: mp -> Proxy (Record r) -> StandaloneTsType
+class TsBridgeRecord :: Type -> Row Type -> Constraint
+class TsBridgeRecord tok r where
+  -- | `tsBridge` type class method implementation for the Record type
+  -- |
+  -- | See [this
+  -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#records)
+  -- | for details.
+  tsBridgeRecord :: tok -> Proxy (Record r) -> StandaloneTsType
 
-instance (RowToList r rl, DefaultRecordRL mp rl) => DefaultRecord mp r where
-  defaultRecord mp _ = DTS.TsTypeRecord <$> defaultRecordRL mp (Proxy :: _ rl)
+instance (RowToList r rl, TsBridgeRecordRL tok rl) => TsBridgeRecord tok r where
+  tsBridgeRecord tok _ = DTS.TsTypeRecord <$> tsBridgeRecordRL tok (Proxy :: _ rl)
 
 -------------------------------------------------------------------------------
--- Class / DefaultRecordRL
+-- Class / tsBridgeRecordRL
 -------------------------------------------------------------------------------
 
-class DefaultRecordRL :: Type -> RowList Type -> Constraint
-class DefaultRecordRL mp rl where
-  defaultRecordRL :: mp -> Proxy rl -> TsBridgeM (Array DTS.TsRecordField)
+class TsBridgeRecordRL :: Type -> RowList Type -> Constraint
+class TsBridgeRecordRL tok rl where
+  tsBridgeRecordRL :: tok -> Proxy rl -> TsBridgeM (Array DTS.TsRecordField)
 
-instance DefaultRecordRL mp Nil where
-  defaultRecordRL _ _ = pure []
+instance TsBridgeRecordRL tok Nil where
+  tsBridgeRecordRL _ _ = pure []
 
 instance
-  ( TsBridgeBy mp t
-  , DefaultRecordRL mp rl
+  ( TsBridgeBy tok t
+  , TsBridgeRecordRL tok rl
   , IsSymbol s
   ) =>
-  DefaultRecordRL mp (Cons s t rl) where
-  defaultRecordRL mp _ = do
-    x <- tsBridgeBy mp (Proxy :: _ t)
-    xs <- defaultRecordRL mp (Proxy :: _ rl)
+  TsBridgeRecordRL tok (Cons s t rl) where
+  tsBridgeRecordRL tok _ = do
+    x <- tsBridgeBy tok (Proxy :: _ t)
+    xs <- tsBridgeRecordRL tok (Proxy :: _ rl)
     let k = DTS.TsName $ reflectSymbol (Proxy :: _ s)
     pure $
       A.cons (DTS.TsRecordField k { optional: false, readonly: true } x) xs
 
 -------------------------------------------------------------------------------
--- Class / DefaultVariant
+-- Class / tsBridgeVariant
 -------------------------------------------------------------------------------
 
-class DefaultVariant :: Type -> Row Type -> Constraint
-class DefaultVariant mp r where
-  defaultVariant :: mp -> Proxy (Variant r) -> StandaloneTsType
+class TsBridgeVariant :: Type -> Row Type -> Constraint
+class TsBridgeVariant tok r where
+  -- | `tsBridge` type class method implementation for the Variant type
+  -- |
+  -- | See [this
+  -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#variants)
+  -- | for details.
+  tsBridgeVariant :: tok -> Proxy (Variant r) -> StandaloneTsType
 
-instance (RowToList r rl, DefaultVariantRL mp rl) => DefaultVariant mp r where
-  defaultVariant mp _ = DTS.TsTypeUnion <$> defaultVariantRL mp (Proxy :: _ rl)
+instance (RowToList r rl, TsBridgeVariantRL tok rl) => TsBridgeVariant tok r where
+  tsBridgeVariant tok _ = DTS.TsTypeUnion <$> tsBridgeVariantRL tok (Proxy :: _ rl)
 
 -------------------------------------------------------------------------------
--- Class / DefaultVariantRL
+-- Class / tsBridgeVariantRL
 -------------------------------------------------------------------------------
 
-class DefaultVariantRL :: Type -> RowList Type -> Constraint
-class DefaultVariantRL mp rl where
-  defaultVariantRL :: mp -> Proxy rl -> TsBridgeM (Array DTS.TsType)
+class TsBridgeVariantRL :: Type -> RowList Type -> Constraint
+class TsBridgeVariantRL tok rl where
+  tsBridgeVariantRL :: tok -> Proxy rl -> TsBridgeM (Array DTS.TsType)
 
-instance DefaultVariantRL mp Nil where
-  defaultVariantRL _ _ = pure []
+instance TsBridgeVariantRL tok Nil where
+  tsBridgeVariantRL _ _ = pure []
 
 instance
-  ( TsBridgeBy mp t
-  , DefaultVariantRL mp rl
+  ( TsBridgeBy tok t
+  , TsBridgeVariantRL tok rl
   , IsSymbol s
   ) =>
-  DefaultVariantRL mp (Cons s t rl) where
-  defaultVariantRL mp _ =
+  TsBridgeVariantRL tok (Cons s t rl) where
+  tsBridgeVariantRL tok _ =
     do
-      x <- tsBridgeBy mp (Proxy :: _ t)
-      xs <- defaultVariantRL mp (Proxy :: _ rl)
+      x <- tsBridgeBy tok (Proxy :: _ t)
+      xs <- tsBridgeVariantRL tok (Proxy :: _ rl)
       pure $
         A.cons
           ( DTS.TsTypeRecord
@@ -330,8 +347,9 @@ instance
 
 -------------------------------------------------------------------------------
 
-defaultOpaqueType :: forall a. String -> String -> Array (String /\ StandaloneTsType) -> a -> StandaloneTsType
-defaultOpaqueType pursModuleName pursTypeName args _ = brandedType
+-- | `tsBridge` type class method implementation for opaque types
+tsBridgeOpaqueType :: forall a. String -> String -> Array (String /\ StandaloneTsType) -> a -> StandaloneTsType
+tsBridgeOpaqueType pursModuleName pursTypeName args _ = brandedType
   (DTS.TsFilePath (pursModuleName <> "/index") "d.ts")
   (DTS.TsModuleAlias pursModuleName)
   (DTS.TsName pursTypeName)
@@ -342,23 +360,24 @@ defaultOpaqueType pursModuleName pursTypeName args _ = brandedType
   targNames = map fst args
   targs = map snd args
 
-defaultNewtype
-  :: forall mp a t
+-- | `tsBridge` type class method implementation for newtypes
+tsBridgeNewtype
+  :: forall tok a t
    . Newtype a t
-  => TsBridgeBy mp t
-  => mp
+  => TsBridgeBy tok t
+  => tok
   -> String
   -> String
   -> Array (String /\ StandaloneTsType)
   -> Proxy a
   -> StandaloneTsType
-defaultNewtype mp pursModuleName pursTypeName args_ t = do
+tsBridgeNewtype tok pursModuleName pursTypeName args_ _ = do
   let
     targNames = map fst args_
     targs = map snd args_
 
   args <- sequence targs
-  x <- tsBridgeBy mp (Proxy :: _ t)
+  x <- tsBridgeBy tok (Proxy :: _ t)
   let
     filePath = DTS.TsFilePath (pursModuleName <> "/index") "d.ts"
     alias = DTS.TsModuleAlias pursModuleName

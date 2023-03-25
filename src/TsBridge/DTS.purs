@@ -34,6 +34,7 @@ import Data.Set.Ordered as OSet
 -- Types
 -------------------------------------------------------------------------------
 
+-- | Represents a subset of TypeScript type declarations
 data TsDeclaration
   = TsDeclTypeDef TsName TsDeclVisibility (TsBridge_DTS_Wrap (OSet TsName)) TsType
   | TsDeclValueDef TsName TsDeclVisibility TsType
@@ -41,6 +42,7 @@ data TsDeclaration
 
 data TsDeclVisibility = Public | Private
 
+-- | Represents a subset of TypeScript types
 data TsType
   = TsTypeNumber
   | TsTypeString
@@ -62,6 +64,7 @@ data TsModule = TsModule String (Set TsImport) (Array TsDeclaration)
 
 data TsModuleFile = TsModuleFile TsFilePath TsModule
 
+-- | A collection of TypeScript modules
 data TsProgram = TsProgram (Map TsFilePath TsModule)
 
 newtype Statements a = Statements a

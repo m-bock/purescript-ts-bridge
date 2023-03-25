@@ -41,26 +41,26 @@ instance TsBridge a => TSB.TsBridgeBy Tok a where
 --
 
 instance TsBridge Number where
-  tsBridge = TSB.defaultNumber
+  tsBridge = TSB.tsBridgeNumber
 
 instance TsBridge String where
-  tsBridge = TSB.defaultString
+  tsBridge = TSB.tsBridgeString
 
 -- Things get a bit more interesting for instances of generic types, like
 -- the `Array` or `Function` type.
--- Here we need to pass the previously defined token so that the default
+-- Here we need to pass the previously defined token so that the tsBridge
 -- implementation can generate the generic type with the class that you defined.
 
 instance TsBridge a => TsBridge (Array a) where
-  tsBridge = TSB.defaultArray Tok
+  tsBridge = TSB.tsBridgeArray Tok
 
 instance (TsBridge a, TsBridge b) => TsBridge (a -> b) where
-  tsBridge = TSB.defaultFunction Tok
+  tsBridge = TSB.tsBridgeFunction Tok
 
 -- As you can see, this even works for something generic like records:
 
-instance (TSB.DefaultRecord Tok r) => TsBridge (Record r) where
-  tsBridge = TSB.defaultRecord Tok
+instance (TSB.TsBridgeRecord Tok r) => TsBridge (Record r) where
+  tsBridge = TSB.tsBridgeRecord Tok
 
 -- </li>
 -- <li>
