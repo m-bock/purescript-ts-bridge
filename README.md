@@ -1,5 +1,7 @@
 # purescript-ts-bridge
 
+![example workflow](https://github.com/thought2/purescript-ts-bridge/actions/workflows/ci.yml/badge.svg)
+
 A **PureScript** library for type class based **TypeScript** type generation (`.d.ts` files).
 
 ## Documentation
