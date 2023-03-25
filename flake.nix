@@ -15,7 +15,7 @@
       let
         overlays = [
           (prev: final: {
-            inherit (easy-purescript-nix) purs-tidy;
+            inherit (easy-purescript-nix) purs-tidy psa;
             purescript = easy-purescript-nix.purs-0_15_4;
           })
         ];
@@ -41,6 +41,7 @@
             pkgs.nodePackages.prettier
             pkgs.just
             pkgs.yarn
+            pkgs.psa
           ];
         };
       }
