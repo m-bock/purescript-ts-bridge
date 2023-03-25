@@ -25,8 +25,7 @@ import Options.Applicative (help, helper, info, long, metavar, strOption, value,
 import Options.Applicative as O
 import Options.Applicative.Types (optional)
 import Sunde as Sun
-import TsBridge.DTS (TsProgram)
-import TsBridge.Monad (TsBridgeError, printTsBridgeError)
+import TsBridge.DTS (TsProgram, Error, printError)
 import TsBridge.Print (Path(..), TsSource(..), printTsProgram)
 
 -------------------------------------------------------------------------------
@@ -67,13 +66,13 @@ parserInfoTsBridgeCliOpts = info (parserTsBridgeCliOpts <**> helper) mempty
 -------------------------------------------------------------------------------
 -- App
 -------------------------------------------------------------------------------
-mkTypeGenCliAff :: Either TsBridgeError TsProgram -> Aff Unit
+mkTypeGenCliAff :: Either Error TsProgram -> Aff Unit
 mkTypeGenCliAff eitherTsProg = do
   cliOpts <- liftEffect $ O.execParser parserInfoTsBridgeCliOpts
 
   case eitherTsProg of
     Left err -> do
-      log $ printTsBridgeError err
+      log $ printError err
       liftEffect $ Process.exit 0
     Right tsProg -> writeTsProgramToDisk cliOpts tsProg
 
@@ -102,7 +101,7 @@ writeTsProgramToDisk cliOpts tsProg = do
 
 -- | Given a `TsProgram` returns an effectful CLI that can be used as an entry
 -- | point for a type generator.
-mkTypeGenCli :: Either TsBridgeError TsProgram -> Effect Unit
+mkTypeGenCli :: Either Error TsProgram -> Effect Unit
 mkTypeGenCli tsProg = launchAff_ $ mkTypeGenCliAff tsProg
 
 -------------------------------------------------------------------------------

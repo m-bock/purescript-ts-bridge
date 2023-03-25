@@ -13,7 +13,6 @@ import Prelude
 
 import Data.Either (Either)
 import Effect (Effect)
-import TsBridge (TsBridgeError(..))
 import TsBridge as TSB
 import Type.Proxy (Proxy)
 
@@ -101,7 +100,7 @@ person =
 -- record puns to eliminate the risk of spelling mistakes:
 --
 
-myTsProgram :: Either TsBridgeError TSB.TsProgram
+myTsProgram :: Either TSB.Error TSB.TsProgram
 myTsProgram =
   TSB.tsProgram
     [ TSB.tsModuleFile "Sample"

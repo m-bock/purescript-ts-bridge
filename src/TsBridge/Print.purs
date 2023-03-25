@@ -139,7 +139,7 @@ class Tokenize a where
   tokenize :: a -> TsTokens
 
 instance Tokenize DTS.TsName where
-  tokenize (DTS.TsName x) = [ TsTokIdentifier x ]
+  tokenize x = [ TsTokIdentifier $ DTS.printTsName x ]
 
 instance Tokenize DTS.TsModuleAlias where
   tokenize (DTS.TsModuleAlias x) = [ TsTokIdentifier x ]

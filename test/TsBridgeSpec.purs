@@ -148,7 +148,7 @@ spec = do
                 # TSB.runTsBridgeM
                 <#> (fst >>> printTsDeclarations)
             )
-              `shouldEqual` (Left $ TSB.ErrUnquantifiedTypeVariables $ Set.fromFoldable [ TSB.TsName "A" ])
+              `shouldEqual` (Left $ TSB.ErrUnquantifiedTypeVariables $ Set.fromFoldable [ TSB.unsafeTsName "A" ])
 
     describe "Type Printing" do
       describe "Number" do

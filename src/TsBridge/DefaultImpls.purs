@@ -65,9 +65,10 @@ data TypeVar (s :: Symbol) = TypeVar
 -- | typed `Maybe (Var "A")` to be exported.
 tsBridgeTypeVar :: forall s. IsSymbol s => Proxy (TypeVar s) -> StandaloneTsType
 tsBridgeTypeVar _ = do
-  let
-    tsName = DTS.TsName $ reflectSymbol (Proxy :: _ s)
 
+  tsName <- DTS.mkTsName $ reflectSymbol (Proxy :: _ s)
+
+  let
     scope = Scope
       { floating: coerce $ OSet.singleton tsName
       , fixed: OSet.empty
@@ -210,7 +211,7 @@ tsBridgePromise :: forall tok a. TsBridgeBy tok a => tok -> Proxy (Promise a) ->
 tsBridgePromise tok _ = do
   x <- tsBridgeBy tok (Proxy :: _ a)
   pure $ DTS.TsTypeConstructor
-    (DTS.TsQualName Nothing (DTS.TsName "Promise"))
+    (DTS.TsQualName Nothing (DTS.unsafeTsName "Promise"))
     (DTS.TsTypeArgs [ x ])
 
 -- | `tsBridge` type class method implementation for the `Nullable` type. 
@@ -249,7 +250,7 @@ tsBridgeFunction tok _ = censor mapAccum ado
 
   in
     DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
-      [ DTS.TsFnArg (DTS.TsName "_") (removeQuant arg)
+      [ DTS.TsFnArg (DTS.unsafeTsName "_") (removeQuant arg)
       ]
       (removeQuant ret)
   where
@@ -291,7 +292,7 @@ instance
   tsBridgeRecordRL tok _ = do
     x <- tsBridgeBy tok (Proxy :: _ t)
     xs <- tsBridgeRecordRL tok (Proxy :: _ rl)
-    let k = DTS.TsName $ reflectSymbol (Proxy :: _ s)
+    let k = DTS.unsafeTsName $ reflectSymbol (Proxy :: _ s)
     pure $
       A.cons (DTS.TsRecordField k { optional: false, readonly: true } x) xs
 
@@ -335,10 +336,10 @@ instance
       pure $
         A.cons
           ( DTS.TsTypeRecord
-              [ DTS.TsRecordField (DTS.TsName "type")
+              [ DTS.TsRecordField (DTS.unsafeTsName "type")
                   { readonly: true, optional: false }
                   (DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ s))
-              , DTS.TsRecordField (DTS.TsName "value")
+              , DTS.TsRecordField (DTS.unsafeTsName "value")
                   { readonly: true, optional: false }
                   x
               ]
@@ -352,8 +353,8 @@ tsBridgeOpaqueType :: forall a. String -> String -> Array (String /\ StandaloneT
 tsBridgeOpaqueType pursModuleName pursTypeName args _ = brandedType
   (DTS.TsFilePath (pursModuleName <> "/index") "d.ts")
   (DTS.TsModuleAlias pursModuleName)
-  (DTS.TsName pursTypeName)
-  (coerce $ OSet.fromFoldable $ DTS.TsName <$> targNames)
+  (DTS.unsafeTsName pursTypeName)
+  (coerce $ OSet.fromFoldable $ DTS.unsafeTsName <$> targNames)
   targs
   Nothing
   where
@@ -381,8 +382,8 @@ tsBridgeNewtype tok pursModuleName pursTypeName args_ _ = do
   let
     filePath = DTS.TsFilePath (pursModuleName <> "/index") "d.ts"
     alias = DTS.TsModuleAlias pursModuleName
-    name = DTS.TsName pursTypeName
-    args' = OSet.fromFoldable $ DTS.TsName <$> targNames
+    name = DTS.unsafeTsName pursTypeName
+    args' = OSet.fromFoldable $ DTS.unsafeTsName <$> targNames
 
   let
     typeDefs =
@@ -445,11 +446,11 @@ mkBrandedTypeDecl name args type_ = DTS.TsDeclTypeDef name DTS.Public (coerce ar
     Just t -> \x -> DTS.TsTypeIntersection [ x, t ]
 
   opaqueField = DTS.TsRecordField
-    (DTS.TsName $ "__brand")
+    (DTS.unsafeTsName "__brand")
     { optional: false, readonly: true }
     DTS.TsTypeUniqueSymbol
 
   mkArgFields idx name' = DTS.TsRecordField
-    (DTS.TsName ("__arg" <> show (idx + 1)))
+    (DTS.unsafeTsName ("__arg" <> show (idx + 1)))
     { optional: false, readonly: true }
     (DTS.TsTypeVar name')

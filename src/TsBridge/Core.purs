@@ -33,7 +33,7 @@ import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
 import Safe.Coerce (coerce)
 import TsBridge.DTS as DTS
-import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeError(..), TsBridgeM, runTsBridgeM)
+import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, runTsBridgeM)
 import Type.Proxy (Proxy(..))
 
 -- | Type Class that is used by the type generator to recursively traverse
@@ -65,9 +65,9 @@ class TsBridgeBy tok a where
 -- | render those references.
 type StandaloneTsType = TsBridgeM DTS.TsType
 
-tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Either TsBridgeError (Array DTS.TsModuleFile)
+tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Either DTS.Error (Array DTS.TsModuleFile)
 tsModuleFile n xs = do
-  (xs' /\ TsBridgeAccum { typeDefs }) <- runTsBridgeM $ mapErr (AtModule n) $ join <$> sequence xs
+  (xs' /\ TsBridgeAccum { typeDefs }) <- runTsBridgeM $ mapErr (DTS.AtModule n) $ join <$> sequence xs
 
   pure (typeDefs <> [ DTS.TsModuleFile (DTS.dtsFilePath n) (DTS.TsModule n Set.empty xs') ])
 
@@ -88,7 +88,7 @@ mergeModule (DTS.TsModule _ is1 ds1) (DTS.TsModule n2 is2 ds2) =
     (is1 `Set.union` is2)
     (Array.nub (ds1 <> ds2))
 
-tsProgram :: Array (Either TsBridgeError (Array DTS.TsModuleFile)) -> Either TsBridgeError DTS.TsProgram
+tsProgram :: Array (Either DTS.Error (Array DTS.TsModuleFile)) -> Either DTS.Error DTS.TsProgram
 tsProgram xs = xs # sequence <#> join >>> mergeModules
 
 -- | For rare cases where you want to export a type alias. References to this type
@@ -97,7 +97,7 @@ tsProgram xs = xs # sequence <#> join >>> mergeModules
 tsTypeAlias :: forall tok a. TsBridgeBy tok a => tok -> String -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
 tsTypeAlias tok n x = ado
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
-  in [ DTS.TsDeclTypeDef (DTS.TsName n) DTS.Public (coerce scope.floating) x ]
+  in [ DTS.TsDeclTypeDef (DTS.unsafeTsName n) DTS.Public (coerce scope.floating) x ]
   where
   t = tsBridgeBy tok x
 
@@ -127,11 +127,11 @@ tsValue' tok n _ = do
 
   when (OSet.length scope.floating /= 0)
     $ throwError
-    $ ErrUnquantifiedTypeVariables
+    $ DTS.ErrUnquantifiedTypeVariables
     $ (Set.fromFoldable :: Array _ -> _)
     $ OSet.toUnfoldable scope.floating
 
-  pure [ DTS.TsDeclValueDef (DTS.TsName n) DTS.Public x ]
+  pure [ DTS.TsDeclValueDef (DTS.unsafeTsName n) DTS.Public x ]
 
 --------------------------------------------------------------------------------
 -- class TsValues

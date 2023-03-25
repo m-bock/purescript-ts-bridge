@@ -1,6 +1,7 @@
 module TsBridge.DTS
   ( OSet(..)
   , PropModifiers
+  , Error(..)
   , TsDeclVisibility(..)
   , TsDeclaration(..)
   , TsFilePath(..)
@@ -10,7 +11,7 @@ module TsBridge.DTS
   , TsModuleAlias(..)
   , TsModuleFile(..)
   , TsModulePath(..)
-  , TsName(..)
+  , TsName
   , TsProgram(..)
   , TsQualName(..)
   , TsRecordField(..)
@@ -19,11 +20,16 @@ module TsBridge.DTS
   , TsTypeArgsQuant(..)
   , dtsFilePath
   , mapQuantifier
+  , mkTsName
+  , printError
   , printTsName
-  ) where
+  , unsafeTsName
+  )
+  where
 
 import Prelude
 
+import Control.Monad.Error.Class (class MonadThrow)
 import Data.Generic.Rep (class Generic)
 import Data.Map (Map)
 import Data.Maybe (Maybe)
@@ -31,10 +37,19 @@ import Data.Newtype (class Newtype)
 import Data.Set (Set)
 import Data.Set.Ordered as OSet
 import Data.Show.Generic (genericShow)
+import Data.Foldable (fold)
+import Data.Set as Set
+import Data.String as Str
 
 -------------------------------------------------------------------------------
 -- Types
 -------------------------------------------------------------------------------
+
+data Error
+  = ErrUnquantifiedTypeVariables (Set TsName)
+  | ErrIllegalSymbolName String
+  | AtModule String Error
+  | AtValue TsName Error
 
 -- | Represents a subset of TypeScript type declarations
 data TsDeclaration
@@ -72,6 +87,12 @@ data TsProgram = TsProgram (Map TsFilePath TsModule)
 newtype Statements a = Statements a
 
 data TsName = TsName String
+
+unsafeTsName :: String -> TsName
+unsafeTsName = TsName
+
+mkTsName :: forall m. MonadThrow Error m => String -> m TsName
+mkTsName = pure <<< TsName
 
 newtype TsModuleAlias = TsModuleAlias String
 
@@ -149,6 +170,26 @@ mapQuantifier f = case _ of
 printTsName :: TsName -> String
 printTsName (TsName n) = n
 
+printError :: Error -> String
+printError = case _ of
+  AtModule name err -> Str.joinWith "\n"
+    [ "At module " <> name
+    , printError err
+    ]
+  AtValue name err -> Str.joinWith "\n"
+    [ "At Value " <> printTsName name
+    , printError err
+    ]
+  ErrUnquantifiedTypeVariables vars ->
+    fold
+      [ "Type variables"
+      , " "
+      , vars # Set.toUnfoldable <#> printTsName # Str.joinWith ", "
+      , " "
+      , "are not behind a function. This is not possible in TypeScript. E.g. `Maybe a` needs to be exported as `Unit -> Maybe a`."
+      ]
+  ErrIllegalSymbolName _ -> ""
+
 -------------------------------------------------------------------------------
 -- Wrap
 -------------------------------------------------------------------------------
@@ -204,6 +245,12 @@ derive instance Ord TsModulePath
 derive instance Ord TsFilePath
 derive instance Ord TsDeclVisibility
 
-derive instance Generic TsName _
 instance Show TsName where
-  show = genericShow
+  show (TsName name) = show name
+
+derive instance Generic Error _
+
+derive instance Eq Error
+
+instance Show Error where
+  show x = genericShow x
