@@ -5,6 +5,25 @@ The best way to get started is to have a look at the
 
 
 <ol>
+
+<li>
+
+Create a new spago project and install the dependency.
+
+```
+spago init
+spago install ts-bridge
+```
+
+Also it's recommended to install a code formatter. E.g `prettier`:
+
+```
+yarn init -y
+yarn add -D prettier
+```
+</li>
+
+
 <!-- AUTO-GENERATED-CONTENT:START (SAMPLE) -->
 <li>
 Create a new module inside the spago project.
@@ -12,16 +31,13 @@ Create a new module inside the spago project.
 ```hs
 module Sample where
 ```
-</li>
-<li>
-The following imports are needed for this example:
+And add the following imports are needed for this example:
 
 ```hs
 import Prelude
 
 import Data.Either (Either)
 import Effect (Effect)
-import TsBridge (TsBridgeError(..))
 import TsBridge as TSB
 import Type.Proxy (Proxy)
 ```
@@ -109,7 +125,7 @@ The same for the values that we want to expose. However, we're making use of
 record puns to eliminate the risk of spelling mistakes:
 
 ```hs
-myTsProgram :: Either TsBridgeError TSB.TsProgram
+myTsProgram :: Either TSB.Error TSB.TsProgram
 myTsProgram =
   TSB.tsProgram
     [ TSB.tsModuleFile "Sample"
@@ -125,7 +141,7 @@ myTsProgram =
 ```
 </li>
 <li>
-Finaly we define an entry point for the code generator:
+Finally we define an entry point for the code generator:
 
 ```hs
 main :: Effect Unit
@@ -138,10 +154,15 @@ main = TSB.mkTypeGenCli myTsProgram
 And we can run this CLI with `spago`:
 
 ```
-spago run --main App -a '--prettier "node_modules/.bin/prettier"'
+spago run --main App
 ```
 
-Thereafter the file `output/Sample/index.d.ts` should contain the generated types for this module.
+And format the output with e.g.:
+```
+yarn run prettier --write 'output/*/index.d.ts'
+```
+
+Thereafter the file `output/Sample/index.d.ts` should contain the generated types for this module:
 
 <!-- AUTO-GENERATED-CONTENT:START (SAMPLE_OUTPUT) -->
 ```ts

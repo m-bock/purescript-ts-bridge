@@ -4,9 +4,7 @@
 
 module Sample where
 
--- </li>
--- <li>
--- The following imports are needed for this example:
+-- And add the following imports are needed for this example:
 --
 
 import Prelude
@@ -116,7 +114,7 @@ myTsProgram =
 
 -- </li>
 -- <li>
--- Finaly we define an entry point for the code generator:
+-- Finally we define an entry point for the code generator:
 --
 
 main :: Effect Unit

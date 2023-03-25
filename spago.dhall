@@ -11,7 +11,6 @@
   , "maybe"
   , "newtype"
   , "node-buffer"
-  , "node-child-process"
   , "node-fs"
   , "node-fs-aff"
   , "node-path"
@@ -26,10 +25,8 @@
   , "spec"
   , "spec-discovery"
   , "strings"
-  , "sunde"
   , "transformers"
   , "tuples"
-  , "typelevel"
   , "variant"
   ]
 , packages = ./packages.dhall

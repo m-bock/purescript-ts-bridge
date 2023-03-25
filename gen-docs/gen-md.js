@@ -101,7 +101,11 @@ const config = {
     },
     SAMPLE_OUTPUT() {
       child_process.execSync(
-        "spago run --main Sample -a '--prettier node_modules/.bin/prettier'"
+        "spago run --main Sample"
+      );
+
+      child_process.execSync(
+        "yarn run prettier --write output/*/index.d.ts"
       );
 
       const tgt = fs
