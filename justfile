@@ -1,3 +1,5 @@
+set shell := ["bash", "-c"]
+
 build:
     spago build --purs-args '--stash --censor-lib --censor-codes=ImplicitQualifiedImport'
 
@@ -25,3 +27,6 @@ check-spell:
     yarn run cspell "README.md" || true
 
 ci: check-format build-strict test
+
+check-git-clean:
+    [ -z "$(git status --porcelain)" ]
