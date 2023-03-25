@@ -16,7 +16,7 @@ module TsBridge.DTS
   , TsType(..)
   , TsTypeArgs(..)
   , TsTypeArgsQuant(..)
-  , TsBridge_DTS_Wrap(..)
+  , OSet(..)
   , dtsFilePath
   , mapQuantifier
   ) where
@@ -25,9 +25,8 @@ import Prelude
 
 import Data.Map (Map)
 import Data.Maybe (Maybe)
-import Data.Newtype (class Newtype, over, wrap)
+import Data.Newtype (class Newtype)
 import Data.Set (Set)
-import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
 
 -------------------------------------------------------------------------------
@@ -36,7 +35,7 @@ import Data.Set.Ordered as OSet
 
 -- | Represents a subset of TypeScript type declarations
 data TsDeclaration
-  = TsDeclTypeDef TsName TsDeclVisibility (TsBridge_DTS_Wrap (OSet TsName)) TsType
+  = TsDeclTypeDef TsName TsDeclVisibility (OSet TsName) TsType
   | TsDeclValueDef TsName TsDeclVisibility TsType
   | TsDeclComments (Array String)
 
@@ -81,7 +80,7 @@ data TsImport = TsImport TsModuleAlias TsModulePath
 
 data TsQualName = TsQualName (Maybe TsModuleAlias) TsName
 
-newtype TsTypeArgsQuant = TsTypeArgsQuant (TsBridge_DTS_Wrap (OSet TsName))
+newtype TsTypeArgsQuant = TsTypeArgsQuant (OSet TsName)
 
 newtype TsTypeArgs = TsTypeArgs (Array TsType)
 
@@ -132,7 +131,7 @@ mapQuantifier f = case _ of
     (goPropModifiers y)
     (mapQuantifier f z)
 
-  goTsTypeArgsQuant (TsTypeArgsQuant oset) = TsTypeArgsQuant $ over wrap f oset
+  goTsTypeArgsQuant (TsTypeArgsQuant oset) = TsTypeArgsQuant $ f oset
 
   goTsTypeArgs (TsTypeArgs x) = TsTypeArgs $ mapQuantifier f <$> x
 
@@ -148,24 +147,24 @@ mapQuantifier f = case _ of
 -- Wrap
 -------------------------------------------------------------------------------
 
-newtype TsBridge_DTS_Wrap a = TsBridge_DTS_Wrap a
+newtype OSet a = OSet (OSet.OSet a)
 
-derive instance Newtype (TsBridge_DTS_Wrap a) _
+derive instance Newtype (OSet a) _
 
-derive newtype instance Eq a => Semigroup (TsBridge_DTS_Wrap (OSet a))
+derive newtype instance Eq a => Semigroup (OSet a)
 
-instance Ord a => Ord (TsBridge_DTS_Wrap (OSet a)) where
-  compare (TsBridge_DTS_Wrap o1) (TsBridge_DTS_Wrap o2) = toArray o1 `compare` toArray o2
+instance Ord a => Ord (OSet a) where
+  compare (OSet o1) (OSet o2) = toArray o1 `compare` toArray o2
     where
     toArray = OSet.toUnfoldable :: _ -> Array _
 
-instance Eq a => Eq (TsBridge_DTS_Wrap (OSet a)) where
-  eq (TsBridge_DTS_Wrap o1) (TsBridge_DTS_Wrap o2) = toArray o1 `eq` toArray o2
+instance Eq a => Eq (OSet a) where
+  eq (OSet o1) (OSet o2) = toArray o1 `eq` toArray o2
     where
     toArray = OSet.toUnfoldable :: _ -> Array _
 
-instance Eq a => Monoid (TsBridge_DTS_Wrap (OSet a)) where
-  mempty = TsBridge_DTS_Wrap $ OSet.empty
+instance Eq a => Monoid (OSet a) where
+  mempty = OSet $ OSet.empty
 
 -------------------------------------------------------------------------------
 -- Class

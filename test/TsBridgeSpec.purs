@@ -24,7 +24,7 @@ import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
 import Type.Proxy (Proxy(..))
 
-class TsBridge a where
+class TsBridge (a :: Type) where
   tsBridge :: Proxy a -> TSB.StandaloneTsType
 
 instance TsBridge Number where

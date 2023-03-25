@@ -19,7 +19,7 @@ import Type.Proxy (Proxy)
 -- Then you should define a typeclass that looks like this: 
 --
 
-class TsBridge a where
+class TsBridge (a :: Type) where
   tsBridge :: Proxy a -> TSB.StandaloneTsType
 
 -- </li>

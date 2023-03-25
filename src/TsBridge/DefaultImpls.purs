@@ -38,7 +38,6 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable)
 import Data.Set as Set
-import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (sequence)
@@ -50,6 +49,7 @@ import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
 import TsBridge.Core (class TsBridgeBy, StandaloneTsType, tsBridgeBy)
+import TsBridge.DTS (OSet(..))
 import TsBridge.DTS as DTS
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM)
 import Type.Proxy (Proxy(..))
@@ -69,7 +69,7 @@ tsBridgeTypeVar _ = do
     tsName = DTS.TsName $ reflectSymbol (Proxy :: _ s)
 
     scope = Scope
-      { floating: OSet.singleton tsName
+      { floating: coerce $ OSet.singleton tsName
       , fixed: OSet.empty
       }
 
@@ -138,7 +138,7 @@ tsBridgeEffect tok _ = censor mapAccum ado
       <> scopeRet.floating
 
     removeQuant =
-      DTS.mapQuantifier $ OSet.filter (_ `OSet.notElem` newFixed)
+      DTS.mapQuantifier $ coerce $ OSet.filter (_ `OSet.notElem` newFixed)
 
   in
     DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed) []
@@ -245,7 +245,7 @@ tsBridgeFunction tok _ = censor mapAccum ado
       <> scopeRet.floating
 
     removeQuant =
-      DTS.mapQuantifier $ OSet.filter (_ `OSet.notElem` newFixed)
+      DTS.mapQuantifier $ coerce $ OSet.filter (_ `OSet.notElem` newFixed)
 
   in
     DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
@@ -353,7 +353,7 @@ tsBridgeOpaqueType pursModuleName pursTypeName args _ = brandedType
   (DTS.TsFilePath (pursModuleName <> "/index") "d.ts")
   (DTS.TsModuleAlias pursModuleName)
   (DTS.TsName pursTypeName)
-  (OSet.fromFoldable $ DTS.TsName <$> targNames)
+  (coerce $ OSet.fromFoldable $ DTS.TsName <$> targNames)
   targs
   Nothing
   where
@@ -437,7 +437,7 @@ mkBrandedTypeDecl name args type_ = DTS.TsDeclTypeDef name DTS.Public (coerce ar
   $ maybeWithType
   $
     DTS.TsTypeRecord
-      (opaqueField : (mapWithIndex mkArgFields $ OSet.toUnfoldable args))
+      (opaqueField : (mapWithIndex mkArgFields $ OSet.toUnfoldable $ coerce args))
 
   where
   maybeWithType = case type_ of
