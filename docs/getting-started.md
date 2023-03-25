@@ -14,7 +14,7 @@ module Sample where
 ```
 </li>
 <li>
-The folowing imports are needed for this example:
+The following imports are needed for this example:
 
 ```hs
 import Prelude
@@ -45,7 +45,7 @@ instance TsBridge a => TSB.TsBridgeBy Tok a where
 </li>
 <li>
 Now we can define instances for types. As you can see below `ts-bridge`
-provides some useful default implementations thay you can use:
+provides some useful default implementations that you can use:
 
 ```hs
 instance TsBridge Number where
@@ -103,7 +103,7 @@ person =
 Then we define a program that has one module. Note that the name of the
 module must match the real name of the PureScript module.
 The same for the values that we want to expose. However, we're making use of
-record puns to eliminate the risk of speling mistakes:
+record puns to eliminate the risk of spelling mistakes:
 
 ```hs
 myTsProgram :: TSB.TsProgram

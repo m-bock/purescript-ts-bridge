@@ -21,18 +21,14 @@ spago install ts-bridge
 
 ## Features
 
-- Fully customizable. It's type class based, but the type class is defined on your side to ease selective instance implementations.
-- Many default implementations to pick from
-- Supports opaque types (implemented as branded types in TypeScript)
-- Supports easily accessible Newtypes
+- Fully customizable via a user defined type class pattern
+- Many default implementations to pick from (Primitives, Records, Variants, ...)
+- Opaque types (implemented as branded types in TypeScript)
+- Easily accessible Newtypes
 - Module resolution
-- Polymorphic types
+- Polymorphic types optimized for best type inference in TS
+- Tried and tested in production
 
-## Future features
-
-- Uncurried Functions
-- Native tuples
-- Nonempty Arrays
 
 ## Similar Projects
 

@@ -19,6 +19,11 @@
 
 The following is a list of default implementations for types that are provided in this library. Since the generation typeclass is defined on your side, you can choose a subset of the provided implementations.
 
+In the future the following implementations may be added: 
+- Uncurried Functions
+- Native tuples
+- Nonempty Arrays
+
 <!-- AUTO-GENERATED-CONTENT:START (TYPES) -->
 
 <table>
@@ -216,7 +221,7 @@ boolean
   <td valign="top">
 
 ```ts
-Array a
+Array String
 ```
 
 </td>
@@ -224,7 +229,29 @@ Array a
 
 
 ```ts
-ReadonlyArray<A>
+ReadonlyArray<string>
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+Unit -> Array a
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+<A>() => ReadonlyArray<A>
 ```
 
 
@@ -930,3 +957,4 @@ foreign import data Effect :: Type -> Type
 </table>
 
 <!-- AUTO-GENERATED-CONTENT:END -->
+

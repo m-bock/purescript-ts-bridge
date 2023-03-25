@@ -29,8 +29,13 @@ export const data = [
     [
       [
         "Ref",
-        "Array a",
-        "ReadonlyArray<A>",
+        "Array String",
+        "ReadonlyArray<string>",
+      ],
+      [
+        "Ref",
+        "Unit -> Array a",
+        "<A>() => ReadonlyArray<A>",
       ],
       ["Def", null, null],
     ],
