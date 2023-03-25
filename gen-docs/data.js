@@ -154,7 +154,11 @@ export const data = [
   ],
   [
     "Nullable",
-    "`Nullable` is represented as TypeScript untagged union.",
+    [
+      "From the [nullable](https://pursuit.purescript.org/packages/purescript-nullable) library.",
+      "",
+      "`Nullable` is represented as TypeScript untagged union.",
+    ].join("\n"),
     [
       [
         "Ref",
@@ -203,7 +207,11 @@ export const data = [
   ],
   [
     "Variant",
-    "Variant types are represented as TypeScript tagged unions.",
+    [
+      "From the [variant](https://pursuit.purescript.org/packages/purescript-variant) library.",
+      "",
+      "Variant types are represented as TypeScript tagged unions.",
+    ].join("\n"),
     [
       [
         "Ref",
@@ -235,7 +243,7 @@ export const data = [
           "~/Data/Variant.purs",
           [
             "foreign import data Variant",
-            ":: Row Type -> Type",
+            "  :: Row Type -> Type",
           ].join("\n"),
         ],
         null,
@@ -271,7 +279,11 @@ export const data = [
   ],
   [
     "Promise",
-    "Promises are represented as TypeScript Promises.",
+    [
+      "From the [aff-promise](https://pursuit.purescript.org/packages/purescript-aff-promise) library.",
+      "",
+      "Promises are represented as TypeScript Promises. Note that in most cases it makes sense to treat them as `Effect (Promise a)`.",
+    ].join("\n"),
     [
       [
         "Ref",
@@ -284,6 +296,30 @@ export const data = [
           "~/Control/Promise.purs",
           [
             "foreign import data Promise :: Type -> Type",
+          ].join("\n"),
+        ],
+        null,
+      ],
+    ],
+  ],
+  [
+    "Effect",
+    [
+      "Effects are represented as TypeScript functions.",
+      "",
+    ].join("\n"),
+    [
+      [
+        "Ref",
+        ["Effect a"].join("\n"),
+        ["<A>() => A"].join("\n"),
+      ],
+      [
+        "Def",
+        [
+          "~/Effect.purs",
+          [
+            "foreign import data Effect :: Type -> Type",
           ].join("\n"),
         ],
         null,

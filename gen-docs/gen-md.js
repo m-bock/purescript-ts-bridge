@@ -28,7 +28,8 @@ const Row = (
       <h2>${title}</h2>
 
 ${text}
-      </td>
+
+</td>
   </tr>
   <tr></tr>
   <tr>

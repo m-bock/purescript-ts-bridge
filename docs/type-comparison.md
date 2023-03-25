@@ -14,6 +14,7 @@
 - [Variant](#variant)
 - [Function](#function)
 - [Promise](#promise)
+- [Effect](#effect)
 <!-- AUTO-GENERATED-CONTENT:END -->
 
 The following is a list of default implementations for types that are provided in this library. Since the generation typeclass is defined on your side, you can choose a subset of the provided implementations.
@@ -27,7 +28,8 @@ The following is a list of default implementations for types that are provided i
       <h2>Number</h2>
 
 `Number` is represented as TypeScript builtin `number` type.
-      </td>
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -83,7 +85,8 @@ number
       <h2>String</h2>
 
 `String` is represented as TypeScript builtin `string` type.
-      </td>
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -139,7 +142,8 @@ string
       <h2>Boolean</h2>
 
 `Boolean` is represented as TypeScript builtin `boolean`.
-      </td>
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -195,7 +199,8 @@ boolean
       <h2>Array</h2>
 
 `Array` is represented as TypeScript builtin `ReadonlyArray` type.
-      </td>
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -251,7 +256,8 @@ ReadonlyArray<A>
       <h2>Int</h2>
 
 `Int` is represented as opaque type using TypeScript branded types. So there is no way to create an `Int` directly in TypeScript, you need to export a function like `round :: Number -> Int` and `toNumber :: Int -> Number` to construct and deconstruct an `Int`.
-      </td>
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -312,7 +318,8 @@ type Int = {
       <h2>Maybe</h2>
 
 `Maybe` is represented as opaque type using TypeScript branded types. So there is no direct way to create a `Maybe` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.
-      </td>
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -379,7 +386,8 @@ type Maybe<A> = {
       <h2>Either</h2>
 
 `Either` is represented as opaque type using TypeScript __branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.
-      </td>
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -447,7 +455,8 @@ type Either<A, B> = {
       <h2>Tuple</h2>
 
 `Tuple` is represented as opaque type using TypeScript __branded types. So there is no direct way to create a `Either` in TypeScript. See the FAQ for the general decision to represent ADTs as opaque types.
-      </td>
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -513,8 +522,11 @@ type Tuple<A, B> = {
     <td colspan=3>
       <h2>Nullable</h2>
 
+From the [nullable](https://pursuit.purescript.org/packages/purescript-nullable) library.
+
 `Nullable` is represented as TypeScript untagged union.
-      </td>
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -577,7 +589,8 @@ export type Nullable<A> = null | A
       <h2>Record</h2>
 
 Records are represented as TypeScript records with readonly fields.
-      </td>
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -637,8 +650,11 @@ Records are represented as TypeScript records with readonly fields.
     <td colspan=3>
       <h2>Variant</h2>
 
+From the [variant](https://pursuit.purescript.org/packages/purescript-variant) library.
+
 Variant types are represented as TypeScript tagged unions.
-      </td>
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -693,7 +709,7 @@ Variant
 `~/Data/Variant.purs`
 ```hs
 foreign import data Variant
-:: Row Type -> Type
+  :: Row Type -> Type
 ```
 
 </td>
@@ -713,7 +729,8 @@ foreign import data Variant
       <h2>Function</h2>
 
 Functions are represented as TypeScript curried functions.
-      </td>
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -792,8 +809,11 @@ forall a b c. a -> b -> c
     <td colspan=3>
       <h2>Promise</h2>
 
-Promises are represented as TypeScript Promises.
-      </td>
+From the [aff-promise](https://pursuit.purescript.org/packages/purescript-aff-promise) library.
+
+Promises are represented as TypeScript Promises. Note that in most cases it makes sense to treat them as `Effect (Promise a)`.
+
+</td>
   </tr>
   <tr></tr>
   <tr>
@@ -833,6 +853,67 @@ Promise<A>
 `~/Control/Promise.purs`
 ```hs
 foreign import data Promise :: Type -> Type
+```
+
+</td>
+<td valign="top">
+
+
+`<builtin>`
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+  <tr>
+    <td colspan=3>
+      <h2>Effect</h2>
+
+Effects are represented as TypeScript functions.
+
+
+</td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th align="left">PureScript</th>
+    <th align="left">TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+Effect a
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+<A>() => A
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+`~/Effect.purs`
+```hs
+foreign import data Effect :: Type -> Type
 ```
 
 </td>
