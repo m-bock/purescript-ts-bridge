@@ -3,7 +3,7 @@ import markdownMagic from "markdown-magic";
 import { fileURLToPath } from "url";
 import * as fs from "fs";
 import * as child_process from "child_process";
-import {data} from "./data.js"
+import { data } from "./data.js";
 import * as pursToMd from "purs-to-md";
 
 const __filename = fileURLToPath(
@@ -111,8 +111,6 @@ const config = {
       return "```ts\n" + tgt + "```\n";
     },
     TYPES(content, options) {
-      
-
       return Table(
         {},
         data
@@ -132,11 +130,15 @@ const config = {
                 ),
                 samples
                   .map(
-                    ([
-                      type_,
-                      codePurs,
-                      codeTs,
-                    ]) =>
+                    (
+                      [
+                        type_,
+                        codePurs,
+                        codeTs,
+                      ],
+                      ix2,
+                      all2
+                    ) =>
                       Row_(
                         {
                           type_,
@@ -144,8 +146,11 @@ const config = {
                           codeTs,
                           isLast:
                             ix ===
-                            all.length -
-                              1,
+                              all.length -
+                                1 &&
+                            ix2 ===
+                              all2.length -
+                                1,
                         },
                         ""
                       )
@@ -168,8 +173,14 @@ export default config;
 
 markdownMagic(
   [
-    path.join(__dirname, "../README.md"),
-    path.join(__dirname, "../docs/*.md"),
+    path.join(
+      __dirname,
+      "../README.md"
+    ),
+    path.join(
+      __dirname,
+      "../docs/*.md"
+    ),
   ],
   config
 );

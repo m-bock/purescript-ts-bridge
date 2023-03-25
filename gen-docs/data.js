@@ -37,7 +37,7 @@ export const data = [
   ],
   [
     "Int",
-    "`Int` is represented as opaque type using TypeScript branded types. So there is no way to create an `Int` directly in TypeScript, you need to export a functions like `round :: Number -> Int` and `toNumber :: Int -> Number` to construct and deconstruct an `Int`.",
+    "`Int` is represented as opaque type using TypeScript branded types. So there is no way to create an `Int` directly in TypeScript, you need to export a function like `round :: Number -> Int` and `toNumber :: Int -> Number` to construct and deconstruct an `Int`.",
     [
       [
         "Ref",
@@ -199,6 +199,47 @@ export const data = [
         ].join("\n"),
       ],
       ["Def", null, null],
+    ],
+  ],
+  [
+    "Variant",
+    "Variant types are represented as TypeScript tagged unions.",
+    [
+      [
+        "Ref",
+        [
+          "Variant",
+          "  ( done :: String",
+          "  , counting :: Number",
+          "  , init :: Unit",
+          "  )",
+        ].join("\n"),
+        [
+          "| {",
+          "    readonly type: 'done';",
+          "    readonly value: string;",
+          "  }",
+          "| {",
+          "    readonly type: 'counting';",
+          "    readonly value: number;",
+          "  }",
+          "| {",
+          "    readonly type: 'init';",
+          "    readonly value: void;",
+          "  }",
+        ].join("\n"),
+      ],
+      [
+        "Def",
+        [
+          "~/Data/Variant.purs",
+          [
+            "foreign import data Variant",
+            ":: Row Type -> Type",
+          ].join("\n"),
+        ],
+        null,
+      ],
     ],
   ],
   [

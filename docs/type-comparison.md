@@ -11,6 +11,7 @@
 - [Tuple](#tuple)
 - [Nullable](#nullable)
 - [Record](#record)
+- [Variant](#variant)
 - [Function](#function)
 - [Promise](#promise)
 <!-- AUTO-GENERATED-CONTENT:END -->
@@ -249,7 +250,7 @@ ReadonlyArray<A>
     <td colspan=3>
       <h2>Int</h2>
 
-`Int` is represented as opaque type using TypeScript branded types. So there is no way to create an `Int` directly in TypeScript, you need to export a functions like `round :: Number -> Int` and `toNumber :: Int -> Number` to construct and deconstruct an `Int`.
+`Int` is represented as opaque type using TypeScript branded types. So there is no way to create an `Int` directly in TypeScript, you need to export a function like `round :: Number -> Int` and `toNumber :: Int -> Number` to construct and deconstruct an `Int`.
       </td>
   </tr>
   <tr></tr>
@@ -634,6 +635,81 @@ Records are represented as TypeScript records with readonly fields.
 
   <tr>
     <td colspan=3>
+      <h2>Variant</h2>
+
+Variant types are represented as TypeScript tagged unions.
+      </td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th align="left">PureScript</th>
+    <th align="left">TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+Variant
+  ( done :: String
+  , counting :: Number
+  , init :: Unit
+  )
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+| {
+    readonly type: 'done';
+    readonly value: string;
+  }
+| {
+    readonly type: 'counting';
+    readonly value: number;
+  }
+| {
+    readonly type: 'init';
+    readonly value: void;
+  }
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+`~/Data/Variant.purs`
+```hs
+foreign import data Variant
+:: Row Type -> Type
+```
+
+</td>
+<td valign="top">
+
+
+`<builtin>`
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+  <tr>
+    <td colspan=3>
       <h2>Function</h2>
 
 Functions are represented as TypeScript curried functions.
@@ -747,7 +823,7 @@ Promise<A>
 
   </td>
 </tr>
-
+<tr></tr>
 
 
 <tr>
