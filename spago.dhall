@@ -3,7 +3,6 @@
   [ "aff"
   , "aff-promise"
   , "arrays"
-  , "bifunctors"
   , "console"
   , "effect"
   , "either"

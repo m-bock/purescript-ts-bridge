@@ -1,5 +1,8 @@
 build:
-    spago build
+    spago build --purs-args '--stash --censor-lib --censor-codes=ImplicitQualifiedImport'
+
+build-strict:
+    spago build --purs-args '--stash --censor-lib --strict --censor-codes=ImplicitQualifiedImport'
 
 format:
     purs-tidy format-in-place 'src/**/*.purs'

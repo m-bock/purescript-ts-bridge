@@ -4,9 +4,7 @@ module Test.TsBridgeSpec
 
 import Prelude
 
-import Data.Array.NonEmpty (fromFoldable)
-import Data.Bifunctor (lmap)
-import Data.Either (Either(..), fromLeft, fromRight)
+import Data.Either (Either(..), fromRight)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
