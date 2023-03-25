@@ -17,7 +17,7 @@ check-format:
 test:
     spago test
 
-gen-readme:
+gen-docs:
     node gen-docs/gen-md.js
 
 check-spell:
@@ -26,7 +26,7 @@ check-spell:
     yarn run cspell "docs/**/*.md" || true
     yarn run cspell "README.md" || true
 
-ci: check-format build-strict test
+ci: check-format gen-docs check-git-clean build-strict test
 
 check-git-clean:
     [ -z "$(git status --porcelain)" ]
