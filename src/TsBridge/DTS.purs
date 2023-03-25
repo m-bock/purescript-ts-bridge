@@ -1,5 +1,6 @@
 module TsBridge.DTS
-  ( PropModifiers
+  ( OSet(..)
+  , PropModifiers
   , TsDeclVisibility(..)
   , TsDeclaration(..)
   , TsFilePath(..)
@@ -16,9 +17,9 @@ module TsBridge.DTS
   , TsType(..)
   , TsTypeArgs(..)
   , TsTypeArgsQuant(..)
-  , OSet(..)
   , dtsFilePath
   , mapQuantifier
+  , printTsName
   ) where
 
 import Prelude
@@ -144,6 +145,9 @@ mapQuantifier f = case _ of
   goTsName = identity
 
   goPropModifiers = identity
+
+printTsName :: TsName -> String
+printTsName (TsName n) = n
 
 -------------------------------------------------------------------------------
 -- Wrap

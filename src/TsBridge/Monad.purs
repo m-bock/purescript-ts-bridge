@@ -13,14 +13,19 @@ import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Except (Except, runExcept)
 import Control.Monad.Writer (class MonadTell, class MonadWriter, WriterT, runWriterT)
 import Data.Either (Either)
+import Data.Foldable (fold)
 import Data.Generic.Rep (class Generic)
-import Data.Newtype (class Newtype)
+import Data.Newtype (class Newtype, un)
+import Data.Semigroup.Foldable (fold1)
 import Data.Set (Set)
+import Data.Set as Set
 import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
 import Data.Show.Generic (genericShow)
+import Data.String as Str
 import Data.Tuple.Nested (type (/\))
-import TsBridge.DTS (TsModuleFile, TsName)
+import TsBridge.DTS (TsModuleFile, TsName(..))
+import TsBridge.DTS as DTS
 
 -------------------------------------------------------------------------------
 -- Types / TsBridge
@@ -36,6 +41,7 @@ data TsBridgeError
   = ErrUnquantifiedTypeVariables (Set TsName)
   | ErrIllegalSymbolName String
   | AtModule String TsBridgeError
+  | AtValue TsName TsBridgeError
 
 newtype TsBridgeAccum = TsBridgeAccum
   { typeDefs :: Array TsModuleFile
@@ -63,7 +69,24 @@ runTsBridgeM (TsBridgeM ma) = ma
   # runExcept
 
 printTsBridgeError :: TsBridgeError -> String
-printTsBridgeError _ = ""
+printTsBridgeError = case _ of
+  AtModule name err -> Str.joinWith "\n"
+    [ "At module " <> name
+    , printTsBridgeError err
+    ]
+  AtValue (TsName name) err -> Str.joinWith "\n"
+    [ "At Value " <> name
+    , printTsBridgeError err
+    ]
+  ErrUnquantifiedTypeVariables vars ->
+    fold
+      [ "Type variables"
+      , " "
+      , vars # Set.toUnfoldable <#> DTS.printTsName # Str.joinWith ", "
+      , " "
+      , "are not behind a function. This is not possible in TypeScript. E.g. `Maybe a` needs to be exported as `Unit -> Maybe a`."
+      ]
+  ErrIllegalSymbolName _ -> ""
 
 -------------------------------------------------------------------------------
 -- Instances
