@@ -8,6 +8,10 @@ format:
     purs-tidy format-in-place 'src/**/*.purs'
     purs-tidy format-in-place 'test/**/*.purs'
 
+check-format:
+    purs-tidy check 'src/**/*.purs'
+    purs-tidy check 'test/**/*.purs'    
+
 test:
     spago test
 
@@ -19,3 +23,5 @@ check-spell:
     yarn run cspell "src/**/*.purs" || true
     yarn run cspell "docs/**/*.md" || true
     yarn run cspell "README.md" || true
+
+ci: check-format build-strict test

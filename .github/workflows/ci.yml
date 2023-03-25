@@ -6,5 +6,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2.4.0
     - uses: cachix/install-nix-action@v15 
+    - run: nix develop --command just check-format
     - run: nix develop --command just build-strict
     - run: nix develop --command just test
