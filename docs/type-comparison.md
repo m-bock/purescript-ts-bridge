@@ -398,7 +398,7 @@ data Maybe a
 ```ts
 type Maybe<A> = {
   readonly __brand: unique symbol;
-  readonly __arg0: A;
+  readonly __arg1: A;
 }
 ```
 
@@ -466,8 +466,8 @@ data Either a b
 ```ts
 type Either<A, B> = {
   readonly __brand: unique symbol;
-  readonly __arg0: A;
-  readonly __arg1: B;
+  readonly __arg1: A;
+  readonly __arg2: B;
 }
 ```
 
@@ -534,8 +534,8 @@ data Tuple a b
 ```ts
 type Tuple<A, B> = {
   readonly __brand: unique symbol;
-  readonly __arg0: A;
-  readonly __arg1: B;
+  readonly __arg1: A;
+  readonly __arg2: B;
 }
 ```
 

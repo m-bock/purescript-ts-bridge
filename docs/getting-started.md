@@ -18,7 +18,10 @@ The following imports are needed for this example:
 
 ```hs
 import Prelude
+
+import Data.Either (Either)
 import Effect (Effect)
+import TsBridge (TsBridgeError(..))
 import TsBridge as TSB
 import Type.Proxy (Proxy)
 ```
@@ -106,7 +109,7 @@ The same for the values that we want to expose. However, we're making use of
 record puns to eliminate the risk of spelling mistakes:
 
 ```hs
-myTsProgram :: TSB.TsProgram
+myTsProgram :: Either TsBridgeError TSB.TsProgram
 myTsProgram =
   TSB.tsProgram
     [ TSB.tsModuleFile "Sample"

@@ -450,6 +450,6 @@ mkBrandedTypeDecl name args type_ = DTS.TsDeclTypeDef name DTS.Public (coerce ar
     DTS.TsTypeUniqueSymbol
 
   mkArgFields idx name' = DTS.TsRecordField
-    (DTS.TsName ("__arg" <> show idx))
+    (DTS.TsName ("__arg" <> show (idx + 1)))
     { optional: false, readonly: true }
     (DTS.TsTypeVar name')

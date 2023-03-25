@@ -4,12 +4,15 @@ module Test.TsBridgeSpec
 
 import Prelude
 
-import Data.Either (Either(..))
+import Data.Array.NonEmpty (fromFoldable)
+import Data.Bifunctor (lmap)
+import Data.Either (Either(..), fromLeft, fromRight)
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, un)
 import Data.Nullable (Nullable)
+import Data.Set as Set
 import Data.String (Pattern(..))
 import Data.String as String
 import Data.Symbol (class IsSymbol)
@@ -19,6 +22,7 @@ import Data.Variant (Variant)
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
+import TsBridge (TsSource(..))
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Print (printTsDeclarations, printTsType)
@@ -96,42 +100,55 @@ spec = do
     describe "Program Printing" do
       describe "Program with imports" do
         it "generates a type and adds the type module" do
-          TSB.tsProgram
-            [ TSB.tsModuleFile "Foo.Bar"
-                [ TSB.tsValue Tok "a" (Left "" :: Either String Boolean) ]
-            ]
-            # printTsProgram
-            # shouldEqual
-            $ Map.fromFoldable
-                [ textFile "Foo.Bar/index.d.ts"
-                    [ "export const a : import('../Data.Either').Either<string, boolean>"
-                    ]
-                , textFile "Data.Either/index.d.ts"
-                    [ "export type Either<A, B> = { readonly __brand: unique symbol; readonly __arg0: A; readonly __arg1: B; }"
-                    ]
-                ]
+          ( TSB.tsProgram
+              [ TSB.tsModuleFile "Foo.Bar"
+                  [ TSB.tsValue Tok "a" (Left "" :: Either String Boolean) ]
+              ]
+              <#> printTsProgram
+          )
+            `shouldEqual`
+              ( Right $ Map.fromFoldable
+                  [ textFile "Foo.Bar/index.d.ts"
+                      [ "export const a : import('../Data.Either').Either<string, boolean>"
+                      ]
+                  , textFile "Data.Either/index.d.ts"
+                      [ "export type Either<A, B> = { readonly __brand: unique symbol; readonly __arg1: A; readonly __arg2: B; }"
+                      ]
+                  ]
+              )
 
       describe "Newtype" do
         it "generates a type and adds the type module" do
-          TSB.tsProgram
-            [ TSB.tsModuleFile "Foo.Bar"
-                [ TSB.tsValue Tok "a" (MyNT 0.0) ]
-            ]
-            # printTsProgram
-            # shouldEqual
-            $ Map.fromFoldable
-                [ textFile "Foo.Bar/index.d.ts"
-                    [ "export const a : import('../Foo.Bar').MyNT"
-                    , ""
-                    , "export type MyNT = number"
-                    ]
-                ]
+          ( TSB.tsProgram
+              [ TSB.tsModuleFile "Foo.Bar"
+                  [ TSB.tsValue Tok "a" (MyNT 0.0) ]
+              ]
+              <#> printTsProgram
+          )
+            `shouldEqual`
+              ( Right $ Map.fromFoldable
+                  [ textFile "Foo.Bar/index.d.ts"
+                      [ "export const a : import('../Foo.Bar').MyNT"
+                      , ""
+                      , "export type MyNT = number"
+                      ]
+                  ]
+              )
 
+    describe "Decl tsValue" do
       describe "tsValue" do
         describe "Number" do
           testDeclPrint
             (TSB.tsValue Tok "foo" 13.0)
             [ "export const foo : number" ]
+
+        describe "Number" do
+          it "prints the correct declaration" do
+            ( TSB.tsValue Tok "foo" (Nothing :: Maybe A)
+                # TSB.runTsBridgeM
+                <#> (fst >>> printTsDeclarations)
+            )
+              `shouldEqual` (Left $ TSB.ErrUnquantifiedTypeVariables $ Set.fromFoldable [ TSB.TsName "A" ])
 
     describe "Type Printing" do
       describe "Number" do
@@ -176,18 +193,18 @@ spec = do
 
       describe "Nullable" do
         testTypePrint (tsBridge (Proxy :: _ (Nullable String)))
-          "(null)|(string)"
+          "(null) | (string)"
 
       describe "Variant" do
         testTypePrint (tsBridge (Proxy :: _ (Variant (a :: String, b :: Boolean))))
-          "({ readonly type: 'a'; readonly value: string; })|({ readonly type: 'b'; readonly value: boolean; })"
+          "({ readonly type: 'a'; readonly value: string; }) | ({ readonly type: 'b'; readonly value: boolean; })"
 
 testDeclPrint :: TsBridgeM (Array TSB.TsDeclaration) -> Array String -> Spec Unit
 testDeclPrint x s =
   it "prints the correct declaration" do
     TSB.runTsBridgeM x
-      # fst
-      # printTsDeclarations
+      <#> (fst >>> printTsDeclarations)
+      # fromRight []
       # shouldEqual (TSB.TsSource <$> s)
 
 testTypePrint :: TsBridgeM TSB.TsType -> String -> Spec Unit
@@ -195,8 +212,8 @@ testTypePrint x s =
   it "prints the correct type" do
     shouldEqual
       ( TSB.runTsBridgeM x
-          # fst
-          # printTsType
+          <#> (fst >>> printTsType)
+          # fromRight (TsSource "")
       )
       (TSB.TsSource s)
 

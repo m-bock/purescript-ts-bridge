@@ -15,13 +15,16 @@ module TsBridge.Core
 
 import Prelude
 
+import Control.Monad.Error.Class (class MonadError, catchError, throwError)
 import Control.Monad.Writer (listens, tell)
 import Data.Array as A
 import Data.Array as Array
+import Data.Either (Either)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Newtype (un)
 import Data.Set as Set
+import Data.Set.Ordered as OSet
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (sequence)
 import Data.Tuple.Nested ((/\))
@@ -30,7 +33,7 @@ import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
 import Safe.Coerce (coerce)
 import TsBridge.DTS as DTS
-import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, runTsBridgeM)
+import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeError(..), TsBridgeM, runTsBridgeM)
 import Type.Proxy (Proxy(..))
 
 -- | Type Class that is used by the type generator to recursively traverse
@@ -62,12 +65,14 @@ class TsBridgeBy tok a where
 -- | render those references.
 type StandaloneTsType = TsBridgeM DTS.TsType
 
-tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Array DTS.TsModuleFile
-tsModuleFile n xs =
-  let
-    (xs' /\ TsBridgeAccum { typeDefs }) = runTsBridgeM $ join <$> sequence xs
-  in
-    typeDefs <> [ DTS.TsModuleFile (DTS.dtsFilePath n) (DTS.TsModule n Set.empty xs') ]
+tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Either TsBridgeError (Array DTS.TsModuleFile)
+tsModuleFile n xs = do
+  (xs' /\ TsBridgeAccum { typeDefs }) <- runTsBridgeM $ mapErr (AtModule n) $ join <$> sequence xs
+
+  pure (typeDefs <> [ DTS.TsModuleFile (DTS.dtsFilePath n) (DTS.TsModule n Set.empty xs') ])
+
+mapErr :: forall e m a. MonadError e m => (e -> e) -> m a -> m a
+mapErr f ma = catchError ma (f >>> throwError)
 
 mergeModules :: Array DTS.TsModuleFile -> DTS.TsProgram
 mergeModules xs =
@@ -83,8 +88,8 @@ mergeModule (DTS.TsModule _ is1 ds1) (DTS.TsModule n2 is2 ds2) =
     (is1 `Set.union` is2)
     (Array.nub (ds1 <> ds2))
 
-tsProgram :: Array (Array DTS.TsModuleFile) -> DTS.TsProgram
-tsProgram xs = mergeModules $ join xs
+tsProgram :: Array (Either TsBridgeError (Array DTS.TsModuleFile)) -> Either TsBridgeError DTS.TsProgram
+tsProgram xs = xs # sequence <#> join >>> mergeModules
 
 -- | For rare cases where you want to export a type alias. References to this type
 -- | alias will be fully resolved in the generated code. So it is more practical
@@ -117,8 +122,16 @@ tsValue tok n _ = tsValue' tok n (Proxy :: _ a)
 
 tsValue' :: forall tok a. TsBridgeBy tok a => tok -> String -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
 tsValue' tok n _ = do
-  t <- tsBridgeBy tok (Proxy :: _ a)
-  pure [ DTS.TsDeclValueDef (DTS.TsName n) DTS.Public t ]
+  let t = tsBridgeBy tok (Proxy :: _ a)
+  x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
+
+  when (OSet.length scope.floating /= 0)
+    $ throwError
+    $ ErrUnquantifiedTypeVariables
+    $ (Set.fromFoldable :: Array _ -> _)
+    $ OSet.toUnfoldable scope.floating
+
+  pure [ DTS.TsDeclValueDef (DTS.TsName n) DTS.Public x ]
 
 --------------------------------------------------------------------------------
 -- class TsValues

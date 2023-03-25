@@ -5,6 +5,7 @@ module TsBridge.Cli (mkTypeGenCli) where
 
 import Prelude
 
+import Data.Either (Either(..))
 import Data.Foldable (fold, for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -19,11 +20,13 @@ import Node.Encoding (Encoding(..))
 import Node.FS.Aff (mkdir', writeTextFile)
 import Node.FS.Perms (all, mkPerms)
 import Node.Path (dirname)
+import Node.Process as Process
 import Options.Applicative (help, helper, info, long, metavar, strOption, value, (<**>))
 import Options.Applicative as O
 import Options.Applicative.Types (optional)
 import Sunde as Sun
 import TsBridge.DTS (TsProgram)
+import TsBridge.Monad (TsBridgeError, printTsBridgeError)
 import TsBridge.Print (Path(..), TsSource(..), printTsProgram)
 
 -------------------------------------------------------------------------------
@@ -64,10 +67,25 @@ parserInfoTsBridgeCliOpts = info (parserTsBridgeCliOpts <**> helper) mempty
 -------------------------------------------------------------------------------
 -- App
 -------------------------------------------------------------------------------
-mkTypeGenCliAff :: TsProgram -> Aff Unit
-mkTypeGenCliAff tsProg = do
+mkTypeGenCliAff :: Either TsBridgeError TsProgram -> Aff Unit
+mkTypeGenCliAff eitherTsProg = do
   cliOpts <- liftEffect $ O.execParser parserInfoTsBridgeCliOpts
 
+  case eitherTsProg of
+    Left err -> do
+      log $ printTsBridgeError err
+      liftEffect $ Process.exit 0
+    Right tsProg -> writeTsProgramToDisk cliOpts tsProg
+
+  case cliOpts.prettier of
+    Just prettierPath ->
+      void $ spawn prettierPath
+        [ "--write", un Path (cliOpts.outputDir <> Path "/**/*.d.ts") ] -- can fail, if there are no files!
+    Nothing ->
+      log "No path to prettier specified. Generated files will be ugly."
+
+writeTsProgramToDisk :: TsBridgeCliOpts -> TsProgram -> Aff Unit
+writeTsProgramToDisk cliOpts tsProg = do
   let files = Map.toUnfoldable $ printTsProgram tsProg :: Array _
 
   for_ files
@@ -82,16 +100,9 @@ mkTypeGenCliAff tsProg = do
         writeTextFile UTF8 (un Path filePath) (un TsSource source)
     )
 
-  case cliOpts.prettier of
-    Just prettierPath ->
-      void $ spawn prettierPath
-        [ "--write", un Path (cliOpts.outputDir <> Path "/**/*.d.ts") ] -- can fail, if there are no files!
-    Nothing ->
-      log "No path to prettier specified. Generated files will be ugly."
-
 -- | Given a `TsProgram` returns an effectful CLI that can be used as an entry
 -- | point for a type generator.
-mkTypeGenCli :: TsProgram -> Effect Unit
+mkTypeGenCli :: Either TsBridgeError TsProgram -> Effect Unit
 mkTypeGenCli tsProg = launchAff_ $ mkTypeGenCliAff tsProg
 
 -------------------------------------------------------------------------------

@@ -27,5 +27,5 @@
 
 - Q: TypeScript is a structurally typed language. PureScript has both, some structural qualities like the primitive types, records, arrays. And nominal part like ADTs and newtypes. the former is easy to express in TypeScript, but the latter how is it even possible?
 
-  A: In TypeScript the technique of "branded types" is an approximation to nominal typing. If a type is defined like `type T = { readonly __brand: unique symbol; } & { a : number }` there is no way to directly construct a value of that type. The only way to construct a value of type `T` is with an explicit `as` conversion: `const x : T = { a: 12 } as T`.
-  If you consider the `as` conversion as a `unsafeCoerce` this is good enough to represent opaque types. Unfortunately `as` conversions are also used for safe conversions or broadening in TypeScript, like `"a" as string | number`.
+  A: In TypeScript the technique of "branded types" is an approximation to nominal typing. If a type is defined like `type T = { readonly __brand: unique symbol; }` there is no way to directly construct a value of that type. The only way to construct a value of type `T` is with an explicit `as` conversion: `const x : T = 17 as unknown as T`.
+  If you consider the `as unknown as` conversion as a `unsafeCoerce` this is good enough to represent opaque types.

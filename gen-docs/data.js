@@ -87,7 +87,7 @@ export const data = [
           [
             "type Maybe<A> = {",
             "  readonly __brand: unique symbol;",
-            "  readonly __arg0: A;",
+            "  readonly __arg1: A;",
             "}",
           ].join("\n"),
         ],
@@ -118,8 +118,8 @@ export const data = [
           [
             "type Either<A, B> = {",
             "  readonly __brand: unique symbol;",
-            "  readonly __arg0: A;",
-            "  readonly __arg1: B;",
+            "  readonly __arg1: A;",
+            "  readonly __arg2: B;",
             "}",
           ].join("\n"),
         ],
@@ -149,8 +149,8 @@ export const data = [
           [
             "type Tuple<A, B> = {",
             "  readonly __brand: unique symbol;",
-            "  readonly __arg0: A;",
-            "  readonly __arg1: B;",
+            "  readonly __arg1: A;",
+            "  readonly __arg2: B;",
             "}",
           ].join("\n"),
         ],

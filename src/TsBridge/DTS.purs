@@ -23,11 +23,13 @@ module TsBridge.DTS
 
 import Prelude
 
+import Data.Generic.Rep (class Generic)
 import Data.Map (Map)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
 import Data.Set (Set)
 import Data.Set.Ordered as OSet
+import Data.Show.Generic (genericShow)
 
 -------------------------------------------------------------------------------
 -- Types
@@ -197,3 +199,7 @@ derive instance Ord TsName
 derive instance Ord TsModulePath
 derive instance Ord TsFilePath
 derive instance Ord TsDeclVisibility
+
+derive instance Generic TsName _
+instance Show TsName where
+  show = genericShow

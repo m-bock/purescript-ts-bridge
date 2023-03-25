@@ -1,6 +1,7 @@
 module TsBridge.Print
   ( Path(..)
   , TsSource(..)
+  , printTsDeclaration
   , printTsDeclarations
   , printTsProgram
   , printTsType
@@ -181,7 +182,7 @@ instance Tokenize DTS.TsType where
       join $ intersperse [ TsTokAmpersand ] $ (wrapParens <<< tokenize) <$> xs
 
     DTS.TsTypeUnion xs ->
-      join $ intersperse [ TsTokPipe ] $ (wrapParens <<< tokenize) <$> xs
+      join $ intersperse [ TsTokWhitespace, TsTokPipe, TsTokWhitespace ] $ (wrapParens <<< tokenize) <$> xs
 
     DTS.TsTypeRecord xs ->
       wrapBraces $
@@ -376,6 +377,9 @@ printTsModule x = tokenize x <#> printToken # fold
 
 printTsType :: DTS.TsType -> TsSource
 printTsType x = tokenize x <#> printToken # fold
+
+printTsDeclaration :: DTS.TsDeclaration -> TsSource
+printTsDeclaration x = x # tokenize # map printToken >>> fold
 
 printTsDeclarations :: Array DTS.TsDeclaration -> Array TsSource
 printTsDeclarations x = x <#> tokenize <#> map printToken >>> fold
