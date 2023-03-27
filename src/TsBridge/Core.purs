@@ -36,6 +36,12 @@ import TsBridge.DTS as DTS
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, runTsBridgeM)
 import Type.Proxy (Proxy(..))
 
+-- | A `StandaloneTsType` represents a TypeScript type with everything it needs
+-- | to be placed inside complete TS program: If the type references nominal
+-- | types from other modules, all information is contained that is needed to
+-- | render those references.
+type StandaloneTsType = TsBridgeM DTS.TsType
+
 -- | Type Class that is used by the type generator to recursively traverse
 -- | types.
 -- | Instances for the specific types will be defined on the user's side with a
@@ -58,12 +64,6 @@ import Type.Proxy (Proxy(..))
 class TsBridgeBy :: Type -> Type -> Constraint
 class TsBridgeBy tok a where
   tsBridgeBy :: tok -> Proxy a -> StandaloneTsType
-
--- | A `StandaloneTsType` represents a TypeScript type with everything it needs
--- | to be placed inside complete TS program: If the type references nominal
--- | types from other modules, all information is contained that is needed to
--- | render those references.
-type StandaloneTsType = TsBridgeM DTS.TsType
 
 tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Either DTS.Error (Array DTS.TsModuleFile)
 tsModuleFile n xs = do

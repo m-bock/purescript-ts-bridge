@@ -18,14 +18,10 @@ import Data.Tuple.Nested (type (/\))
 import TsBridge.DTS (TsModuleFile, TsName, Error)
 
 -------------------------------------------------------------------------------
--- Types / TsBridge
+-- Types
 -------------------------------------------------------------------------------
 
 newtype TsBridgeM a = TsBridgeM (WriterT TsBridgeAccum (Except Error) a)
-
-derive newtype instance MonadThrow Error TsBridgeM
-
-derive newtype instance MonadError Error TsBridgeM
 
 newtype TsBridgeAccum = TsBridgeAccum
   { typeDefs :: Array TsModuleFile
@@ -37,15 +33,9 @@ newtype Scope = Scope
   , fixed :: OSet TsName
   }
 
-derive newtype instance Semigroup Scope
-
-instance Monoid Scope where
-  mempty = Scope
-    { floating: OSet.empty
-    , fixed: OSet.empty
-    }
-
-derive instance Newtype Scope _
+-------------------------------------------------------------------------------
+-- Run
+-------------------------------------------------------------------------------
 
 runTsBridgeM :: forall a. TsBridgeM a -> Either Error (a /\ TsBridgeAccum)
 runTsBridgeM (TsBridgeM ma) = ma
@@ -56,11 +46,10 @@ runTsBridgeM (TsBridgeM ma) = ma
 -- Instances
 -------------------------------------------------------------------------------
 
-derive instance Newtype TsBridgeAccum _
-
 derive newtype instance Monoid TsBridgeAccum
 
 derive newtype instance Semigroup TsBridgeAccum
+derive newtype instance Semigroup Scope
 
 derive newtype instance MonadTell TsBridgeAccum TsBridgeM
 
@@ -76,3 +65,15 @@ derive newtype instance Apply TsBridgeM
 
 derive newtype instance Applicative TsBridgeM
 
+derive newtype instance MonadThrow Error TsBridgeM
+
+derive newtype instance MonadError Error TsBridgeM
+
+derive instance Newtype TsBridgeAccum _
+derive instance Newtype Scope _
+
+instance Monoid Scope where
+  mempty = Scope
+    { floating: OSet.empty
+    , fixed: OSet.empty
+    }

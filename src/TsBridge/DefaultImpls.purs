@@ -54,10 +54,18 @@ import TsBridge.DTS as DTS
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM)
 import Type.Proxy (Proxy(..))
 
+-------------------------------------------------------------------------------
+-- Types
+-------------------------------------------------------------------------------
+
 -- | Represents a monomorphized type variable. E.g. a `Maybe a` can become a
 -- | `Maybe (TypeVar "A")`. It's useful to create some type aliases for
 -- | variables that are used often, like: `type A = TypeVar "A"`.
 data TypeVar (s :: Symbol) = TypeVar
+
+-------------------------------------------------------------------------------
+-- tsBridge methods
+-------------------------------------------------------------------------------
 
 -- | `tsBridge` type class method implementation for type variables.
 -- | This is needed because polymorphic values cannot be exported directly.
@@ -256,98 +264,6 @@ tsBridgeFunction tok _ = censor mapAccum ado
   where
   mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
 
--------------------------------------------------------------------------------
--- Class / tsBridgeRecord
--------------------------------------------------------------------------------
-
-class TsBridgeRecord :: Type -> Row Type -> Constraint
-class TsBridgeRecord tok r where
-  -- | `tsBridge` type class method implementation for the Record type
-  -- |
-  -- | See [this
-  -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#record)
-  -- | for details.
-  tsBridgeRecord :: tok -> Proxy (Record r) -> StandaloneTsType
-
-instance (RowToList r rl, TsBridgeRecordRL tok rl) => TsBridgeRecord tok r where
-  tsBridgeRecord tok _ = DTS.TsTypeRecord <$> tsBridgeRecordRL tok (Proxy :: _ rl)
-
--------------------------------------------------------------------------------
--- Class / tsBridgeRecordRL
--------------------------------------------------------------------------------
-
-class TsBridgeRecordRL :: Type -> RowList Type -> Constraint
-class TsBridgeRecordRL tok rl where
-  tsBridgeRecordRL :: tok -> Proxy rl -> TsBridgeM (Array DTS.TsRecordField)
-
-instance TsBridgeRecordRL tok Nil where
-  tsBridgeRecordRL _ _ = pure []
-
-instance
-  ( TsBridgeBy tok t
-  , TsBridgeRecordRL tok rl
-  , IsSymbol s
-  ) =>
-  TsBridgeRecordRL tok (Cons s t rl) where
-  tsBridgeRecordRL tok _ = do
-    x <- tsBridgeBy tok (Proxy :: _ t)
-    xs <- tsBridgeRecordRL tok (Proxy :: _ rl)
-    let k = reflectSymbol (Proxy :: _ s)
-    pure $
-      A.cons (DTS.TsRecordField k { optional: false, readonly: true } x) xs
-
--------------------------------------------------------------------------------
--- Class / tsBridgeVariant
--------------------------------------------------------------------------------
-
-class TsBridgeVariant :: Type -> Row Type -> Constraint
-class TsBridgeVariant tok r where
-  -- | `tsBridge` type class method implementation for the Variant type
-  -- |
-  -- | See [this
-  -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#variant)
-  -- | for details.
-  tsBridgeVariant :: tok -> Proxy (Variant r) -> StandaloneTsType
-
-instance (RowToList r rl, TsBridgeVariantRL tok rl) => TsBridgeVariant tok r where
-  tsBridgeVariant tok _ = DTS.TsTypeUnion <$> tsBridgeVariantRL tok (Proxy :: _ rl)
-
--------------------------------------------------------------------------------
--- Class / tsBridgeVariantRL
--------------------------------------------------------------------------------
-
-class TsBridgeVariantRL :: Type -> RowList Type -> Constraint
-class TsBridgeVariantRL tok rl where
-  tsBridgeVariantRL :: tok -> Proxy rl -> TsBridgeM (Array DTS.TsType)
-
-instance TsBridgeVariantRL tok Nil where
-  tsBridgeVariantRL _ _ = pure []
-
-instance
-  ( TsBridgeBy tok t
-  , TsBridgeVariantRL tok rl
-  , IsSymbol s
-  ) =>
-  TsBridgeVariantRL tok (Cons s t rl) where
-  tsBridgeVariantRL tok _ =
-    do
-      x <- tsBridgeBy tok (Proxy :: _ t)
-      xs <- tsBridgeVariantRL tok (Proxy :: _ rl)
-      pure $
-        A.cons
-          ( DTS.TsTypeRecord
-              [ DTS.TsRecordField "type"
-                  { readonly: true, optional: false }
-                  (DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ s))
-              , DTS.TsRecordField "value"
-                  { readonly: true, optional: false }
-                  x
-              ]
-          )
-          xs
-
--------------------------------------------------------------------------------
-
 -- | `tsBridge` type class method implementation for opaque types
 tsBridgeOpaqueType :: forall a. String -> String -> Array (String /\ StandaloneTsType) -> a -> StandaloneTsType
 tsBridgeOpaqueType pursModuleName pursTypeName args _ = do
@@ -405,6 +321,96 @@ tsBridgeNewtype tok pursModuleName pursTypeName args_ _ = do
 
   pure
     $ DTS.TsTypeConstructor (DTS.TsQualName (Just alias) name) (DTS.TsTypeArgs args)
+
+-------------------------------------------------------------------------------
+-- tsBridge methods / class TsBridgeRecord
+-------------------------------------------------------------------------------
+
+class TsBridgeRecord :: Type -> Row Type -> Constraint
+class TsBridgeRecord tok r where
+  -- | `tsBridge` type class method implementation for the Record type
+  -- |
+  -- | See [this
+  -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#record)
+  -- | for details.
+  tsBridgeRecord :: tok -> Proxy (Record r) -> StandaloneTsType
+
+instance (RowToList r rl, TsBridgeRecordRL tok rl) => TsBridgeRecord tok r where
+  tsBridgeRecord tok _ = DTS.TsTypeRecord <$> tsBridgeRecordRL tok (Proxy :: _ rl)
+
+-------------------------------------------------------------------------------
+-- tsBridge methods / class TsBridgeRecordRL
+-------------------------------------------------------------------------------
+
+class TsBridgeRecordRL :: Type -> RowList Type -> Constraint
+class TsBridgeRecordRL tok rl where
+  tsBridgeRecordRL :: tok -> Proxy rl -> TsBridgeM (Array DTS.TsRecordField)
+
+instance TsBridgeRecordRL tok Nil where
+  tsBridgeRecordRL _ _ = pure []
+
+instance
+  ( TsBridgeBy tok t
+  , TsBridgeRecordRL tok rl
+  , IsSymbol s
+  ) =>
+  TsBridgeRecordRL tok (Cons s t rl) where
+  tsBridgeRecordRL tok _ = do
+    x <- tsBridgeBy tok (Proxy :: _ t)
+    xs <- tsBridgeRecordRL tok (Proxy :: _ rl)
+    let k = reflectSymbol (Proxy :: _ s)
+    pure $
+      A.cons (DTS.TsRecordField k { optional: false, readonly: true } x) xs
+
+-------------------------------------------------------------------------------
+-- tsBridge methods / class TsBridgeVariant
+-------------------------------------------------------------------------------
+
+class TsBridgeVariant :: Type -> Row Type -> Constraint
+class TsBridgeVariant tok r where
+  -- | `tsBridge` type class method implementation for the Variant type
+  -- |
+  -- | See [this
+  -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#variant)
+  -- | for details.
+  tsBridgeVariant :: tok -> Proxy (Variant r) -> StandaloneTsType
+
+instance (RowToList r rl, TsBridgeVariantRL tok rl) => TsBridgeVariant tok r where
+  tsBridgeVariant tok _ = DTS.TsTypeUnion <$> tsBridgeVariantRL tok (Proxy :: _ rl)
+
+-------------------------------------------------------------------------------
+-- CltsBridge methods / class TsBridgeVariantRL
+-------------------------------------------------------------------------------
+
+class TsBridgeVariantRL :: Type -> RowList Type -> Constraint
+class TsBridgeVariantRL tok rl where
+  tsBridgeVariantRL :: tok -> Proxy rl -> TsBridgeM (Array DTS.TsType)
+
+instance TsBridgeVariantRL tok Nil where
+  tsBridgeVariantRL _ _ = pure []
+
+instance
+  ( TsBridgeBy tok t
+  , TsBridgeVariantRL tok rl
+  , IsSymbol s
+  ) =>
+  TsBridgeVariantRL tok (Cons s t rl) where
+  tsBridgeVariantRL tok _ =
+    do
+      x <- tsBridgeBy tok (Proxy :: _ t)
+      xs <- tsBridgeVariantRL tok (Proxy :: _ rl)
+      pure $
+        A.cons
+          ( DTS.TsTypeRecord
+              [ DTS.TsRecordField "type"
+                  { readonly: true, optional: false }
+                  (DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ s))
+              , DTS.TsRecordField "value"
+                  { readonly: true, optional: false }
+                  x
+              ]
+          )
+          xs
 
 -------------------------------------------------------------------------------
 -- Util

@@ -97,8 +97,6 @@ data TsModuleFile = TsModuleFile TsFilePath TsModule
 -- | A collection of TypeScript modules
 data TsProgram = TsProgram (Map TsFilePath TsModule)
 
-newtype Statements a = Statements a
-
 data TsName = TsName String
 
 newtype TsModuleAlias = TsModuleAlias String
@@ -124,46 +122,19 @@ type PropModifiers =
   , optional :: Boolean
   }
 
+newtype OSet a = OSet (OSet.OSet a)
+
+newtype Statements a = Statements a
+
 -------------------------------------------------------------------------------
-
-unsafeTsName :: String -> TsName
-unsafeTsName = TsName
-
-tsReservedWords :: Set String
-tsReservedWords = Set.fromFoldable
-  [ "instanceof"
-  , "typeof"
-  , "break"
-  , "do"
-  , "new"
-  , "var"
-  , "case"
-  , "else"
-  , "return"
-  , "void"
-  , "catch"
-  , "finally"
-  , "continue"
-  , "for"
-  , "switch"
-  , "while"
-  , "this"
-  , "with"
-  , "debugger"
-  , "function"
-  , "throw"
-  , "default"
-  , "if"
-  , "try"
-  , "delete"
-  , "in"
-  ]
+-- TsName
+-------------------------------------------------------------------------------
 
 tsNameRegexFirst :: Regex
 tsNameRegexFirst = Regex.unsafeRegex "[_$A-Za-z]" noFlags
 
-tsNamerRegexRest :: Regex
-tsNamerRegexRest = Regex.unsafeRegex "[_$A-Za-z0-9]" noFlags
+tsNameRegexRest :: Regex
+tsNameRegexRest = Regex.unsafeRegex "[_$A-Za-z0-9]" noFlags
 
 mkTsName :: forall m. MonadThrow Error m => String -> m TsName
 mkTsName s = do
@@ -181,13 +152,49 @@ mkTsName s = do
     throwError (ErrTsName $ ErrInvalidBegining head)
 
   for_ tail \c ->
-    when (not $ Reg.test tsNamerRegexRest $ Char.singleton c) $
+    when (not $ Reg.test tsNameRegexRest $ Char.singleton c) $
       throwError (ErrTsName $ ErrInvalidCharacter c)
 
   pure $ TsName s
 
-dtsFilePath :: String -> TsFilePath
-dtsFilePath x = TsFilePath (x <> "/index") "d.ts"
+unsafeTsName :: String -> TsName
+unsafeTsName = TsName
+
+printTsName :: TsName -> String
+printTsName (TsName n) = n
+
+-------------------------------------------------------------------------------
+-- Error
+-------------------------------------------------------------------------------
+
+printError :: Error -> String
+printError = case _ of
+  AtModule name err -> Str.joinWith "\n"
+    [ "At module " <> name
+    , printError err
+    ]
+  AtValue name err -> Str.joinWith "\n"
+    [ "At Value " <> printTsName name
+    , printError err
+    ]
+  ErrUnquantifiedTypeVariables vars ->
+    fold
+      [ "Type variables"
+      , " "
+      , vars # Set.toUnfoldable <#> printTsName # Str.joinWith ", "
+      , " "
+      , "are not behind a function. This is not possible in TypeScript. E.g. `Maybe a` needs to be exported as `Unit -> Maybe a`."
+      ]
+  ErrIllegalSymbolName _ -> ""
+  ErrTsName err -> case err of
+    ErrEmpty -> "Identifier is empty"
+    ErrReserveredWord s -> s <> " is a reserved word."
+    ErrInvalidBegining s -> "Identifer cannot start with `" <> s <> "`"
+    ErrInvalidCharacter s -> "Identifier cannot contain `" <> Char.singleton s <> "`"
+
+-------------------------------------------------------------------------------
+-- TsType
+-------------------------------------------------------------------------------
 
 mapQuantifier :: (OSet TsName -> OSet TsName) -> TsType -> TsType
 mapQuantifier f = case _ of
@@ -232,60 +239,48 @@ mapQuantifier f = case _ of
 
   goPropModifiers = identity
 
-printTsName :: TsName -> String
-printTsName (TsName n) = n
-
-printError :: Error -> String
-printError = case _ of
-  AtModule name err -> Str.joinWith "\n"
-    [ "At module " <> name
-    , printError err
-    ]
-  AtValue name err -> Str.joinWith "\n"
-    [ "At Value " <> printTsName name
-    , printError err
-    ]
-  ErrUnquantifiedTypeVariables vars ->
-    fold
-      [ "Type variables"
-      , " "
-      , vars # Set.toUnfoldable <#> printTsName # Str.joinWith ", "
-      , " "
-      , "are not behind a function. This is not possible in TypeScript. E.g. `Maybe a` needs to be exported as `Unit -> Maybe a`."
-      ]
-  ErrIllegalSymbolName _ -> ""
-  ErrTsName err -> case err of
-    ErrEmpty -> "Identifier is empty"
-    ErrReserveredWord s -> s <> " is a reserved word."
-    ErrInvalidBegining s -> "Identifer cannot start with `" <> s <> "`"
-    ErrInvalidCharacter s -> "Identifier cannot contain `" <> Char.singleton s <> "`"
-
 -------------------------------------------------------------------------------
--- Wrap
+-- Util
 -------------------------------------------------------------------------------
 
-newtype OSet a = OSet (OSet.OSet a)
+dtsFilePath :: String -> TsFilePath
+dtsFilePath x = TsFilePath (x <> "/index") "d.ts"
 
-derive instance Newtype (OSet a) _
+tsReservedWords :: Set String
+tsReservedWords = Set.fromFoldable
+  [ "instanceof"
+  , "typeof"
+  , "break"
+  , "do"
+  , "new"
+  , "var"
+  , "case"
+  , "else"
+  , "return"
+  , "void"
+  , "catch"
+  , "finally"
+  , "continue"
+  , "for"
+  , "switch"
+  , "while"
+  , "this"
+  , "with"
+  , "debugger"
+  , "function"
+  , "throw"
+  , "default"
+  , "if"
+  , "try"
+  , "delete"
+  , "in"
+  ]
+
+-------------------------------------------------------------------------------
+-- Instances
+-------------------------------------------------------------------------------
 
 derive newtype instance Eq a => Semigroup (OSet a)
-
-instance Ord a => Ord (OSet a) where
-  compare (OSet o1) (OSet o2) = toArray o1 `compare` toArray o2
-    where
-    toArray = OSet.toUnfoldable :: _ -> Array _
-
-instance Eq a => Eq (OSet a) where
-  eq (OSet o1) (OSet o2) = toArray o1 `eq` toArray o2
-    where
-    toArray = OSet.toUnfoldable :: _ -> Array _
-
-instance Eq a => Monoid (OSet a) where
-  mempty = OSet $ OSet.empty
-
--------------------------------------------------------------------------------
--- Class
--------------------------------------------------------------------------------
 
 derive instance Eq TsRecordField
 derive instance Eq TsFnArg
@@ -320,6 +315,8 @@ derive instance Ord TsDeclVisibility
 derive instance Generic Error _
 derive instance Generic TsNameError _
 
+derive instance Newtype (OSet a) _
+
 instance Show TsName where
   show (TsName name) = show name
 
@@ -328,3 +325,17 @@ instance Show TsNameError where
 
 instance Show Error where
   show x = genericShow x
+
+instance Ord a => Ord (OSet a) where
+  compare (OSet o1) (OSet o2) = toArray o1 `compare` toArray o2
+    where
+    toArray = OSet.toUnfoldable :: _ -> Array _
+
+instance Eq a => Eq (OSet a) where
+  eq (OSet o1) (OSet o2) = toArray o1 `eq` toArray o2
+    where
+    toArray = OSet.toUnfoldable :: _ -> Array _
+
+instance Eq a => Monoid (OSet a) where
+  mempty = OSet $ OSet.empty
+

@@ -49,7 +49,11 @@ parserTsBridgeCliOpts = ado
   in { outputDir }
 
 parserInfoTsBridgeCliOpts :: O.ParserInfo TsBridgeCliOpts
-parserInfoTsBridgeCliOpts = info (parserTsBridgeCliOpts <**> helper) mempty
+parserInfoTsBridgeCliOpts = info (parserTsBridgeCliOpts <**> helper)
+  ( O.fullDesc
+      <> O.progDesc "Print a greeting for TARGET"
+      <> O.header "hello - a test for purescript-optparse"
+  )
 
 -------------------------------------------------------------------------------
 -- App

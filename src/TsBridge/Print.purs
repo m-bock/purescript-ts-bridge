@@ -20,31 +20,13 @@ import Data.Set.Ordered as OSet
 import Data.Tuple.Nested ((/\))
 import TsBridge.DTS as DTS
 
+-------------------------------------------------------------------------------
+-- Types
+-------------------------------------------------------------------------------
+
 newtype TsSource = TsSource String
 
-derive newtype instance Semigroup TsSource
-
-derive newtype instance Eq TsSource
-
-derive newtype instance Show TsSource
-
-derive newtype instance Monoid TsSource
-
-derive instance Newtype TsSource _
-
 newtype Path = Path String
-
-derive newtype instance Eq Path
-
-derive newtype instance Ord Path
-
-derive newtype instance Semigroup Path
-
-derive newtype instance Monoid Path
-
-derive newtype instance Show Path
-
-derive instance Newtype Path _
 
 type TsTokens = Array TsToken
 
@@ -90,6 +72,7 @@ data TsToken
   | TsTokQuestionMark
   | TsTokAmpersand
   | TsTokPipe
+
   -- Formatting 
   | TsTokWhitespace
   | TsTokNewline
@@ -103,37 +86,6 @@ data TsToken
 -------------------------------------------------------------------------------
 -- Tokenize
 -------------------------------------------------------------------------------
-
-wrap :: TsTokens -> TsTokens -> TsTokens -> TsTokens
-wrap p q x = p <> x <> q
-
-sepBy :: TsTokens -> Array TsTokens -> TsTokens
-sepBy sep xs = intersperse sep xs # join
-
-postfix :: TsTokens -> Array TsTokens -> TsTokens
-postfix tok xs = xs <#> (_ <> tok) # join
-
-wrapAngles :: TsTokens -> TsTokens
-wrapAngles = wrap [ TsTokOpenAngle ] [ TsTokCloseAngle ]
-
-wrapBraces :: TsTokens -> TsTokens
-wrapBraces = wrap [ TsTokOpenBrace ] [ TsTokCloseBrace ]
-
-wrapParens :: TsTokens -> TsTokens
-wrapParens = wrap [ TsTokOpenParen ] [ TsTokCloseParen ]
-
-sepByComma :: Array TsTokens -> TsTokens
-sepByComma = sepBy [ TsTokComma, TsTokWhitespace ]
-
-sepByDoubleNewline :: Array TsTokens -> TsTokens
-sepByDoubleNewline = sepBy [ TsTokNewline, TsTokNewline ]
-
-postfixNewline :: Array TsTokens -> TsTokens
-postfixNewline = postfix [ TsTokNewline ]
-
-applyWhenNotEmpty :: forall a b. (Array a -> Array b) -> Array a -> Array b
-applyWhenNotEmpty _ xs | Array.null xs = []
-applyWhenNotEmpty f xs = f xs
 
 class Tokenize a where
   tokenize :: a -> TsTokens
@@ -279,6 +231,37 @@ instance Tokenize DTS.TsModulePath where
   tokenize (DTS.TsModulePath x) =
     [ TsTokStringLiteral x ]
 
+wrap :: TsTokens -> TsTokens -> TsTokens -> TsTokens
+wrap p q x = p <> x <> q
+
+sepBy :: TsTokens -> Array TsTokens -> TsTokens
+sepBy sep xs = intersperse sep xs # join
+
+postfix :: TsTokens -> Array TsTokens -> TsTokens
+postfix tok xs = xs <#> (_ <> tok) # join
+
+wrapAngles :: TsTokens -> TsTokens
+wrapAngles = wrap [ TsTokOpenAngle ] [ TsTokCloseAngle ]
+
+wrapBraces :: TsTokens -> TsTokens
+wrapBraces = wrap [ TsTokOpenBrace ] [ TsTokCloseBrace ]
+
+wrapParens :: TsTokens -> TsTokens
+wrapParens = wrap [ TsTokOpenParen ] [ TsTokCloseParen ]
+
+sepByComma :: Array TsTokens -> TsTokens
+sepByComma = sepBy [ TsTokComma, TsTokWhitespace ]
+
+sepByDoubleNewline :: Array TsTokens -> TsTokens
+sepByDoubleNewline = sepBy [ TsTokNewline, TsTokNewline ]
+
+postfixNewline :: Array TsTokens -> TsTokens
+postfixNewline = postfix [ TsTokNewline ]
+
+applyWhenNotEmpty :: forall a b. (Array a -> Array b) -> Array a -> Array b
+applyWhenNotEmpty _ xs | Array.null xs = []
+applyWhenNotEmpty f xs = f xs
+
 -------------------------------------------------------------------------------
 -- Print
 -------------------------------------------------------------------------------
@@ -375,6 +358,9 @@ printToken tsToken = TsSource case tsToken of
 printTsModule :: DTS.TsModule -> TsSource
 printTsModule x = tokenize x <#> printToken # fold
 
+printTsPath :: DTS.TsFilePath -> Path
+printTsPath (DTS.TsFilePath x y) = Path (x <> "." <> y)
+
 printTsType :: DTS.TsType -> TsSource
 printTsType x = tokenize x <#> printToken # fold
 
@@ -384,12 +370,34 @@ printTsDeclaration x = x # tokenize # map printToken >>> fold
 printTsDeclarations :: Array DTS.TsDeclaration -> Array TsSource
 printTsDeclarations x = x <#> tokenize <#> map printToken >>> fold
 
-printTsPath :: DTS.TsFilePath -> Path
-printTsPath (DTS.TsFilePath x y) = Path (x <> "." <> y)
-
 printTsProgram :: DTS.TsProgram -> Map Path TsSource
 printTsProgram (DTS.TsProgram xs) = xs
   # (Map.toUnfoldable :: _ -> Array _)
   <#> (\(k /\ v) -> printTsPath k /\ printTsModule v)
   # Map.fromFoldable
 
+-------------------------------------------------------------------------------
+-- Instances
+-------------------------------------------------------------------------------
+
+derive newtype instance Semigroup TsSource
+
+derive newtype instance Semigroup Path
+
+derive newtype instance Eq TsSource
+
+derive newtype instance Eq Path
+
+derive newtype instance Ord Path
+
+derive newtype instance Show TsSource
+
+derive newtype instance Show Path
+
+derive newtype instance Monoid TsSource
+
+derive newtype instance Monoid Path
+
+derive instance Newtype TsSource _
+
+derive instance Newtype Path _
