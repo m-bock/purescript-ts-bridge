@@ -6,9 +6,7 @@ module TsBridge.DTS
   , TsDeclaration(..)
   , TsFilePath(..)
   , TsFnArg(..)
-  , TsImport(..)
   , TsModule(..)
-  , TsModuleAlias(..)
   , TsModuleFile(..)
   , TsModulePath(..)
   , TsName
@@ -90,7 +88,7 @@ data TsType
   | TsTypeTypelevelString String
   | TsTypeVoid
 
-data TsModule = TsModule String (Set TsImport) (Array TsDeclaration)
+data TsModule = TsModule (Array TsDeclaration)
 
 data TsModuleFile = TsModuleFile TsFilePath TsModule
 
@@ -99,15 +97,11 @@ data TsProgram = TsProgram (Map TsFilePath TsModule)
 
 data TsName = TsName String
 
-newtype TsModuleAlias = TsModuleAlias String
-
 data TsModulePath = TsModulePath String
 
 data TsFilePath = TsFilePath String String
 
-data TsImport = TsImport TsModuleAlias TsModulePath
-
-data TsQualName = TsQualName (Maybe TsModuleAlias) TsName
+data TsQualName = TsQualName (Maybe TsFilePath) TsName
 
 newtype TsTypeArgsQuant = TsTypeArgsQuant (OSet TsName)
 
@@ -285,8 +279,6 @@ derive newtype instance Eq a => Semigroup (OSet a)
 derive instance Eq TsRecordField
 derive instance Eq TsFnArg
 derive instance Eq TsTypeArgs
-derive instance Eq TsImport
-derive instance Eq TsModuleAlias
 derive instance Eq TsQualName
 derive instance Eq TsTypeArgsQuant
 derive instance Eq TsDeclaration
@@ -301,8 +293,6 @@ derive instance Eq TsNameError
 derive instance Ord TsFnArg
 derive instance Ord TsRecordField
 derive instance Ord TsTypeArgs
-derive instance Ord TsImport
-derive instance Ord TsModuleAlias
 derive instance Ord TsQualName
 derive instance Ord TsTypeArgsQuant
 derive instance Ord TsDeclaration

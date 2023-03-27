@@ -69,7 +69,7 @@ tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Either 
 tsModuleFile n xs = do
   (xs' /\ TsBridgeAccum { typeDefs }) <- runTsBridgeM $ mapErr (DTS.AtModule n) $ join <$> sequence xs
 
-  pure (typeDefs <> [ DTS.TsModuleFile (DTS.dtsFilePath n) (DTS.TsModule n Set.empty xs') ])
+  pure (typeDefs <> [ DTS.TsModuleFile (DTS.dtsFilePath n) (DTS.TsModule xs') ])
 
 mapErr :: forall e m a. MonadError e m => (e -> e) -> m a -> m a
 mapErr f ma = catchError ma (f >>> throwError)
@@ -82,10 +82,8 @@ mergeModules xs =
     # DTS.TsProgram
 
 mergeModule :: DTS.TsModule -> DTS.TsModule -> DTS.TsModule
-mergeModule (DTS.TsModule _ is1 ds1) (DTS.TsModule n2 is2 ds2) =
+mergeModule (DTS.TsModule ds1) (DTS.TsModule ds2) =
   DTS.TsModule
-    n2
-    (is1 `Set.union` is2)
     (Array.nub (ds1 <> ds2))
 
 tsProgram :: Array (Either DTS.Error (Array DTS.TsModuleFile)) -> Either DTS.Error DTS.TsProgram
@@ -109,7 +107,7 @@ tsOpaqueType :: forall tok a. TsBridgeBy tok a => tok -> Proxy a -> TsBridgeM (A
 tsOpaqueType tok x = do
   _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ tsBridgeBy tok x
   case A.uncons modules of
-    Just { head: (DTS.TsModuleFile _ (DTS.TsModule _ _ decls)), tail: [] } -> do
+    Just { head: (DTS.TsModuleFile _ (DTS.TsModule decls)), tail: [] } -> do
       tell $ TsBridgeAccum
         { typeDefs: mempty
         , scope: mempty

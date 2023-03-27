@@ -93,16 +93,13 @@ class Tokenize a where
 instance Tokenize DTS.TsName where
   tokenize x = [ TsTokIdentifier $ DTS.printTsName x ]
 
-instance Tokenize DTS.TsModuleAlias where
-  tokenize (DTS.TsModuleAlias x) = [ TsTokIdentifier x ]
-
 instance Tokenize DTS.TsQualName where
   tokenize (DTS.TsQualName s x) =
     maybe []
-      ( \(DTS.TsModuleAlias n) ->
+      ( \(DTS.TsFilePath n _) ->
           [ TsTokImport
           , TsTokOpenParen
-          , TsTokStringLiteral ("../" <> n)
+          , TsTokStringLiteral n
           , TsTokCloseParen
           , TsTokDot
           ]
@@ -212,20 +209,8 @@ instance Tokenize DTS.TsDeclaration where
       xs >>= \x -> [ TsTokLineComment x ]
 
 instance Tokenize DTS.TsModule where
-  tokenize (DTS.TsModule _ is ds) =
-    ( is
-        # Set.toUnfoldable
-        <#> tokenize
-        # applyWhenNotEmpty (postfixNewline >>> (_ <> [ TsTokNewline ]))
-    )
-      <> (ds <#> tokenize # sepByDoubleNewline)
-
-instance Tokenize DTS.TsImport where
-  tokenize (DTS.TsImport n fp) =
-    [ TsTokImport, TsTokWhitespace, TsTokAsterisk, TsTokWhitespace, TsTokAs, TsTokWhitespace ]
-      <> tokenize n
-      <> [ TsTokWhitespace, TsTokFrom, TsTokWhitespace ]
-      <> tokenize fp
+  tokenize (DTS.TsModule ds) =
+    (ds <#> tokenize # sepByDoubleNewline)
 
 instance Tokenize DTS.TsModulePath where
   tokenize (DTS.TsModulePath x) =

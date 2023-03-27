@@ -271,7 +271,7 @@ tsBridgeOpaqueType pursModuleName pursTypeName args _ = do
   args' <- traverse DTS.mkTsName targNames
   brandedType
     (DTS.TsFilePath (pursModuleName <> "/index") "d.ts")
-    (DTS.TsModuleAlias pursModuleName)
+    (DTS.TsFilePath ("../" <> pursModuleName) "d.ts")
     name
     (coerce $ OSet.fromFoldable $ args')
     targs
@@ -279,6 +279,27 @@ tsBridgeOpaqueType pursModuleName pursTypeName args _ = do
   where
   targNames = map fst args
   targs = map snd args
+
+brandedType :: DTS.TsFilePath -> DTS.TsFilePath -> DTS.TsName -> OSet DTS.TsName -> Array (StandaloneTsType) -> Maybe DTS.TsType -> StandaloneTsType
+brandedType filePath filePathRef name targs args' type_ = do
+  args <- sequence args'
+
+  let
+    typeDefs =
+      [ DTS.TsModuleFile
+          filePath
+          ( DTS.TsModule
+              [ mkBrandedTypeDecl name targs type_
+              ]
+          )
+      ]
+
+  tell
+    $ TsBridgeAccum
+    $ R.union mempty { typeDefs }
+
+  pure
+    $ DTS.TsTypeConstructor (DTS.TsQualName (Just filePathRef) name) (DTS.TsTypeArgs args)
 
 -- | `tsBridge` type class method implementation for newtypes
 tsBridgeNewtype
@@ -300,7 +321,7 @@ tsBridgeNewtype tok pursModuleName pursTypeName args_ _ = do
   x <- tsBridgeBy tok (Proxy :: _ t)
   let
     filePath = DTS.TsFilePath (pursModuleName <> "/index") "d.ts"
-    alias = DTS.TsModuleAlias pursModuleName
+    filePathRef = DTS.TsFilePath ("../" <> pursModuleName) "d.ts"
 
   name <- DTS.mkTsName pursTypeName
   args' <- OSet.fromFoldable <$> traverse DTS.mkTsName targNames
@@ -309,7 +330,7 @@ tsBridgeNewtype tok pursModuleName pursTypeName args_ _ = do
     typeDefs =
       [ DTS.TsModuleFile
           filePath
-          ( DTS.TsModule pursModuleName Set.empty
+          ( DTS.TsModule
               [ DTS.TsDeclTypeDef name DTS.Public (coerce args') x
               ]
           )
@@ -320,7 +341,7 @@ tsBridgeNewtype tok pursModuleName pursTypeName args_ _ = do
     $ R.union mempty { typeDefs }
 
   pure
-    $ DTS.TsTypeConstructor (DTS.TsQualName (Just alias) name) (DTS.TsTypeArgs args)
+    $ DTS.TsTypeConstructor (DTS.TsQualName (Just filePathRef) name) (DTS.TsTypeArgs args)
 
 -------------------------------------------------------------------------------
 -- tsBridge methods / class TsBridgeRecord
@@ -421,27 +442,6 @@ fixScope (Scope { fixed, floating }) = Scope
   { floating: OSet.empty
   , fixed: fixed <> floating
   }
-
-brandedType :: DTS.TsFilePath -> DTS.TsModuleAlias -> DTS.TsName -> OSet DTS.TsName -> Array (StandaloneTsType) -> Maybe DTS.TsType -> StandaloneTsType
-brandedType filePath moduleAlias@(DTS.TsModuleAlias alias) name targs args' type_ = do
-  args <- sequence args'
-
-  let
-    typeDefs =
-      [ DTS.TsModuleFile
-          filePath
-          ( DTS.TsModule alias Set.empty
-              [ mkBrandedTypeDecl name targs type_
-              ]
-          )
-      ]
-
-  tell
-    $ TsBridgeAccum
-    $ R.union mempty { typeDefs }
-
-  pure
-    $ DTS.TsTypeConstructor (DTS.TsQualName (Just moduleAlias) name) (DTS.TsTypeArgs args)
 
 mkBrandedTypeDecl :: DTS.TsName -> OSet DTS.TsName -> Maybe DTS.TsType -> DTS.TsDeclaration
 mkBrandedTypeDecl name args type_ = DTS.TsDeclTypeDef name DTS.Public (coerce args)
