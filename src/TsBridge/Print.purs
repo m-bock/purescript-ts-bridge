@@ -96,7 +96,7 @@ instance Tokenize DTS.TsName where
 instance Tokenize DTS.TsQualName where
   tokenize (DTS.TsQualName s x) =
     maybe []
-      ( \(DTS.TsFilePath n _) ->
+      ( \(DTS.TsImportPath n) ->
           [ TsTokImport
           , TsTokOpenParen
           , TsTokStringLiteral n
@@ -344,7 +344,7 @@ printTsModule :: DTS.TsModule -> TsSource
 printTsModule x = tokenize x <#> printToken # fold
 
 printTsPath :: DTS.TsFilePath -> Path
-printTsPath (DTS.TsFilePath x y) = Path (x <> "." <> y)
+printTsPath (DTS.TsFilePath x) = Path x
 
 printTsType :: DTS.TsType -> TsSource
 printTsType x = tokenize x <#> printToken # fold

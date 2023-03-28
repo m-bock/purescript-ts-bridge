@@ -37,7 +37,6 @@ import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable)
-import Data.Set as Set
 import Data.Set.Ordered as OSet
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (sequence, traverse)
@@ -267,29 +266,19 @@ tsBridgeFunction tok _ = censor mapAccum ado
 -- | `tsBridge` type class method implementation for opaque types
 tsBridgeOpaqueType :: forall a. String -> String -> Array (String /\ StandaloneTsType) -> a -> StandaloneTsType
 tsBridgeOpaqueType pursModuleName pursTypeName args _ = do
+  argNames <- args <#> fst # traverse DTS.mkTsName
+  targs <- args <#> snd # sequence
   name <- DTS.mkTsName pursTypeName
-  args' <- traverse DTS.mkTsName targNames
-  brandedType
-    (DTS.TsFilePath (pursModuleName <> "/index") "d.ts")
-    (DTS.TsFilePath ("../" <> pursModuleName) "d.ts")
-    name
-    (coerce $ OSet.fromFoldable $ args')
-    targs
-    Nothing
-  where
-  targNames = map fst args
-  targs = map snd args
-
-brandedType :: DTS.TsFilePath -> DTS.TsFilePath -> DTS.TsName -> OSet DTS.TsName -> Array (StandaloneTsType) -> Maybe DTS.TsType -> StandaloneTsType
-brandedType filePath filePathRef name targs args' type_ = do
-  args <- sequence args'
 
   let
+    filePath = DTS.TsFilePath (pursModuleName <> "/index.d.ts")
+    importPath = DTS.TsImportPath ("../" <> pursModuleName)
+
     typeDefs =
       [ DTS.TsModuleFile
           filePath
           ( DTS.TsModule
-              [ mkBrandedTypeDecl name targs type_
+              [ mkBrandedTypeDecl name (coerce $ OSet.fromFoldable $ argNames) Nothing
               ]
           )
       ]
@@ -299,7 +288,7 @@ brandedType filePath filePathRef name targs args' type_ = do
     $ R.union mempty { typeDefs }
 
   pure
-    $ DTS.TsTypeConstructor (DTS.TsQualName (Just filePathRef) name) (DTS.TsTypeArgs args)
+    $ DTS.TsTypeConstructor (DTS.TsQualName (Just importPath) name) (DTS.TsTypeArgs targs)
 
 -- | `tsBridge` type class method implementation for newtypes
 tsBridgeNewtype
@@ -320,8 +309,8 @@ tsBridgeNewtype tok pursModuleName pursTypeName args_ _ = do
   args <- sequence targs
   x <- tsBridgeBy tok (Proxy :: _ t)
   let
-    filePath = DTS.TsFilePath (pursModuleName <> "/index") "d.ts"
-    filePathRef = DTS.TsFilePath ("../" <> pursModuleName) "d.ts"
+    filePath = DTS.TsFilePath (pursModuleName <> "/index.d.ts")
+    filePathRef = DTS.TsImportPath ("../" <> pursModuleName)
 
   name <- DTS.mkTsName pursTypeName
   args' <- OSet.fromFoldable <$> traverse DTS.mkTsName targNames

@@ -5,6 +5,7 @@ module TsBridge.DTS
   , TsDeclVisibility(..)
   , TsDeclaration(..)
   , TsFilePath(..)
+  , TsImportPath(..)
   , TsFnArg(..)
   , TsModule(..)
   , TsModuleFile(..)
@@ -17,7 +18,6 @@ module TsBridge.DTS
   , TsType(..)
   , TsTypeArgs(..)
   , TsTypeArgsQuant(..)
-  , dtsFilePath
   , mapQuantifier
   , mkTsName
   , printError
@@ -99,9 +99,11 @@ data TsName = TsName String
 
 data TsModulePath = TsModulePath String
 
-data TsFilePath = TsFilePath String String
+data TsFilePath = TsFilePath String
 
-data TsQualName = TsQualName (Maybe TsFilePath) TsName
+data TsImportPath = TsImportPath String
+
+data TsQualName = TsQualName (Maybe TsImportPath) TsName
 
 newtype TsTypeArgsQuant = TsTypeArgsQuant (OSet TsName)
 
@@ -237,9 +239,6 @@ mapQuantifier f = case _ of
 -- Util
 -------------------------------------------------------------------------------
 
-dtsFilePath :: String -> TsFilePath
-dtsFilePath x = TsFilePath (x <> "/index") "d.ts"
-
 tsReservedWords :: Set String
 tsReservedWords = Set.fromFoldable
   [ "instanceof"
@@ -281,6 +280,7 @@ derive instance Eq TsFnArg
 derive instance Eq TsTypeArgs
 derive instance Eq TsQualName
 derive instance Eq TsTypeArgsQuant
+derive instance Eq TsImportPath
 derive instance Eq TsDeclaration
 derive instance Eq TsType
 derive instance Eq TsName
@@ -294,6 +294,7 @@ derive instance Ord TsFnArg
 derive instance Ord TsRecordField
 derive instance Ord TsTypeArgs
 derive instance Ord TsQualName
+derive instance Ord TsImportPath
 derive instance Ord TsTypeArgsQuant
 derive instance Ord TsDeclaration
 derive instance Ord TsType

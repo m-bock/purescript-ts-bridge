@@ -69,7 +69,7 @@ tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Either 
 tsModuleFile n xs = do
   (xs' /\ TsBridgeAccum { typeDefs }) <- runTsBridgeM $ mapErr (DTS.AtModule n) $ join <$> sequence xs
 
-  pure (typeDefs <> [ DTS.TsModuleFile (DTS.dtsFilePath n) (DTS.TsModule xs') ])
+  pure (typeDefs <> [ DTS.TsModuleFile (DTS.TsFilePath (n <> "/index.d.ts")) (DTS.TsModule xs') ])
 
 mapErr :: forall e m a. MonadError e m => (e -> e) -> m a -> m a
 mapErr f ma = catchError ma (f >>> throwError)
