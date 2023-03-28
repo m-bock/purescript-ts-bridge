@@ -48,7 +48,7 @@ import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
 import TsBridge.Core (class TsBridgeBy, StandaloneTsType, tsBridgeBy)
-import TsBridge.DTS (OSet(..), TsNameDraft)
+import TsBridge.DTS (OSet(..))
 import TsBridge.DTS as DTS
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM)
 import Type.Proxy (Proxy(..))

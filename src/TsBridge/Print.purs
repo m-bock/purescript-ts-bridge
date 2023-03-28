@@ -15,7 +15,6 @@ import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (maybe)
 import Data.Newtype (class Newtype, unwrap)
-import Data.Set as Set
 import Data.Set.Ordered as OSet
 import Data.Tuple.Nested ((/\))
 import TsBridge.DTS as DTS
@@ -239,9 +238,6 @@ sepByComma = sepBy [ TsTokComma, TsTokWhitespace ]
 
 sepByDoubleNewline :: Array TsTokens -> TsTokens
 sepByDoubleNewline = sepBy [ TsTokNewline, TsTokNewline ]
-
-postfixNewline :: Array TsTokens -> TsTokens
-postfixNewline = postfix [ TsTokNewline ]
 
 applyWhenNotEmpty :: forall a b. (Array a -> Array b) -> Array a -> Array b
 applyWhenNotEmpty _ xs | Array.null xs = []
