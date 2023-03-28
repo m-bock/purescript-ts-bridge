@@ -221,9 +221,6 @@ wrap p q x = p <> x <> q
 sepBy :: TsTokens -> Array TsTokens -> TsTokens
 sepBy sep xs = intersperse sep xs # join
 
-postfix :: TsTokens -> Array TsTokens -> TsTokens
-postfix tok xs = xs <#> (_ <> tok) # join
-
 wrapAngles :: TsTokens -> TsTokens
 wrapAngles = wrap [ TsTokOpenAngle ] [ TsTokCloseAngle ]
 
