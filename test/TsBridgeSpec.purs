@@ -76,7 +76,7 @@ newtype MyNT = MyNT Number
 derive instance Newtype MyNT _
 
 instance TsBridge MyNT where
-  tsBridge = TSB.tsBridgeNewtype Tok "Foo.Bar" "MyNT" []
+  tsBridge = TSB.tsBridgeNewtype Tok "Foo.Bar" (TSB.TsName "MyNT") []
 
 --
 
@@ -100,7 +100,7 @@ spec = do
         it "generates a type and adds the type module" do
           ( TSB.tsProgram
               [ TSB.tsModuleFile "Foo.Bar"
-                  [ TSB.tsValue Tok "a" (Left "" :: Either String Boolean) ]
+                  [ TSB.tsValue Tok (TSB.TsName "a") (Left "" :: Either String Boolean) ]
               ]
               <#> printTsProgram
           )
@@ -119,7 +119,7 @@ spec = do
         it "generates a type and adds the type module" do
           ( TSB.tsProgram
               [ TSB.tsModuleFile "Foo.Bar"
-                  [ TSB.tsValue Tok "a" (MyNT 0.0) ]
+                  [ TSB.tsValue Tok (TSB.TsName "a") (MyNT 0.0) ]
               ]
               <#> printTsProgram
           )
@@ -137,12 +137,12 @@ spec = do
       describe "tsValue" do
         describe "Number" do
           testDeclPrint
-            (TSB.tsValue Tok "foo" 13.0)
+            (TSB.tsValue Tok (TSB.TsName "foo") 13.0)
             [ "export const foo : number" ]
 
         describe "Number" do
           it "prints the correct declaration" do
-            ( TSB.tsValue Tok "foo'" 0.0
+            ( TSB.tsValue Tok (TSB.TsName "foo'") 0.0
                 # TSB.runTsBridgeM
                 <#> (fst >>> printTsDeclarations)
             )
@@ -150,7 +150,7 @@ spec = do
 
         describe "Number" do
           it "prints the correct declaration" do
-            ( TSB.tsValue Tok "foo" (Nothing :: Maybe A)
+            ( TSB.tsValue Tok (TSB.TsName "foo") (Nothing :: Maybe A)
                 # TSB.runTsBridgeM
                 <#> (fst >>> printTsDeclarations)
             )

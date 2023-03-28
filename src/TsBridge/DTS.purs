@@ -11,6 +11,7 @@ module TsBridge.DTS
   , TsModuleFile(..)
   , TsModulePath(..)
   , TsName
+  , TsNameDraft(..)
   , TsNameError(..)
   , TsProgram(..)
   , TsQualName(..)
@@ -95,7 +96,9 @@ data TsModuleFile = TsModuleFile TsFilePath TsModule
 -- | A collection of TypeScript modules
 data TsProgram = TsProgram (Map TsFilePath TsModule)
 
-data TsName = TsName String
+data TsName = UnsafeTsName String
+
+data TsNameDraft = TsName String
 
 data TsModulePath = TsModulePath String
 
@@ -132,8 +135,8 @@ tsNameRegexFirst = Regex.unsafeRegex "[_$A-Za-z]" noFlags
 tsNameRegexRest :: Regex
 tsNameRegexRest = Regex.unsafeRegex "[_$A-Za-z0-9]" noFlags
 
-mkTsName :: forall m. MonadThrow Error m => String -> m TsName
-mkTsName s = do
+mkTsName :: forall m. MonadThrow Error m => TsNameDraft -> m TsName
+mkTsName (TsName s) = do
   when (s == "") $
     throwError (ErrTsName ErrEmpty)
 
@@ -151,13 +154,13 @@ mkTsName s = do
     when (not $ Reg.test tsNameRegexRest $ Char.singleton c) $
       throwError (ErrTsName $ ErrInvalidCharacter c)
 
-  pure $ TsName s
+  pure $ UnsafeTsName s
 
 unsafeTsName :: String -> TsName
-unsafeTsName = TsName
+unsafeTsName = UnsafeTsName
 
 printTsName :: TsName -> String
-printTsName (TsName n) = n
+printTsName (UnsafeTsName n) = n
 
 -------------------------------------------------------------------------------
 -- Error
@@ -309,7 +312,7 @@ derive instance Generic TsNameError _
 derive instance Newtype (OSet a) _
 
 instance Show TsName where
-  show (TsName name) = show name
+  show (UnsafeTsName name) = show name
 
 instance Show TsNameError where
   show = genericShow

@@ -32,6 +32,7 @@ import Prim.Row as Row
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
 import Safe.Coerce (coerce)
+import TsBridge.DTS (TsNameDraft)
 import TsBridge.DTS as DTS
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, runTsBridgeM)
 import Type.Proxy (Proxy(..))
@@ -92,7 +93,7 @@ tsProgram xs = xs # sequence <#> join >>> mergeModules
 -- | For rare cases where you want to export a type alias. References to this type
 -- | alias will be fully resolved in the generated code. So it is more practical
 -- | to use a newtype instead, which can be references by name.
-tsTypeAlias :: forall tok a. TsBridgeBy tok a => tok -> String -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
+tsTypeAlias :: forall tok a. TsBridgeBy tok a => tok -> TsNameDraft -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
 tsTypeAlias tok n x = ado
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
   name <- DTS.mkTsName n
@@ -116,10 +117,10 @@ tsOpaqueType tok x = do
     _ -> pure []
 
 -- | Exports a single PureScript value to TypeScript. `tsValues` may be better choice. 
-tsValue :: forall tok a. TsBridgeBy tok a => tok -> String -> a -> TsBridgeM (Array DTS.TsDeclaration)
+tsValue :: forall tok a. TsBridgeBy tok a => tok -> TsNameDraft -> a -> TsBridgeM (Array DTS.TsDeclaration)
 tsValue tok n _ = tsValue' tok n (Proxy :: _ a)
 
-tsValue' :: forall tok a. TsBridgeBy tok a => tok -> String -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
+tsValue' :: forall tok a. TsBridgeBy tok a => tok -> TsNameDraft -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
 tsValue' tok n _ = do
   let t = tsBridgeBy tok (Proxy :: _ a)
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
@@ -168,4 +169,4 @@ instance
   tsValuesRL tok r _ = (<>) <$> head <*> tail
     where
     tail = tsValuesRL tok r (Proxy :: _ rl)
-    head = tsValue' tok (reflectSymbol (Proxy :: _ sym)) (Proxy :: _ a)
+    head = tsValue' tok (DTS.TsName $ reflectSymbol (Proxy :: _ sym)) (Proxy :: _ a)

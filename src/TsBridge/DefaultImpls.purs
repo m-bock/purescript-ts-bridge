@@ -48,7 +48,7 @@ import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
 import TsBridge.Core (class TsBridgeBy, StandaloneTsType, tsBridgeBy)
-import TsBridge.DTS (OSet(..))
+import TsBridge.DTS (OSet(..), TsNameDraft)
 import TsBridge.DTS as DTS
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM)
 import Type.Proxy (Proxy(..))
@@ -73,7 +73,7 @@ data TypeVar (s :: Symbol) = TypeVar
 tsBridgeTypeVar :: forall s. IsSymbol s => Proxy (TypeVar s) -> StandaloneTsType
 tsBridgeTypeVar _ = do
 
-  tsName <- DTS.mkTsName $ reflectSymbol (Proxy :: _ s)
+  tsName <- DTS.mkTsName $ DTS.TsName $ reflectSymbol (Proxy :: _ s)
 
   let
     scope = Scope
@@ -115,7 +115,7 @@ tsBridgeBoolean _ = pure DTS.TsTypeBoolean
 -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#int)
 -- | for details.
 tsBridgeInt :: Proxy Int -> StandaloneTsType
-tsBridgeInt = tsBridgeOpaqueType "Prim" "Int" []
+tsBridgeInt = tsBridgeOpaqueType "Prim" (DTS.TsName "Int") []
 
 -- | `tsBridge` type class method implementation for the `Char` type
 -- |
@@ -123,7 +123,7 @@ tsBridgeInt = tsBridgeOpaqueType "Prim" "Int" []
 -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#char)
 -- | for details.
 tsBridgeChar :: Proxy Char -> StandaloneTsType
-tsBridgeChar = tsBridgeOpaqueType "Prim" "Char" []
+tsBridgeChar = tsBridgeOpaqueType "Prim" (DTS.TsName "Char") []
 
 -- | `tsBridge` type class method implementation for the `Unit` type
 -- |
@@ -175,9 +175,9 @@ tsBridgeTuple
   -> Proxy (Tuple a b)
   -> StandaloneTsType
 tsBridgeTuple tok =
-  tsBridgeOpaqueType "Data.Tuple" "Tuple"
-    [ "A" /\ tsBridgeBy tok (Proxy :: _ a)
-    , "B" /\ tsBridgeBy tok (Proxy :: _ b)
+  tsBridgeOpaqueType "Data.Tuple" (DTS.TsName "Tuple")
+    [ DTS.TsName "A" /\ tsBridgeBy tok (Proxy :: _ a)
+    , DTS.TsName "B" /\ tsBridgeBy tok (Proxy :: _ b)
     ]
 
 -- | `tsBridge` type class method implementation for the `Either` type
@@ -194,9 +194,9 @@ tsBridgeEither
   -> Proxy (Either a b)
   -> StandaloneTsType
 tsBridgeEither tok =
-  tsBridgeOpaqueType "Data.Either" "Either"
-    [ "A" /\ tsBridgeBy tok (Proxy :: _ a)
-    , "B" /\ tsBridgeBy tok (Proxy :: _ b)
+  tsBridgeOpaqueType "Data.Either" (DTS.TsName "Either")
+    [ DTS.TsName "A" /\ tsBridgeBy tok (Proxy :: _ a)
+    , DTS.TsName "B" /\ tsBridgeBy tok (Proxy :: _ b)
     ]
 
 -- | `tsBridge` type class method implementation for the `Maybe` type
@@ -206,8 +206,8 @@ tsBridgeEither tok =
 -- | for details.
 tsBridgeMaybe :: forall tok a. TsBridgeBy tok a => tok -> Proxy (Maybe a) -> StandaloneTsType
 tsBridgeMaybe tok =
-  tsBridgeOpaqueType "Data.Maybe" "Maybe"
-    [ "A" /\ tsBridgeBy tok (Proxy :: _ a) ]
+  tsBridgeOpaqueType "Data.Maybe" (DTS.TsName "Maybe")
+    [ DTS.TsName "A" /\ tsBridgeBy tok (Proxy :: _ a) ]
 
 -- | `tsBridge` type class method implementation for the `Promise` type.
 -- |
@@ -264,7 +264,7 @@ tsBridgeFunction tok _ = censor mapAccum ado
   mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
 
 -- | `tsBridge` type class method implementation for opaque types
-tsBridgeOpaqueType :: forall a. String -> String -> Array (String /\ StandaloneTsType) -> a -> StandaloneTsType
+tsBridgeOpaqueType :: forall a. String -> DTS.TsNameDraft -> Array (DTS.TsNameDraft /\ StandaloneTsType) -> a -> StandaloneTsType
 tsBridgeOpaqueType pursModuleName pursTypeName args _ = do
   argNames <- args <#> fst # traverse DTS.mkTsName
   targs <- args <#> snd # sequence
@@ -297,8 +297,8 @@ tsBridgeNewtype
   => TsBridgeBy tok t
   => tok
   -> String
-  -> String
-  -> Array (String /\ StandaloneTsType)
+  -> DTS.TsNameDraft
+  -> Array (DTS.TsNameDraft /\ StandaloneTsType)
   -> Proxy a
   -> StandaloneTsType
 tsBridgeNewtype tok pursModuleName pursTypeName args_ _ = do
