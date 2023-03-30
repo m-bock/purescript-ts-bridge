@@ -20,11 +20,12 @@ import Data.Variant (Variant)
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-import TsBridge (TsNameError(..), TsSource(..))
+
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
-import TsBridge.Print (printTsDeclarations, printTsType)
+import DTS.Print (printTsDeclarations, printTsType)
 import Type.Proxy (Proxy(..))
+import DTS as DTS
 
 class TsBridge (a :: Type) where
   tsBridge :: Proxy a -> TSB.StandaloneTsType
@@ -76,7 +77,7 @@ newtype MyNT = MyNT Number
 derive instance Newtype MyNT _
 
 instance TsBridge MyNT where
-  tsBridge = TSB.tsBridgeNewtype Tok "Foo.Bar" (TSB.TsName "MyNT") []
+  tsBridge = TSB.tsBridgeNewtype Tok "Foo.Bar" (TSB.DefName "MyNT") []
 
 --
 
@@ -100,7 +101,7 @@ spec = do
         it "generates a type and adds the type module" do
           ( TSB.tsProgram
               [ TSB.tsModuleFile "Foo.Bar"
-                  [ TSB.tsValue Tok (TSB.TsName "a") (Left "" :: Either String Boolean) ]
+                  [ TSB.tsValue Tok (TSB.DefName "a") (Left "" :: Either String Boolean) ]
               ]
               <#> printTsProgram
           )
@@ -119,7 +120,7 @@ spec = do
         it "generates a type and adds the type module" do
           ( TSB.tsProgram
               [ TSB.tsModuleFile "Foo.Bar"
-                  [ TSB.tsValue Tok (TSB.TsName "a") (MyNT 0.0) ]
+                  [ TSB.tsValue Tok (TSB.DefName "a") (MyNT 0.0) ]
               ]
               <#> printTsProgram
           )
@@ -137,24 +138,24 @@ spec = do
       describe "tsValue" do
         describe "Number" do
           testDeclPrint
-            (TSB.tsValue Tok (TSB.TsName "foo") 13.0)
+            (TSB.tsValue Tok (TSB.DefName "foo") 13.0)
             [ "export const foo : number" ]
 
         describe "Number" do
           it "prints the correct declaration" do
-            ( TSB.tsValue Tok (TSB.TsName "foo'") 0.0
+            ( TSB.tsValue Tok (TSB.DefName "foo'") 0.0
                 # TSB.runTsBridgeM
                 <#> (fst >>> printTsDeclarations)
             )
-              `shouldEqual` (Left $ TSB.ErrTsName $ ErrInvalidCharacter '\'')
+              `shouldEqual` (Left $ TSB.ErrTsName $ TSB.ErrInvalidCharacter '\'')
 
         describe "Number" do
           it "prints the correct declaration" do
-            ( TSB.tsValue Tok (TSB.TsName "foo") (Nothing :: Maybe A)
+            ( TSB.tsValue Tok (TSB.DefName "foo") (Nothing :: Maybe A)
                 # TSB.runTsBridgeM
                 <#> (fst >>> printTsDeclarations)
             )
-              `shouldEqual` (Left $ TSB.ErrUnquantifiedTypeVariables $ Set.fromFoldable [ TSB.unsafeTsName "A" ])
+              `shouldEqual` (Left $ TSB.ErrUnquantifiedTypeVariables $ Set.fromFoldable [ TSB.unsafeName "A" ])
 
     describe "Type Printing" do
       describe "Number" do
@@ -199,7 +200,7 @@ spec = do
               # TSB.runTsBridgeM
               <#> (fst >>> printTsType)
           )
-            `shouldEqual` (Right $ TSB.TsSource "import('../Data.Either').Either<string, boolean>")
+            `shouldEqual` (Right $ DTS.TsSource "import('../Data.Either').Either<string, boolean>")
 
       describe "Nullable" do
         testTypePrint (tsBridge (Proxy :: _ (Nullable String)))
@@ -209,27 +210,27 @@ spec = do
         testTypePrint (tsBridge (Proxy :: _ (Variant (a :: String, b :: Boolean))))
           "({ readonly 'type': 'a'; readonly 'value': string; }) | ({ readonly 'type': 'b'; readonly 'value': boolean; })"
 
-testDeclPrint :: TsBridgeM (Array TSB.TsDeclaration) -> Array String -> Spec Unit
+testDeclPrint :: TsBridgeM (Array DTS.TsDeclaration) -> Array String -> Spec Unit
 testDeclPrint x s =
   it "prints the correct declaration" do
     TSB.runTsBridgeM x
       <#> (fst >>> printTsDeclarations)
       # fromRight []
-      # shouldEqual (TSB.TsSource <$> s)
+      # shouldEqual (DTS.TsSource <$> s)
 
-testTypePrint :: TsBridgeM TSB.TsType -> String -> Spec Unit
+testTypePrint :: TsBridgeM DTS.TsType -> String -> Spec Unit
 testTypePrint x s =
   it "prints the correct type" do
     shouldEqual
       ( TSB.runTsBridgeM x
           <#> (fst >>> printTsType)
-          # fromRight (TsSource "")
+          # fromRight (DTS.TsSource "")
       )
-      (TSB.TsSource s)
+      (DTS.TsSource s)
 
-textFile :: String -> Array String -> TSB.Path /\ Array String
-textFile n lines = TSB.Path n /\ lines
+textFile :: String -> Array String -> DTS.Path /\ Array String
+textFile n lines = DTS.Path n /\ lines
 
-printTsProgram :: TSB.TsProgram -> Map TSB.Path (Array String)
-printTsProgram x = TSB.printTsProgram x
-  <#> un TSB.TsSource >>> String.split (Pattern "\n")
+printTsProgram :: DTS.TsProgram -> Map DTS.Path (Array String)
+printTsProgram x = DTS.printTsProgram x
+  <#> un DTS.TsSource >>> String.split (Pattern "\n")

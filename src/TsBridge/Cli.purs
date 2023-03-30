@@ -21,8 +21,9 @@ import Node.Path (dirname)
 import Node.Process as Process
 import Options.Applicative (help, helper, info, long, metavar, strOption, value, (<**>))
 import Options.Applicative as O
-import TsBridge.DTS (TsProgram, Error, printError)
-import TsBridge.Print (Path(..), TsSource(..), printTsProgram)
+import DTS (TsProgram)
+import DTS.Print (Path(..), TsSource(..), printTsProgram)
+import TsBridge.Types (AppError(..), printError)
 
 -------------------------------------------------------------------------------
 -- Types
@@ -58,7 +59,7 @@ parserInfoTsBridgeCliOpts = info (parserTsBridgeCliOpts <**> helper)
 -------------------------------------------------------------------------------
 -- App
 -------------------------------------------------------------------------------
-mkTypeGenCliAff :: Either Error TsProgram -> Aff Unit
+mkTypeGenCliAff :: Either AppError TsProgram -> Aff Unit
 mkTypeGenCliAff eitherTsProg = do
   cliOpts <- liftEffect $ O.execParser parserInfoTsBridgeCliOpts
 
@@ -86,6 +87,6 @@ writeTsProgramToDisk cliOpts tsProg = do
 
 -- | Given a `TsProgram` returns an effectful CLI that can be used as an entry
 -- | point for a type generator.
-mkTypeGenCli :: Either Error TsProgram -> Effect Unit
+mkTypeGenCli :: Either AppError TsProgram -> Effect Unit
 mkTypeGenCli tsProg = launchAff_ $ mkTypeGenCliAff tsProg
 

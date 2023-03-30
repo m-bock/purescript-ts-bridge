@@ -9,6 +9,7 @@ module Sample where
 
 import Prelude
 
+import DTS as DTS
 import Data.Either (Either)
 import Effect (Effect)
 import TsBridge as TSB
@@ -98,7 +99,7 @@ person =
 -- record puns to eliminate the risk of spelling mistakes:
 --
 
-myTsProgram :: Either TSB.Error TSB.TsProgram
+myTsProgram :: Either TSB.AppError DTS.TsProgram
 myTsProgram =
   TSB.tsProgram
     [ TSB.tsModuleFile "Sample"

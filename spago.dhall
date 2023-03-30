@@ -4,6 +4,7 @@
   , "aff-promise"
   , "arrays"
   , "console"
+  , "dts"
   , "effect"
   , "either"
   , "foldable-traversable"
