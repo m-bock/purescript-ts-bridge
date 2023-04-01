@@ -51,7 +51,7 @@ import Record as R
 import Safe.Coerce (coerce)
 import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM)
-import TsBridge.Types (mkName, Name, DefName(..), unsafeName, toTsName)
+import TsBridge.Types (DefName(..), mkName, toTsName)
 import Type.Proxy (Proxy(..))
 
 -------------------------------------------------------------------------------

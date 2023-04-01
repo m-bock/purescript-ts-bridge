@@ -4,6 +4,8 @@ module Test.TsBridgeSpec
 
 import Prelude
 
+import DTS as DTS
+import DTS.Print (printTsDeclarations, printTsType)
 import Data.Either (Either(..), fromRight)
 import Data.Map (Map)
 import Data.Map as Map
@@ -20,12 +22,9 @@ import Data.Variant (Variant)
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
-import DTS.Print (printTsDeclarations, printTsType)
 import Type.Proxy (Proxy(..))
-import DTS as DTS
 
 class TsBridge (a :: Type) where
   tsBridge :: Proxy a -> TSB.TsBridgeM DTS.TsType
@@ -155,7 +154,7 @@ spec = do
                 # TSB.runTsBridgeM
                 <#> (fst >>> printTsDeclarations)
             )
-              `shouldEqual` (Left $ TSB.ErrUnquantifiedTypeVariables $ Set.fromFoldable [ TSB.unsafeName "A" ])
+              `shouldEqual` (Left $ TSB.ErrUnquantifiedTypeVariables $ Set.fromFoldable [ DTS.TsName "A" ])
 
     describe "Type Printing" do
       describe "Number" do

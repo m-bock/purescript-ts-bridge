@@ -35,7 +35,6 @@ import Safe.Coerce (coerce)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, runTsBridgeM)
 import TsBridge.Types (AppError(..), DefName(..), mkName, toTsName)
 import Type.Proxy (Proxy(..))
-import Unsafe.Coerce (unsafeCoerce)
 
 -- | A `StandaloneTsType` represents a TypeScript type with everything it needs
 -- | to be placed inside complete TS program: If the type references nominal
@@ -96,8 +95,8 @@ tsProgram xs = xs # sequence <#> join >>> mergeModules
 tsTypeAlias :: forall tok a. TsBridgeBy tok a => tok -> DefName -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
 tsTypeAlias tok n x = ado
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
-  name <- unsafeCoerce 1 --DTS.mkTsName n
-  in [ DTS.TsDeclTypeDef name DTS.Public (coerce scope.floating) x ]
+  name <- mkName n
+  in [ DTS.TsDeclTypeDef (toTsName name) DTS.Public (coerce scope.floating) x ]
   where
   t = tsBridgeBy tok x
 
@@ -127,11 +126,12 @@ tsValue' tok n _ = do
 
   name <- mkName n
 
-  -- when (OSet.length scope.floating /= 0)
-  --   $ throwError
-  --   $ ErrUnquantifiedTypeVariables
-  --   $ (Set.fromFoldable :: Array _ -> _)
-  --   $ OSet.toUnfoldable scope.floating
+  when (OSet.length scope.floating /= 0)
+    ( throwError
+        $ ErrUnquantifiedTypeVariables
+        $ (Set.fromFoldable :: Array _ -> _)
+        $ OSet.toUnfoldable scope.floating
+    )
 
   pure [ DTS.TsDeclValueDef (toTsName name) DTS.Public x ]
 

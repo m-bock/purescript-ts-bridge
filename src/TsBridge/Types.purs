@@ -18,7 +18,7 @@ import Prelude
 
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, throwError)
 import DTS as DTS
-import Data.Foldable (for_)
+import Data.Foldable (fold, for_)
 import Data.Generic.Rep (class Generic)
 import Data.Set (Set)
 import Data.Set as Set
@@ -31,11 +31,10 @@ import Data.String.Regex as Reg
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (noFlags)
 import Data.String.Regex.Unsafe (unsafeRegex)
-import Unsafe.Coerce (unsafeCoerce)
 
 data AppError
   = ErrInvalidPursModuleName DefPursModuleName
-  | ErrUnquantifiedTypeVariables (Set Name)
+  | ErrUnquantifiedTypeVariables (Set DTS.TsName)
   | AtModule String AppError
   | AtValue String AppError
   | ErrTsName TsNameError
@@ -80,10 +79,13 @@ mkName (DefName s) = do
   pure $ UnsafeName s
 
 unsafeName :: String -> Name
-unsafeName = unsafeCoerce 1
+unsafeName s = UnsafeName s
 
 toTsName :: Name -> DTS.TsName
-toTsName = unsafeCoerce 1
+toTsName (UnsafeName n) = DTS.TsName n
+
+printName :: Name -> String
+printName (UnsafeName s) = s
 
 mkPursModuleName :: forall m. MonadError AppError m => DefPursModuleName -> m PursModuleName
 mkPursModuleName draft@(DefPursModuleName s) = do
@@ -95,7 +97,29 @@ pursModuleNameRegex :: Regex
 pursModuleNameRegex = unsafeRegex "^([A-Z][a-z0-9_]*)(\\.[A-Z][a-z0-9_]*)*$" noFlags
 
 printError :: AppError -> String
-printError = unsafeCoerce 1
+printError = case _ of
+  AtModule name err -> Str.joinWith "\n"
+    [ "At module " <> name
+    , printError err
+    ]
+  AtValue name err -> Str.joinWith "\n"
+    [ "At Value " <> name
+    , printError err
+    ]
+  ErrUnquantifiedTypeVariables vars ->
+    fold
+      [ "Type variables"
+      , " "
+      , vars # Set.toUnfoldable <#> DTS.printTsName # Str.joinWith ", "
+      , " "
+      , "are not behind a function. This is not possible in TypeScript. E.g. `Maybe a` needs to be exported as `Unit -> Maybe a`."
+      ]
+  ErrInvalidPursModuleName _ -> ""
+  ErrTsName err -> case err of
+    ErrEmpty -> "Identifier is empty"
+    ErrReserveredWord s -> s <> " is a reserved word."
+    ErrInvalidBegining s -> "Identifer cannot start with `" <> s <> "`"
+    ErrInvalidCharacter s -> "Identifier cannot contain `" <> Char.singleton s <> "`"
 
 tsReservedWords :: Set String
 tsReservedWords = Set.fromFoldable

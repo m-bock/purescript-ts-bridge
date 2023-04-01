@@ -23,7 +23,7 @@ import Options.Applicative (help, helper, info, long, metavar, strOption, value,
 import Options.Applicative as O
 import DTS (TsProgram)
 import DTS.Print (Path(..), TsSource(..), printTsProgram)
-import TsBridge.Types (AppError(..), printError)
+import TsBridge.Types (AppError, printError)
 
 -------------------------------------------------------------------------------
 -- Types
