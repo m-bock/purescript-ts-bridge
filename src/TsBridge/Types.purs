@@ -93,7 +93,7 @@ mkPursModuleName s = do
   pure (UnsafePursModuleName s)
 
 pursModuleNameRegex :: Regex
-pursModuleNameRegex = unsafeRegex "^([A-Z][a-z0-9_]*)(\\.[A-Z][a-z0-9_]*)*$" noFlags
+pursModuleNameRegex = unsafeRegex "^([A-Z][A-Za-z0-9_]*)(\\.[A-Z][A-Za-z0-9_]*)*$" noFlags
 
 printError :: AppError -> Doc
 printError = case _ of
