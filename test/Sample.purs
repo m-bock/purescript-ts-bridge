@@ -21,7 +21,7 @@ import Type.Proxy (Proxy)
 --
 
 class TsBridge (a :: Type) where
-  tsBridge :: Proxy a -> TSB.StandaloneTsType
+  tsBridge :: Proxy a -> TSB.TsBridgeM DTS.TsType
 
 -- </li>
 -- <li>

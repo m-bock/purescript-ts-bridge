@@ -28,7 +28,7 @@ import Type.Proxy (Proxy(..))
 import DTS as DTS
 
 class TsBridge (a :: Type) where
-  tsBridge :: Proxy a -> TSB.StandaloneTsType
+  tsBridge :: Proxy a -> TSB.TsBridgeM DTS.TsType
 
 instance TsBridge Number where
   tsBridge = TSB.tsBridgeNumber

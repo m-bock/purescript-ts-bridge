@@ -32,7 +32,6 @@ import Prim.Row as Row
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
 import Safe.Coerce (coerce)
-import TsBridge.Internal (StandaloneTsType, unStandaloneTsType)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, runTsBridgeM)
 import TsBridge.Types (AppError(..), DefName(..), mkName, toTsName)
 import Type.Proxy (Proxy(..))
@@ -65,7 +64,7 @@ import Unsafe.Coerce (unsafeCoerce)
 
 class TsBridgeBy :: Type -> Type -> Constraint
 class TsBridgeBy tok a where
-  tsBridgeBy :: tok -> Proxy a -> StandaloneTsType
+  tsBridgeBy :: tok -> Proxy a -> TsBridgeM DTS.TsType
 
 tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Either AppError (Array DTS.TsModuleFile)
 tsModuleFile n xs = do
@@ -100,14 +99,14 @@ tsTypeAlias tok n x = ado
   name <- unsafeCoerce 1 --DTS.mkTsName n
   in [ DTS.TsDeclTypeDef name DTS.Public (coerce scope.floating) x ]
   where
-  t = unStandaloneTsType $ tsBridgeBy tok x
+  t = tsBridgeBy tok x
 
 -- | For rare cases where you want to manually export an opaque type. Once you export a
 -- | value that contains a reference to this type, the type will be generated
 -- | and exported automatically. Thus in most cases you don't need this.
 tsOpaqueType :: forall tok a. TsBridgeBy tok a => tok -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
 tsOpaqueType tok x = do
-  _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ unStandaloneTsType $ tsBridgeBy tok x
+  _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ tsBridgeBy tok x
   case A.uncons modules of
     Just { head: (DTS.TsModuleFile _ (DTS.TsModule decls)), tail: [] } -> do
       tell $ TsBridgeAccum
@@ -124,7 +123,7 @@ tsValue tok n _ = tsValue' tok n (Proxy :: _ a)
 tsValue' :: forall tok a. TsBridgeBy tok a => tok -> DefName -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
 tsValue' tok n _ = do
   let t = tsBridgeBy tok (Proxy :: _ a)
-  x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) $ unStandaloneTsType t
+  x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
 
   name <- mkName n
 
