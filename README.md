@@ -38,7 +38,7 @@ The library creates an extra CLI entry point to your app, which generates types 
 - [purescript-tsd-gen](https://github.com/minoki/purescript-tsd-gen)
   This project follows a different approach for type generation. It extracts TypeScript types from the PureScript CST. As such the process is more automated but less customizable.
 
-# Support
+## Support
 
 If you find a bug or have a feature idea feel free to make a PR or file an issue.
 
