@@ -44,7 +44,7 @@ data AppError
 
 data TsNameError
   = ErrReserveredWord String
-  | ErrInvalidBegining String
+  | ErrInvalidBeginning String
   | ErrInvalidCharacter Char
   | ErrEmpty
 
@@ -69,7 +69,7 @@ mkName s = do
     tail = toCharArray $ Str.drop 1 s
 
   when (not $ Reg.test tsNameRegexFirst head) $
-    throwError (ErrTsName $ ErrInvalidBegining head)
+    throwError (ErrTsName $ ErrInvalidBeginning head)
 
   for_ tail \c ->
     when (not $ Reg.test tsNameRegexRest $ Char.singleton c) $
@@ -132,7 +132,7 @@ printError = case _ of
   ErrTsName err -> P.text case err of
     ErrEmpty -> "Identifier is empty"
     ErrReserveredWord s -> s <> " is a reserved word."
-    ErrInvalidBegining s -> "Identifer cannot start with `" <> s <> "`"
+    ErrInvalidBeginning s -> "Identifer cannot start with `" <> s <> "`"
     ErrInvalidCharacter s -> "Identifier cannot contain `" <> Char.singleton s <> "`"
 
 mapErr :: forall e m a. MonadError e m => (e -> e) -> m a -> m a

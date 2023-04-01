@@ -14,7 +14,7 @@ module TsBridge.Core
 
 import Prelude
 
-import Control.Monad.Error.Class (class MonadError, catchError, throwError)
+import Control.Monad.Error.Class (throwError)
 import Control.Monad.Writer (listens, tell)
 import DTS as DTS
 import Data.Array as A
