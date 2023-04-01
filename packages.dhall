@@ -17,5 +17,5 @@ in  upstream
       , "tuples"
       ]
     , repo = "https://github.com/thought2/purescript-dts.git"
-    , version = "40638030c33c5e73363a5562e5b4abf09e505007"
+    , version = "v0.1.3"
     }
