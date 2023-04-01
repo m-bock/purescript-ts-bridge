@@ -36,6 +36,7 @@ And add the following imports are needed for this example:
 ```hs
 import Prelude
 
+import DTS as DTS
 import Data.Either (Either)
 import Effect (Effect)
 import TsBridge as TSB
@@ -47,7 +48,7 @@ Then you should define a typeclass that looks like this:
 
 ```hs
 class TsBridge (a :: Type) where
-  tsBridge :: Proxy a -> TSB.StandaloneTsType
+  tsBridge :: Proxy a -> TSB.TsBridgeM DTS.TsType
 ```
 </li>
 <li>
@@ -125,7 +126,7 @@ The same for the values that we want to expose. However, we're making use of
 record puns to eliminate the risk of spelling mistakes:
 
 ```hs
-myTsProgram :: Either TSB.Error TSB.TsProgram
+myTsProgram :: Either TSB.AppError DTS.TsProgram
 myTsProgram =
   TSB.tsProgram
     [ TSB.tsModuleFile "Sample"

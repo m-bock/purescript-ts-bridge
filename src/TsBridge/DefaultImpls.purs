@@ -31,6 +31,8 @@ import Prelude
 
 import Control.Monad.Writer (censor, listen, tell)
 import Control.Promise (Promise)
+import DTS (OSet(..))
+import DTS as DTS
 import Data.Array (mapWithIndex, (:))
 import Data.Array as A
 import Data.Either (Either)
@@ -47,10 +49,9 @@ import Effect (Effect)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
-import TsBridge.Core (class TsBridgeBy, StandaloneTsType, tsBridgeBy)
-import TsBridge.DTS (OSet(..))
-import TsBridge.DTS as DTS
+import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM)
+import TsBridge.Types (AppError(..), mapErr, mkName, toTsName)
 import Type.Proxy (Proxy(..))
 
 -------------------------------------------------------------------------------
@@ -70,27 +71,27 @@ data TypeVar (s :: Symbol) = TypeVar
 -- | This is needed because polymorphic values cannot be exported directly.
 -- | They have to be monomorphized: E.g. something of type `Maybe a` needs to be
 -- | typed `Maybe (Var "A")` to be exported.
-tsBridgeTypeVar :: forall s. IsSymbol s => Proxy (TypeVar s) -> StandaloneTsType
+tsBridgeTypeVar :: forall s. IsSymbol s => Proxy (TypeVar s) -> TsBridgeM DTS.TsType
 tsBridgeTypeVar _ = do
 
-  tsName <- DTS.mkTsName $ DTS.TsName $ reflectSymbol (Proxy :: _ s)
+  name <- mkName $ reflectSymbol (Proxy :: _ s)
 
   let
     scope = Scope
-      { floating: coerce $ OSet.singleton tsName
+      { floating: coerce $ OSet.singleton $ toTsName name
       , fixed: OSet.empty
       }
 
   tell
     $ over TsBridgeAccum _ { scope = scope } mempty
-  pure $ DTS.TsTypeVar tsName
+  pure $ DTS.TsTypeVar $ toTsName name
 
 -- | `tsBridge` type class method implementation for the `Number` type.
 -- |
 -- | See [this
 -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#number)
 -- | for details.
-tsBridgeNumber :: Proxy Number -> StandaloneTsType
+tsBridgeNumber :: Proxy Number -> TsBridgeM DTS.TsType
 tsBridgeNumber _ = pure DTS.TsTypeNumber
 
 -- | `tsBridge` type class method implementation for the `String` type
@@ -98,7 +99,7 @@ tsBridgeNumber _ = pure DTS.TsTypeNumber
 -- | See [this
 -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#string)
 -- | for details.
-tsBridgeString :: Proxy String -> StandaloneTsType
+tsBridgeString :: Proxy String -> TsBridgeM DTS.TsType
 tsBridgeString _ = pure DTS.TsTypeString
 
 -- | `tsBridge` type class method implementation for the `Boolean` type
@@ -106,7 +107,7 @@ tsBridgeString _ = pure DTS.TsTypeString
 -- | See [this
 -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#boolean)
 -- | for details.
-tsBridgeBoolean :: Proxy Boolean -> StandaloneTsType
+tsBridgeBoolean :: Proxy Boolean -> TsBridgeM DTS.TsType
 tsBridgeBoolean _ = pure DTS.TsTypeBoolean
 
 -- | `tsBridge` type class method implementation for the `Int` type
@@ -114,23 +115,31 @@ tsBridgeBoolean _ = pure DTS.TsTypeBoolean
 -- | See [this
 -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#int)
 -- | for details.
-tsBridgeInt :: Proxy Int -> StandaloneTsType
-tsBridgeInt = tsBridgeOpaqueType "Prim" (DTS.TsName "Int") []
+tsBridgeInt :: Proxy Int -> TsBridgeM DTS.TsType
+tsBridgeInt = tsBridgeOpaqueType
+  { moduleName: "Prim"
+  , typeName: "Int"
+  , typeArgs: []
+  }
 
 -- | `tsBridge` type class method implementation for the `Char` type
 -- |
 -- | See [this
 -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#char)
 -- | for details.
-tsBridgeChar :: Proxy Char -> StandaloneTsType
-tsBridgeChar = tsBridgeOpaqueType "Prim" (DTS.TsName "Char") []
+tsBridgeChar :: Proxy Char -> TsBridgeM DTS.TsType
+tsBridgeChar = tsBridgeOpaqueType
+  { moduleName: "Prim"
+  , typeName: "Char"
+  , typeArgs: []
+  }
 
 -- | `tsBridge` type class method implementation for the `Unit` type
 -- |
 -- | See [this
 -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#unit)
 -- | for details.
-tsBridgeUnit :: Proxy Unit -> StandaloneTsType
+tsBridgeUnit :: Proxy Unit -> TsBridgeM DTS.TsType
 tsBridgeUnit _ = pure DTS.TsTypeVoid
 
 -- | `tsBridge` type class method implementation for the `Effect` type
@@ -138,7 +147,7 @@ tsBridgeUnit _ = pure DTS.TsTypeVoid
 -- | See [this
 -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#number)
 -- | for details.
-tsBridgeEffect :: forall tok a. TsBridgeBy tok a => tok -> Proxy (Effect a) -> StandaloneTsType
+tsBridgeEffect :: forall tok a. TsBridgeBy tok a => tok -> Proxy (Effect a) -> TsBridgeM DTS.TsType
 tsBridgeEffect tok _ = censor mapAccum ado
   ret /\ TsBridgeAccum { scope: Scope scopeRet } <- listen $ tsBridgeBy tok (Proxy :: _ a)
   let
@@ -159,7 +168,7 @@ tsBridgeEffect tok _ = censor mapAccum ado
 -- | See [this
 -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#array)
 -- | for details.
-tsBridgeArray :: forall a tok. TsBridgeBy tok a => tok -> Proxy (Array a) -> StandaloneTsType
+tsBridgeArray :: forall a tok. TsBridgeBy tok a => tok -> Proxy (Array a) -> TsBridgeM DTS.TsType
 tsBridgeArray tok _ = DTS.TsTypeArray <$> tsBridgeBy tok (Proxy :: _ a)
 
 -- | tsBridge type class method implementation for the `Tuple` type
@@ -173,12 +182,16 @@ tsBridgeTuple
   => TsBridgeBy tok b
   => tok
   -> Proxy (Tuple a b)
-  -> StandaloneTsType
+  -> TsBridgeM DTS.TsType
 tsBridgeTuple tok =
-  tsBridgeOpaqueType "Data.Tuple" (DTS.TsName "Tuple")
-    [ DTS.TsName "A" /\ tsBridgeBy tok (Proxy :: _ a)
-    , DTS.TsName "B" /\ tsBridgeBy tok (Proxy :: _ b)
-    ]
+  tsBridgeOpaqueType
+    { moduleName: "Data.Tuple"
+    , typeName: "Tuple"
+    , typeArgs:
+        [ "A" /\ tsBridgeBy tok (Proxy :: _ a)
+        , "B" /\ tsBridgeBy tok (Proxy :: _ b)
+        ]
+    }
 
 -- | `tsBridge` type class method implementation for the `Either` type
 -- |
@@ -192,33 +205,42 @@ tsBridgeEither
   => TsBridgeBy tok b
   => tok
   -> Proxy (Either a b)
-  -> StandaloneTsType
+  -> TsBridgeM DTS.TsType
 tsBridgeEither tok =
-  tsBridgeOpaqueType "Data.Either" (DTS.TsName "Either")
-    [ DTS.TsName "A" /\ tsBridgeBy tok (Proxy :: _ a)
-    , DTS.TsName "B" /\ tsBridgeBy tok (Proxy :: _ b)
-    ]
+  tsBridgeOpaqueType
+    { moduleName: "Data.Either"
+    , typeName: "Either"
+    , typeArgs:
+        [ "A" /\ tsBridgeBy tok (Proxy :: _ a)
+        , "B" /\ tsBridgeBy tok (Proxy :: _ b)
+        ]
+    }
 
 -- | `tsBridge` type class method implementation for the `Maybe` type
 -- |
 -- | See [this
 -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#maybe)
 -- | for details.
-tsBridgeMaybe :: forall tok a. TsBridgeBy tok a => tok -> Proxy (Maybe a) -> StandaloneTsType
+tsBridgeMaybe :: forall tok a. TsBridgeBy tok a => tok -> Proxy (Maybe a) -> TsBridgeM DTS.TsType
 tsBridgeMaybe tok =
-  tsBridgeOpaqueType "Data.Maybe" (DTS.TsName "Maybe")
-    [ DTS.TsName "A" /\ tsBridgeBy tok (Proxy :: _ a) ]
+  tsBridgeOpaqueType
+    { moduleName: "Data.Maybe"
+    , typeName: "Maybe"
+    , typeArgs:
+        [ "A" /\ tsBridgeBy tok (Proxy :: _ a)
+        ]
+    }
 
 -- | `tsBridge` type class method implementation for the `Promise` type.
 -- |
 -- | See [this
 -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#promise)
 -- | for details.
-tsBridgePromise :: forall tok a. TsBridgeBy tok a => tok -> Proxy (Promise a) -> StandaloneTsType
+tsBridgePromise :: forall tok a. TsBridgeBy tok a => tok -> Proxy (Promise a) -> TsBridgeM DTS.TsType
 tsBridgePromise tok _ = do
   x <- tsBridgeBy tok (Proxy :: _ a)
   pure $ DTS.TsTypeConstructor
-    (DTS.TsQualName Nothing (DTS.unsafeTsName "Promise"))
+    (DTS.TsQualName Nothing (DTS.TsName "Promise"))
     (DTS.TsTypeArgs [ x ])
 
 -- | `tsBridge` type class method implementation for the `Nullable` type. 
@@ -226,7 +248,7 @@ tsBridgePromise tok _ = do
 -- | See [this
 -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#number)
 -- | for details.
-tsBridgeNullable :: forall a tok. TsBridgeBy tok a => tok -> Proxy (Nullable a) -> StandaloneTsType
+tsBridgeNullable :: forall a tok. TsBridgeBy tok a => tok -> Proxy (Nullable a) -> TsBridgeM DTS.TsType
 tsBridgeNullable tok _ = do
   x <- tsBridgeBy tok (Proxy :: _ a)
   pure $ DTS.TsTypeUnion
@@ -243,7 +265,7 @@ tsBridgeFunction
   => TsBridgeBy tok b
   => tok
   -> Proxy (a -> b)
-  -> StandaloneTsType
+  -> TsBridgeM DTS.TsType
 tsBridgeFunction tok _ = censor mapAccum ado
   arg /\ TsBridgeAccum { scope: Scope scopeArg } <- listen $ tsBridgeBy tok (Proxy :: _ a)
   ret /\ TsBridgeAccum { scope: Scope scopeRet } <- listen $ tsBridgeBy tok (Proxy :: _ b)
@@ -257,38 +279,40 @@ tsBridgeFunction tok _ = censor mapAccum ado
 
   in
     DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
-      [ DTS.TsFnArg (DTS.unsafeTsName "_") (removeQuant arg)
+      [ DTS.TsFnArg (DTS.TsName "_") (removeQuant arg)
       ]
       (removeQuant ret)
   where
   mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
 
 -- | `tsBridge` type class method implementation for opaque types
-tsBridgeOpaqueType :: forall a. String -> DTS.TsNameDraft -> Array (DTS.TsNameDraft /\ StandaloneTsType) -> a -> StandaloneTsType
-tsBridgeOpaqueType pursModuleName pursTypeName args _ = do
-  argNames <- args <#> fst # traverse DTS.mkTsName
-  targs <- args <#> snd # sequence
-  name <- DTS.mkTsName pursTypeName
+tsBridgeOpaqueType :: forall a. { moduleName :: String, typeName :: String, typeArgs :: Array (String /\ TsBridgeM DTS.TsType) } -> Proxy a -> TsBridgeM DTS.TsType
+tsBridgeOpaqueType { moduleName, typeName, typeArgs } _ =
+  mapErr (AtType typeName)
+    do
+      argNames <- typeArgs <#> fst # traverse mkName
+      targs <- typeArgs <#> snd # sequence
+      name <- mkName typeName
 
-  let
-    filePath = DTS.TsFilePath (pursModuleName <> "/index.d.ts")
-    importPath = DTS.TsImportPath ("../" <> pursModuleName)
+      let
+        filePath = DTS.TsFilePath (moduleName <> "/index.d.ts")
+        importPath = DTS.TsImportPath ("../" <> moduleName)
 
-    typeDefs =
-      [ DTS.TsModuleFile
-          filePath
-          ( DTS.TsModule
-              [ mkBrandedTypeDecl name (coerce $ OSet.fromFoldable $ argNames) Nothing
-              ]
-          )
-      ]
+        typeDefs =
+          [ DTS.TsModuleFile
+              filePath
+              ( DTS.TsModule
+                  [ mkBrandedTypeDecl (toTsName name) (coerce $ OSet.fromFoldable $ toTsName <$> argNames) Nothing
+                  ]
+              )
+          ]
 
-  tell
-    $ TsBridgeAccum
-    $ R.union mempty { typeDefs }
+      tell
+        $ TsBridgeAccum
+        $ R.union mempty { typeDefs }
 
-  pure
-    $ DTS.TsTypeConstructor (DTS.TsQualName (Just importPath) name) (DTS.TsTypeArgs targs)
+      pure
+        $ DTS.TsTypeConstructor (DTS.TsQualName (Just importPath) (toTsName name)) (DTS.TsTypeArgs targs)
 
 -- | `tsBridge` type class method implementation for newtypes
 tsBridgeNewtype
@@ -296,41 +320,41 @@ tsBridgeNewtype
    . Newtype a t
   => TsBridgeBy tok t
   => tok
-  -> String
-  -> DTS.TsNameDraft
-  -> Array (DTS.TsNameDraft /\ StandaloneTsType)
+  -> { moduleName :: String, typeName :: String, typeArgs :: Array (String /\ TsBridgeM DTS.TsType) }
   -> Proxy a
-  -> StandaloneTsType
-tsBridgeNewtype tok pursModuleName pursTypeName args_ _ = do
-  let
-    targNames = map fst args_
-    targs = map snd args_
+  -> TsBridgeM DTS.TsType
+tsBridgeNewtype tok { moduleName, typeName, typeArgs } _ =
+  mapErr (AtType typeName)
+    do
+      let
+        targNames = map fst typeArgs
+        targs = map snd typeArgs
 
-  args <- sequence targs
-  x <- tsBridgeBy tok (Proxy :: _ t)
-  let
-    filePath = DTS.TsFilePath (pursModuleName <> "/index.d.ts")
-    filePathRef = DTS.TsImportPath ("../" <> pursModuleName)
+      args <- sequence targs
+      x <- tsBridgeBy tok (Proxy :: _ t)
+      let
+        filePath = DTS.TsFilePath (moduleName <> "/index.d.ts")
+        filePathRef = DTS.TsImportPath ("../" <> moduleName)
 
-  name <- DTS.mkTsName pursTypeName
-  args' <- OSet.fromFoldable <$> traverse DTS.mkTsName targNames
+      name <- mkName typeName
+      args' <- OSet.fromFoldable <$> map toTsName <$> traverse mkName targNames
 
-  let
-    typeDefs =
-      [ DTS.TsModuleFile
-          filePath
-          ( DTS.TsModule
-              [ DTS.TsDeclTypeDef name DTS.Public (coerce args') x
-              ]
-          )
-      ]
+      let
+        typeDefs =
+          [ DTS.TsModuleFile
+              filePath
+              ( DTS.TsModule
+                  [ DTS.TsDeclTypeDef (toTsName name) DTS.Public (coerce args') x
+                  ]
+              )
+          ]
 
-  tell
-    $ TsBridgeAccum
-    $ R.union mempty { typeDefs }
+      tell
+        $ TsBridgeAccum
+        $ R.union mempty { typeDefs }
 
-  pure
-    $ DTS.TsTypeConstructor (DTS.TsQualName (Just filePathRef) name) (DTS.TsTypeArgs args)
+      pure
+        $ DTS.TsTypeConstructor (DTS.TsQualName (Just filePathRef) (toTsName name)) (DTS.TsTypeArgs args)
 
 -------------------------------------------------------------------------------
 -- tsBridge methods / class TsBridgeRecord
@@ -343,7 +367,7 @@ class TsBridgeRecord tok r where
   -- | See [this
   -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#record)
   -- | for details.
-  tsBridgeRecord :: tok -> Proxy (Record r) -> StandaloneTsType
+  tsBridgeRecord :: tok -> Proxy (Record r) -> TsBridgeM DTS.TsType
 
 instance (RowToList r rl, TsBridgeRecordRL tok rl) => TsBridgeRecord tok r where
   tsBridgeRecord tok _ = DTS.TsTypeRecord <$> tsBridgeRecordRL tok (Proxy :: _ rl)
@@ -383,7 +407,7 @@ class TsBridgeVariant tok r where
   -- | See [this
   -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#variant)
   -- | for details.
-  tsBridgeVariant :: tok -> Proxy (Variant r) -> StandaloneTsType
+  tsBridgeVariant :: tok -> Proxy (Variant r) -> TsBridgeM DTS.TsType
 
 instance (RowToList r rl, TsBridgeVariantRL tok rl) => TsBridgeVariant tok r where
   tsBridgeVariant tok _ = DTS.TsTypeUnion <$> tsBridgeVariantRL tok (Proxy :: _ rl)

@@ -1,6 +1,5 @@
 module TsBridge.Core
-  ( StandaloneTsType
-  , class TsBridgeBy
+  ( class TsBridgeBy
   , class TsValues
   , class TsValuesRL
   , tsBridgeBy
@@ -15,8 +14,9 @@ module TsBridge.Core
 
 import Prelude
 
-import Control.Monad.Error.Class (class MonadError, catchError, throwError)
+import Control.Monad.Error.Class (throwError)
 import Control.Monad.Writer (listens, tell)
+import DTS as DTS
 import Data.Array as A
 import Data.Array as Array
 import Data.Either (Either)
@@ -32,16 +32,15 @@ import Prim.Row as Row
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
 import Safe.Coerce (coerce)
-import TsBridge.DTS (TsNameDraft)
-import TsBridge.DTS as DTS
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, runTsBridgeM)
+import TsBridge.Types (AppError(..), mapErr, mkName, mkPursModuleName, toTsName)
 import Type.Proxy (Proxy(..))
 
 -- | A `StandaloneTsType` represents a TypeScript type with everything it needs
 -- | to be placed inside complete TS program: If the type references nominal
 -- | types from other modules, all information is contained that is needed to
 -- | render those references.
-type StandaloneTsType = TsBridgeM DTS.TsType
+--type StandaloneTsType = TsBridgeM DTS.TsType
 
 -- | Type Class that is used by the type generator to recursively traverse
 -- | types.
@@ -64,16 +63,19 @@ type StandaloneTsType = TsBridgeM DTS.TsType
 
 class TsBridgeBy :: Type -> Type -> Constraint
 class TsBridgeBy tok a where
-  tsBridgeBy :: tok -> Proxy a -> StandaloneTsType
+  tsBridgeBy :: tok -> Proxy a -> TsBridgeM DTS.TsType
 
-tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Either DTS.Error (Array DTS.TsModuleFile)
-tsModuleFile n xs = do
-  (xs' /\ TsBridgeAccum { typeDefs }) <- runTsBridgeM $ mapErr (DTS.AtModule n) $ join <$> sequence xs
+tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Either AppError (Array DTS.TsModuleFile)
+tsModuleFile n xs =
+  mapErr (AtModule n)
+    do
+      -- TODO: check for duplicate identifiers
 
-  pure (typeDefs <> [ DTS.TsModuleFile (DTS.TsFilePath (n <> "/index.d.ts")) (DTS.TsModule xs') ])
+      _ <- mkPursModuleName n
 
-mapErr :: forall e m a. MonadError e m => (e -> e) -> m a -> m a
-mapErr f ma = catchError ma (f >>> throwError)
+      (xs' /\ TsBridgeAccum { typeDefs }) <- runTsBridgeM $ join <$> sequence xs
+
+      pure (typeDefs <> [ DTS.TsModuleFile (DTS.TsFilePath (n <> "/index.d.ts")) (DTS.TsModule xs') ])
 
 mergeModules :: Array DTS.TsModuleFile -> DTS.TsProgram
 mergeModules xs =
@@ -87,17 +89,19 @@ mergeModule (DTS.TsModule ds1) (DTS.TsModule ds2) =
   DTS.TsModule
     (Array.nub (ds1 <> ds2))
 
-tsProgram :: Array (Either DTS.Error (Array DTS.TsModuleFile)) -> Either DTS.Error DTS.TsProgram
-tsProgram xs = xs # sequence <#> join >>> mergeModules
+tsProgram :: Array (Either AppError (Array DTS.TsModuleFile)) -> Either AppError DTS.TsProgram
+tsProgram xs =
+  -- TODO: check for duplicate modules
+  xs # sequence <#> join >>> mergeModules
 
 -- | For rare cases where you want to export a type alias. References to this type
 -- | alias will be fully resolved in the generated code. So it is more practical
 -- | to use a newtype instead, which can be references by name.
-tsTypeAlias :: forall tok a. TsBridgeBy tok a => tok -> TsNameDraft -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
-tsTypeAlias tok n x = ado
+tsTypeAlias :: forall tok a. TsBridgeBy tok a => tok -> String -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
+tsTypeAlias tok aliasName x = ado
   x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
-  name <- DTS.mkTsName n
-  in [ DTS.TsDeclTypeDef name DTS.Public (coerce scope.floating) x ]
+  name <- mkName aliasName
+  in [ DTS.TsDeclTypeDef (toTsName name) DTS.Public (coerce scope.floating) x ]
   where
   t = tsBridgeBy tok x
 
@@ -117,23 +121,26 @@ tsOpaqueType tok x = do
     _ -> pure []
 
 -- | Exports a single PureScript value to TypeScript. `tsValues` may be better choice. 
-tsValue :: forall tok a. TsBridgeBy tok a => tok -> TsNameDraft -> a -> TsBridgeM (Array DTS.TsDeclaration)
+tsValue :: forall tok a. TsBridgeBy tok a => tok -> String -> a -> TsBridgeM (Array DTS.TsDeclaration)
 tsValue tok n _ = tsValue' tok n (Proxy :: _ a)
 
-tsValue' :: forall tok a. TsBridgeBy tok a => tok -> TsNameDraft -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
-tsValue' tok n _ = do
-  let t = tsBridgeBy tok (Proxy :: _ a)
-  x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
+tsValue' :: forall tok a. TsBridgeBy tok a => tok -> String -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
+tsValue' tok n _ =
+  mapErr (AtValue n)
+    do
+      let t = tsBridgeBy tok (Proxy :: _ a)
+      x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
 
-  name <- DTS.mkTsName n
+      name <- mkName n
 
-  when (OSet.length scope.floating /= 0)
-    $ throwError
-    $ DTS.ErrUnquantifiedTypeVariables
-    $ (Set.fromFoldable :: Array _ -> _)
-    $ OSet.toUnfoldable scope.floating
+      when (OSet.length scope.floating /= 0)
+        ( throwError
+            $ ErrUnquantifiedTypeVariables
+            $ (Set.fromFoldable :: Array _ -> _)
+            $ OSet.toUnfoldable scope.floating
+        )
 
-  pure [ DTS.TsDeclValueDef name DTS.Public x ]
+      pure [ DTS.TsDeclValueDef (toTsName name) DTS.Public x ]
 
 --------------------------------------------------------------------------------
 -- class TsValues
@@ -169,4 +176,4 @@ instance
   tsValuesRL tok r _ = (<>) <$> head <*> tail
     where
     tail = tsValuesRL tok r (Proxy :: _ rl)
-    head = tsValue' tok (DTS.TsName $ reflectSymbol (Proxy :: _ sym)) (Proxy :: _ a)
+    head = tsValue' tok (reflectSymbol (Proxy :: _ sym)) (Proxy :: _ a)

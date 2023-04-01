@@ -15,13 +15,14 @@ import Data.Newtype (class Newtype)
 import Data.Set.Ordered (OSet)
 import Data.Set.Ordered as OSet
 import Data.Tuple.Nested (type (/\))
-import TsBridge.DTS (TsModuleFile, TsName, Error)
+import DTS (TsModuleFile, TsName)
+import TsBridge.Types (AppError)
 
 -------------------------------------------------------------------------------
 -- Types
 -------------------------------------------------------------------------------
 
-newtype TsBridgeM a = TsBridgeM (WriterT TsBridgeAccum (Except Error) a)
+newtype TsBridgeM a = TsBridgeM (WriterT TsBridgeAccum (Except AppError) a)
 
 newtype TsBridgeAccum = TsBridgeAccum
   { typeDefs :: Array TsModuleFile
@@ -37,7 +38,7 @@ newtype Scope = Scope
 -- Run
 -------------------------------------------------------------------------------
 
-runTsBridgeM :: forall a. TsBridgeM a -> Either Error (a /\ TsBridgeAccum)
+runTsBridgeM :: forall a. TsBridgeM a -> Either AppError (a /\ TsBridgeAccum)
 runTsBridgeM (TsBridgeM ma) = ma
   # runWriterT
   # runExcept
@@ -46,10 +47,13 @@ runTsBridgeM (TsBridgeM ma) = ma
 -- Instances
 -------------------------------------------------------------------------------
 
-derive newtype instance Monoid TsBridgeAccum
-
 derive newtype instance Semigroup TsBridgeAccum
 derive newtype instance Semigroup Scope
+
+derive instance Newtype TsBridgeAccum _
+derive instance Newtype Scope _
+
+derive newtype instance Monoid TsBridgeAccum
 
 derive newtype instance MonadTell TsBridgeAccum TsBridgeM
 
@@ -65,15 +69,13 @@ derive newtype instance Apply TsBridgeM
 
 derive newtype instance Applicative TsBridgeM
 
-derive newtype instance MonadThrow Error TsBridgeM
+derive newtype instance MonadThrow AppError TsBridgeM
 
-derive newtype instance MonadError Error TsBridgeM
-
-derive instance Newtype TsBridgeAccum _
-derive instance Newtype Scope _
+derive newtype instance MonadError AppError TsBridgeM
 
 instance Monoid Scope where
   mempty = Scope
     { floating: OSet.empty
     , fixed: OSet.empty
     }
+

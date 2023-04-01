@@ -2,7 +2,7 @@
 
 ![example workflow](https://github.com/thought2/purescript-ts-bridge/actions/workflows/ci.yml/badge.svg)
 
-A **PureScript** library for type class based **TypeScript** type generation (`.d.ts` files).
+Call your PureScript code from TypeScript.
 
 ## Documentation
 
@@ -28,13 +28,17 @@ spago install ts-bridge
 - Polymorphic types optimized for best type inference in TS
 - Tried and tested in production
 
+## How it works
+
+Via type classes a set of types are defined that you'd like to support to export to TypeScript.
+The library creates an extra CLI entry point to your app, which generates types for given values of those types. They get written to the file system in the form of TypeScript type declaration (`.d.ts`) files.
 
 ## Similar Projects
 
 - [purescript-tsd-gen](https://github.com/minoki/purescript-tsd-gen)
   This project follows a different approach for type generation. It extracts TypeScript types from the PureScript CST. As such the process is more automated but less customizable.
 
-# Support
+## Support
 
 If you find a bug or have a feature idea feel free to make a PR or file an issue.
 

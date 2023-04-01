@@ -1,10 +1,15 @@
 set shell := ["bash", "-c"]
 
+allowed_warnings := "ImplicitQualifiedImport"
+
 build:
-    spago build --purs-args '--stash --censor-lib --censor-codes=ImplicitQualifiedImport'
+    spago build --purs-args '--stash --censor-lib --censor-codes={{allowed_warnings}}'
 
 build-strict:
-    spago build --purs-args '--stash --censor-lib --strict --censor-codes=ImplicitQualifiedImport'
+    spago build --purs-args '--stash --censor-lib --strict --censor-codes={{allowed_warnings}}'
+
+clean:
+    rm -rf .spago output .psa-stash
 
 format:
     purs-tidy format-in-place 'src/**/*.purs'
@@ -26,7 +31,7 @@ check-spell:
     yarn run cspell "docs/**/*.md" || true
     yarn run cspell "README.md" || true
 
-ci: check-format gen-docs check-git-clean build-strict test
+ci: clean check-format gen-docs build-strict test check-git-clean
 
 check-git-clean:
     [ -z "$(git status --porcelain)" ]
