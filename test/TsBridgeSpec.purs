@@ -148,7 +148,7 @@ spec = do
                 # TSB.runTsBridgeM
                 <#> (fst >>> printTsDeclarations)
             )
-              `shouldEqual` (Left $ TSB.ErrTsName $ TSB.ErrInvalidCharacter '\'')
+              `shouldEqual` (Left $ TSB.AtValue "foo'" $ TSB.ErrTsName $ TSB.ErrInvalidCharacter '\'')
 
         describe "Number" do
           it "prints the correct declaration" do
@@ -156,7 +156,7 @@ spec = do
                 # TSB.runTsBridgeM
                 <#> (fst >>> printTsDeclarations)
             )
-              `shouldEqual` (Left $ TSB.ErrUnquantifiedTypeVariables $ Set.fromFoldable [ DTS.TsName "A" ])
+              `shouldEqual` (Left $ TSB.AtValue "foo" $ TSB.ErrUnquantifiedTypeVariables $ Set.fromFoldable [ DTS.TsName "A" ])
 
     describe "Type Printing" do
       describe "Number" do

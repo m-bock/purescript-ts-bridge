@@ -51,7 +51,7 @@ import Record as R
 import Safe.Coerce (coerce)
 import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM)
-import TsBridge.Types (mkName, toTsName)
+import TsBridge.Types (AppError(..), mapErr, mkName, toTsName)
 import Type.Proxy (Proxy(..))
 
 -------------------------------------------------------------------------------
@@ -287,30 +287,32 @@ tsBridgeFunction tok _ = censor mapAccum ado
 
 -- | `tsBridge` type class method implementation for opaque types
 tsBridgeOpaqueType :: forall a. { moduleName :: String, typeName :: String, typeArgs :: Array (String /\ TsBridgeM DTS.TsType) } -> Proxy a -> TsBridgeM DTS.TsType
-tsBridgeOpaqueType { moduleName, typeName, typeArgs } _ = do
-  argNames <- typeArgs <#> fst # traverse mkName
-  targs <- typeArgs <#> snd # sequence
-  name <- mkName typeName
+tsBridgeOpaqueType { moduleName, typeName, typeArgs } _ =
+  mapErr (AtType typeName)
+    do
+      argNames <- typeArgs <#> fst # traverse mkName
+      targs <- typeArgs <#> snd # sequence
+      name <- mkName typeName
 
-  let
-    filePath = DTS.TsFilePath (moduleName <> "/index.d.ts")
-    importPath = DTS.TsImportPath ("../" <> moduleName)
+      let
+        filePath = DTS.TsFilePath (moduleName <> "/index.d.ts")
+        importPath = DTS.TsImportPath ("../" <> moduleName)
 
-    typeDefs =
-      [ DTS.TsModuleFile
-          filePath
-          ( DTS.TsModule
-              [ mkBrandedTypeDecl (toTsName name) (coerce $ OSet.fromFoldable $ toTsName <$> argNames) Nothing
-              ]
-          )
-      ]
+        typeDefs =
+          [ DTS.TsModuleFile
+              filePath
+              ( DTS.TsModule
+                  [ mkBrandedTypeDecl (toTsName name) (coerce $ OSet.fromFoldable $ toTsName <$> argNames) Nothing
+                  ]
+              )
+          ]
 
-  tell
-    $ TsBridgeAccum
-    $ R.union mempty { typeDefs }
+      tell
+        $ TsBridgeAccum
+        $ R.union mempty { typeDefs }
 
-  pure
-    $ DTS.TsTypeConstructor (DTS.TsQualName (Just importPath) (toTsName name)) (DTS.TsTypeArgs targs)
+      pure
+        $ DTS.TsTypeConstructor (DTS.TsQualName (Just importPath) (toTsName name)) (DTS.TsTypeArgs targs)
 
 -- | `tsBridge` type class method implementation for newtypes
 tsBridgeNewtype
@@ -321,36 +323,38 @@ tsBridgeNewtype
   -> { moduleName :: String, typeName :: String, typeArgs :: Array (String /\ TsBridgeM DTS.TsType) }
   -> Proxy a
   -> TsBridgeM DTS.TsType
-tsBridgeNewtype tok { moduleName, typeName, typeArgs } _ = do
-  let
-    targNames = map fst typeArgs
-    targs = map snd typeArgs
+tsBridgeNewtype tok { moduleName, typeName, typeArgs } _ =
+  mapErr (AtType typeName)
+    do
+      let
+        targNames = map fst typeArgs
+        targs = map snd typeArgs
 
-  args <- sequence targs
-  x <- tsBridgeBy tok (Proxy :: _ t)
-  let
-    filePath = DTS.TsFilePath (moduleName <> "/index.d.ts")
-    filePathRef = DTS.TsImportPath ("../" <> moduleName)
+      args <- sequence targs
+      x <- tsBridgeBy tok (Proxy :: _ t)
+      let
+        filePath = DTS.TsFilePath (moduleName <> "/index.d.ts")
+        filePathRef = DTS.TsImportPath ("../" <> moduleName)
 
-  name <- mkName typeName
-  args' <- OSet.fromFoldable <$> map toTsName <$> traverse mkName targNames
+      name <- mkName typeName
+      args' <- OSet.fromFoldable <$> map toTsName <$> traverse mkName targNames
 
-  let
-    typeDefs =
-      [ DTS.TsModuleFile
-          filePath
-          ( DTS.TsModule
-              [ DTS.TsDeclTypeDef (toTsName name) DTS.Public (coerce args') x
-              ]
-          )
-      ]
+      let
+        typeDefs =
+          [ DTS.TsModuleFile
+              filePath
+              ( DTS.TsModule
+                  [ DTS.TsDeclTypeDef (toTsName name) DTS.Public (coerce args') x
+                  ]
+              )
+          ]
 
-  tell
-    $ TsBridgeAccum
-    $ R.union mempty { typeDefs }
+      tell
+        $ TsBridgeAccum
+        $ R.union mempty { typeDefs }
 
-  pure
-    $ DTS.TsTypeConstructor (DTS.TsQualName (Just filePathRef) (toTsName name)) (DTS.TsTypeArgs args)
+      pure
+        $ DTS.TsTypeConstructor (DTS.TsQualName (Just filePathRef) (toTsName name)) (DTS.TsTypeArgs args)
 
 -------------------------------------------------------------------------------
 -- tsBridge methods / class TsBridgeRecord

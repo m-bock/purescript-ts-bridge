@@ -5,6 +5,8 @@ module TsBridge.Cli (mkTypeGenCli) where
 
 import Prelude
 
+import DTS (TsProgram)
+import DTS.Print (Path(..), TsSource(..), printTsProgram)
 import Data.Either (Either(..))
 import Data.Foldable (fold, for_)
 import Data.Map as Map
@@ -21,8 +23,6 @@ import Node.Path (dirname)
 import Node.Process as Process
 import Options.Applicative (help, helper, info, long, metavar, strOption, value, (<**>))
 import Options.Applicative as O
-import DTS (TsProgram)
-import DTS.Print (Path(..), TsSource(..), printTsProgram)
 import TsBridge.Types (AppError, printError)
 
 -------------------------------------------------------------------------------
@@ -65,8 +65,12 @@ mkTypeGenCliAff eitherTsProg = do
 
   case eitherTsProg of
     Left err -> do
-      log $ printError err
-      liftEffect $ Process.exit 0
+      log ""
+      log "Cannot generate TypeScript Code. The following error happened:"
+      log ""
+      log $ show $ printError err
+      log ""
+      liftEffect $ Process.exit 1
     Right tsProg -> writeTsProgramToDisk cliOpts tsProg
 
 writeTsProgramToDisk :: TsBridgeCliOpts -> TsProgram -> Aff Unit

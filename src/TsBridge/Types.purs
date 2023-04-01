@@ -5,6 +5,7 @@ module TsBridge.Types
   , TsNameError(..)
   , class CapError
   , class CapThrow
+  , mapErr
   , mkName
   , mkPursModuleName
   , printError
@@ -15,7 +16,7 @@ module TsBridge.Types
 
 import Prelude
 
-import Control.Monad.Error.Class (class MonadError, class MonadThrow, throwError)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
 import DTS as DTS
 import Data.Foldable (fold, for_)
 import Data.Generic.Rep (class Generic)
@@ -30,12 +31,15 @@ import Data.String.Regex as Reg
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (noFlags)
 import Data.String.Regex.Unsafe (unsafeRegex)
+import Text.PrettyPrint.Leijen (Doc)
+import Text.PrettyPrint.Leijen as P
 
 data AppError
   = ErrInvalidPursModuleName String
   | ErrUnquantifiedTypeVariables (Set DTS.TsName)
   | AtModule String AppError
   | AtValue String AppError
+  | AtType String AppError
   | ErrTsName TsNameError
 
 data TsNameError
@@ -91,30 +95,48 @@ mkPursModuleName s = do
 pursModuleNameRegex :: Regex
 pursModuleNameRegex = unsafeRegex "^([A-Z][a-z0-9_]*)(\\.[A-Z][a-z0-9_]*)*$" noFlags
 
-printError :: AppError -> String
+printError :: AppError -> Doc
 printError = case _ of
-  AtModule name err -> Str.joinWith "\n"
-    [ "At module " <> name
-    , printError err
+  AtModule name err -> fold
+    [ P.text ("At module `" <> name <> "`")
+    , P.line
+    , P.indent 2 $ printError err
     ]
-  AtValue name err -> Str.joinWith "\n"
-    [ "At Value " <> name
-    , printError err
+
+  AtValue name err -> fold
+    [ P.text ("At value `" <> name <> "`")
+    , P.line
+    , P.indent 2 $ printError err
     ]
+
+  AtType name err -> fold
+    [ P.text ("At type `" <> name <> "`")
+    , P.line
+    , P.indent 2 $ printError err
+    ]
+
   ErrUnquantifiedTypeVariables vars ->
-    fold
+    P.text $ fold
       [ "Type variables"
       , " "
-      , vars # Set.toUnfoldable <#> DTS.printTsName # Str.joinWith ", "
+      , vars
+          # Set.toUnfoldable
+          <#> DTS.printTsName >>> (\s -> "`" <> s <> "`")
+          # Str.joinWith ", "
       , " "
       , "are not behind a function. This is not possible in TypeScript. E.g. `Maybe a` needs to be exported as `Unit -> Maybe a`."
       ]
-  ErrInvalidPursModuleName _ -> ""
-  ErrTsName err -> case err of
+  ErrInvalidPursModuleName _ ->
+    P.text "Invalid PureScript module name"
+
+  ErrTsName err -> P.text case err of
     ErrEmpty -> "Identifier is empty"
     ErrReserveredWord s -> s <> " is a reserved word."
     ErrInvalidBegining s -> "Identifer cannot start with `" <> s <> "`"
     ErrInvalidCharacter s -> "Identifier cannot contain `" <> Char.singleton s <> "`"
+
+mapErr :: forall e m a. MonadError e m => (e -> e) -> m a -> m a
+mapErr f ma = catchError ma (f >>> throwError)
 
 tsReservedWords :: Set String
 tsReservedWords = Set.fromFoldable
