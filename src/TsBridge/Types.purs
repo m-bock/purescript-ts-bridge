@@ -1,7 +1,5 @@
 module TsBridge.Types
   ( AppError(..)
-  , DefName(..)
-  , DefPursModuleName(..)
   , Name
   , PursModuleName
   , TsNameError(..)
@@ -10,6 +8,7 @@ module TsBridge.Types
   , mkName
   , mkPursModuleName
   , printError
+  , printName
   , toTsName
   , unsafeName
   ) where
@@ -33,7 +32,7 @@ import Data.String.Regex.Flags (noFlags)
 import Data.String.Regex.Unsafe (unsafeRegex)
 
 data AppError
-  = ErrInvalidPursModuleName DefPursModuleName
+  = ErrInvalidPursModuleName String
   | ErrUnquantifiedTypeVariables (Set DTS.TsName)
   | AtModule String AppError
   | AtValue String AppError
@@ -45,11 +44,7 @@ data TsNameError
   | ErrInvalidCharacter Char
   | ErrEmpty
 
-newtype DefPursModuleName = DefPursModuleName String
-
 newtype PursModuleName = UnsafePursModuleName String
-
-newtype DefName = DefName String
 
 newtype Name = UnsafeName String
 
@@ -57,8 +52,8 @@ class (MonadError AppError m) <= CapError m
 
 class (MonadThrow AppError m) <= CapThrow m
 
-mkName :: forall m. MonadThrow AppError m => DefName -> m Name
-mkName (DefName s) = do
+mkName :: forall m. MonadThrow AppError m => String -> m Name
+mkName s = do
   when (s == "") $
     throwError (ErrTsName ErrEmpty)
 
@@ -87,10 +82,10 @@ toTsName (UnsafeName n) = DTS.TsName n
 printName :: Name -> String
 printName (UnsafeName s) = s
 
-mkPursModuleName :: forall m. MonadError AppError m => DefPursModuleName -> m PursModuleName
-mkPursModuleName draft@(DefPursModuleName s) = do
+mkPursModuleName :: forall m. MonadError AppError m => String -> m PursModuleName
+mkPursModuleName s = do
   when (not $ Regex.test pursModuleNameRegex s) $
-    throwError (ErrInvalidPursModuleName draft)
+    throwError (ErrInvalidPursModuleName s)
   pure (UnsafePursModuleName s)
 
 pursModuleNameRegex :: Regex
@@ -157,22 +152,16 @@ tsNameRegexFirst = unsafeRegex "[_$A-Za-z]" noFlags
 tsNameRegexRest :: Regex
 tsNameRegexRest = unsafeRegex "[_$A-Za-z0-9]" noFlags
 
-derive instance Generic DefPursModuleName _
 derive instance Generic TsNameError _
 derive instance Generic AppError _
 
-derive instance Eq DefPursModuleName
 derive instance Eq Name
 derive instance Eq TsNameError
 derive instance Eq AppError
 
-derive instance Ord DefPursModuleName
 derive instance Ord Name
 derive instance Ord TsNameError
 derive instance Ord AppError
-
-instance Show DefPursModuleName where
-  show = genericShow
 
 instance Show TsNameError where
   show = genericShow

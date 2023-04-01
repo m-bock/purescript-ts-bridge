@@ -1,10 +1,15 @@
 set shell := ["bash", "-c"]
 
+allowed_warnings := "ImplicitQualifiedImport"
+
 build:
-    spago build --purs-args '--stash --censor-lib --censor-codes=ImplicitQualifiedImport'
+    spago build --purs-args '--stash --censor-lib --censor-codes={{allowed_warnings}}'
 
 build-strict:
-    spago build --purs-args '--stash --censor-lib --strict --censor-codes=ImplicitQualifiedImport'
+    spago build --purs-args '--stash --censor-lib --strict --censor-codes={{allowed_warnings}}'
+
+clean:
+    rm -rf output
 
 format:
     purs-tidy format-in-place 'src/**/*.purs'
