@@ -18,6 +18,10 @@ Call your PureScript code from TypeScript.
 spago install ts-bridge
 ```
 
+## Demo
+
+![Demo](assets/demo.gif "Demo")
+
 ## Features
 
 - Fully customizable via a user defined type class pattern
