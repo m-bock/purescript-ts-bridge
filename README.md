@@ -20,6 +20,8 @@ spago install ts-bridge
 
 ## Demo
 
+Some TypeScript - PureScript ping pong ...
+
 ![Demo](assets/demo.gif "Demo")
 
 ## Features
