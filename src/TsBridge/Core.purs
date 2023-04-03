@@ -24,7 +24,7 @@ import Data.Array as Array
 import Data.Either (Either)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
-import Data.Newtype (un, unwrap)
+import Data.Newtype (un)
 import Data.Set as Set
 import Data.Set.Ordered as OSet
 import Data.Symbol (class IsSymbol, reflectSymbol)
