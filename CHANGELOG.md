@@ -6,7 +6,7 @@
 
 - Duplicate identifier error handling
 
-## [2.0.3] - 2023-0304-01
+## [2.0.3] - 2023-04-01
 
 ### Added
 
