@@ -16,17 +16,19 @@ import Prelude
 
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Writer (listens, tell)
+import DTS (TsDeclaration(..))
 import DTS as DTS
 import Data.Array as A
+import Data.Array as Arr
 import Data.Array as Array
 import Data.Either (Either)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
-import Data.Newtype (un)
+import Data.Newtype (un, unwrap)
 import Data.Set as Set
 import Data.Set.Ordered as OSet
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Traversable (sequence)
+import Data.Traversable (for_, sequence)
 import Data.Tuple.Nested ((/\))
 import Prim.Row as Row
 import Prim.RowList (class RowToList, RowList)
@@ -75,7 +77,19 @@ tsModuleFile n xs =
 
       (xs' /\ TsBridgeAccum { typeDefs }) <- runTsBridgeM $ join <$> sequence xs
 
+      let
+        names = Arr.mapMaybe declToName xs'
+        duplicate = Arr.head $ Arr.difference names (Arr.nub names)
+
+      for_ duplicate (throwError <<< ErrDuplicateIdentifier)
+
       pure (typeDefs <> [ DTS.TsModuleFile (DTS.TsFilePath (n <> "/index.d.ts")) (DTS.TsModule xs') ])
+
+declToName :: DTS.TsDeclaration -> Maybe DTS.TsName
+declToName = case _ of
+  TsDeclTypeDef name _ _ _ -> Just name
+  TsDeclValueDef name _ _ -> Just name
+  TsDeclComments _ -> Nothing
 
 mergeModules :: Array DTS.TsModuleFile -> DTS.TsProgram
 mergeModules xs =
@@ -91,7 +105,6 @@ mergeModule (DTS.TsModule ds1) (DTS.TsModule ds2) =
 
 tsProgram :: Array (Either AppError (Array DTS.TsModuleFile)) -> Either AppError DTS.TsProgram
 tsProgram xs =
-  -- TODO: check for duplicate modules
   xs # sequence <#> join >>> mergeModules
 
 -- | For rare cases where you want to export a type alias. References to this type

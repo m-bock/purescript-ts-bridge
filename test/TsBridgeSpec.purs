@@ -117,23 +117,18 @@ spec = do
                   ]
               )
 
-      describe "Newtype" do
-        it "generates a type and adds the type module" do
+      describe "Duplicate Identifiers" do
+        it "does not allow duplicate identifiers in a module" do
           ( TSB.tsProgram
               [ TSB.tsModuleFile "Foo.Bar"
-                  [ TSB.tsValue Tok "a" (MyNT 0.0) ]
+                  [ TSB.tsValue Tok "a" (MyNT 0.0)
+                  , TSB.tsValue Tok "a" (MyNT 0.0)
+                  ]
               ]
               <#> printTsProgram
           )
             `shouldEqual`
-              ( Right $ Map.fromFoldable
-                  [ textFile "Foo.Bar/index.d.ts"
-                      [ "export const a : import('../Foo.Bar').MyNT"
-                      , ""
-                      , "export type MyNT = number"
-                      ]
-                  ]
-              )
+              (Left $ TSB.AtModule "Foo.Bar" $ TSB.ErrDuplicateIdentifier $ DTS.TsName "a")
 
     describe "Decl tsValue" do
       describe "tsValue" do

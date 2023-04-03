@@ -41,6 +41,7 @@ data AppError
   | AtValue String AppError
   | AtType String AppError
   | ErrTsName TsNameError
+  | ErrDuplicateIdentifier DTS.TsName
 
 data TsNameError
   = ErrReserveredWord String
@@ -135,37 +136,77 @@ printError = case _ of
     ErrInvalidBeginning s -> "Identifer cannot start with `" <> s <> "`"
     ErrInvalidCharacter s -> "Identifier cannot contain `" <> Char.singleton s <> "`"
 
+  ErrDuplicateIdentifier (DTS.TsName s) -> P.text ("Duplicate identifier: `" <> s <> "`")
+
 mapErr :: forall e m a. MonadError e m => (e -> e) -> m a -> m a
 mapErr f ma = catchError ma (f >>> throwError)
 
 tsReservedWords :: Set String
 tsReservedWords = Set.fromFoldable
-  [ "instanceof"
-  , "typeof"
-  , "break"
-  , "do"
-  , "new"
-  , "var"
+  [ "break"
   , "case"
-  , "else"
-  , "return"
-  , "void"
   , "catch"
-  , "finally"
+  , "class"
+  , "const"
   , "continue"
-  , "for"
-  , "switch"
-  , "while"
-  , "this"
-  , "with"
   , "debugger"
-  , "function"
-  , "throw"
   , "default"
-  , "if"
-  , "try"
   , "delete"
+  , "do"
+  , "else"
+  , "enum"
+  , "export"
+  , "extends"
+  , "false"
+  , "finally"
+  , "for"
+  , "function"
+  , "if"
+  , "import"
   , "in"
+  , "instanceof"
+  , "new"
+  , "null"
+  , "return"
+  , "super"
+  , "switch"
+  , "this"
+  , "throw"
+  , "true"
+  , "try"
+  , "typeof"
+  , "var"
+  , "void"
+  , "while"
+  , "with"
+
+  , "as"
+  , "implements"
+  , "interface"
+  , "let"
+  , "package"
+  , "private"
+  , "protected"
+  , "public"
+  , "static"
+  , "yield"
+
+  , "any"
+  , "boolean"
+  , "constructor"
+  , "declare"
+  , "get"
+  , "module"
+  , "require"
+  , "number"
+  , "set"
+  , "string"
+  , "symbol"
+  , "type"
+  , "from"
+  , "of"
+
+  , "undefined"
   ]
 
 tsNameRegexFirst :: Regex
