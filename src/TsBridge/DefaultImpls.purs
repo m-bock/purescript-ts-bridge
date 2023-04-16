@@ -6,15 +6,16 @@ module TsBridge.DefaultImpls
   , class TsBridgeVariantRL
   , tsBridgeArray
   , tsBridgeBoolean
-  , tsBridgeNewtype
   , tsBridgeChar
   , tsBridgeEffect
   , tsBridgeEither
   , tsBridgeFunction
   , tsBridgeInt
   , tsBridgeMaybe
+  , tsBridgeNewtype
   , tsBridgeNullable
   , tsBridgeNumber
+  , tsBridgeOneOf
   , tsBridgeOpaqueType
   , tsBridgePromise
   , tsBridgeRecord
@@ -53,6 +54,7 @@ import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM)
 import TsBridge.Types (AppError(..), mapErr, mkName, toTsName)
 import Type.Proxy (Proxy(..))
+import Untagged.Union (OneOf)
 
 -------------------------------------------------------------------------------
 -- Types
@@ -253,6 +255,24 @@ tsBridgeNullable tok _ = do
   x <- tsBridgeBy tok (Proxy :: _ a)
   pure $ DTS.TsTypeUnion
     [ DTS.TsTypeNull, x ]
+
+-- | `tsBridge` type class method implementation for the `OneOf` type. 
+-- |
+-- | See [this
+-- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#oneof)
+-- | for details.
+tsBridgeOneOf
+  :: forall a b tok
+   . TsBridgeBy tok a
+  => TsBridgeBy tok b
+  => tok
+  -> Proxy (OneOf a b)
+  -> TsBridgeM DTS.TsType
+tsBridgeOneOf tok _ = do
+  x <- tsBridgeBy tok (Proxy :: _ a)
+  y <- tsBridgeBy tok (Proxy :: _ b)
+
+  pure $ DTS.TsTypeUnion [ x, y ]
 
 -- | `tsBridge` type class method implementation for the `a -> b` (Function) type
 -- |

@@ -190,6 +190,38 @@ export const data = [
     ],
   ],
   [
+    "OneOf",
+    [
+      "From the [nullable](https://pursuit.purescript.org/packages/purescript-nullable) library.",
+      "",
+      "`OneOf` is represented as TypeScript untagged union.",
+    ].join("\n"),
+    [
+      [
+        "Ref",
+        "OneOf a b",
+        "import('../Untagged.Union').OneOf<A, B>",
+      ],
+      [
+        "Def",
+        [
+          "~/Untagged/Union.purs",
+          [
+            "foreign import data OneOf",
+            "  :: Type -> Type -> Type",
+          ].join("\n"),
+        ],
+        [
+          "output/Untagged.Union/index.d.ts",
+          [
+            "export type OneOf<A, B> = A | B",
+          ].join("\n"),
+        ],
+        ,
+      ],
+    ],
+  ],
+  [
     "Record",
     "Records are represented as TypeScript records with readonly fields.",
     [

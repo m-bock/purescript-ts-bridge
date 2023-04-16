@@ -8,6 +8,8 @@
   , "effect"
   , "either"
   , "foldable-traversable"
+  , "foreign"
+  , "literals"
   , "maybe"
   , "newtype"
   , "node-buffer"
@@ -27,6 +29,7 @@
   , "strings"
   , "transformers"
   , "tuples"
+  , "untagged-union"
   , "variant"
   ]
 , packages = ./packages.dhall

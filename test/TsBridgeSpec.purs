@@ -25,6 +25,7 @@ import Test.Spec.Assertions (shouldEqual)
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
 import Type.Proxy (Proxy(..))
+import Untagged.Union (type (|+|), OneOf)
 
 class TsBridge (a :: Type) where
   tsBridge :: Proxy a -> TSB.TsBridgeM DTS.TsType
@@ -46,6 +47,9 @@ instance TsBridge a => TsBridge (Effect a) where
 
 instance TsBridge a => TsBridge (Nullable a) where
   tsBridge = TSB.tsBridgeNullable Tok
+
+instance (TsBridge a, TsBridge b) => TsBridge (OneOf a b) where
+  tsBridge = TSB.tsBridgeOneOf Tok
 
 instance (TsBridge a, TsBridge b) => TsBridge (a -> b) where
   tsBridge = TSB.tsBridgeFunction Tok
@@ -130,6 +134,18 @@ spec = do
             `shouldEqual`
               (Left $ TSB.AtModule "Foo.Bar" $ TSB.ErrDuplicateIdentifier $ DTS.TsName "a")
 
+      describe "Reserved words" do
+        it "does not allow identifiers to be reserved words" do
+          ( TSB.tsProgram
+              [ TSB.tsModuleFile "Foo.Bar"
+                  [ TSB.tsValues Tok { const: "" }
+                  ]
+              ]
+              <#> printTsProgram
+          )
+            `shouldEqual`
+              (Left $ TSB.AtModule "Foo.Bar" $ TSB.AtValue "const" $ TSB.ErrTsName $ TSB.ErrReserveredWord "const")
+
     describe "Decl tsValue" do
       describe "tsValue" do
         describe "Number" do
@@ -201,6 +217,10 @@ spec = do
       describe "Nullable" do
         testTypePrint (tsBridge (Proxy :: _ (Nullable String)))
           "(null) | (string)"
+
+      describe "OneOf" do
+        testTypePrint (tsBridge (Proxy :: _ (String |+| Boolean |+| Array String)))
+          "(string) | ((boolean) | (Array<string>))"
 
       describe "Variant" do
         testTypePrint (tsBridge (Proxy :: _ (Variant (a :: String, b :: Boolean))))

@@ -10,6 +10,7 @@
 - [Either](#either)
 - [Tuple](#tuple)
 - [Nullable](#nullable)
+- [OneOf](#oneof)
 - [Record](#record)
 - [Variant](#variant)
 - [Function](#function)
@@ -604,6 +605,72 @@ foreign import data Nullable
 `output/Data.Nullable/index.d.ts`
 ```ts
 export type Nullable<A> = null | A
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+  <tr>
+    <td colspan=3>
+      <h2>OneOf</h2>
+
+From the [nullable](https://pursuit.purescript.org/packages/purescript-nullable) library.
+
+`OneOf` is represented as TypeScript untagged union.
+
+</td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th align="left">PureScript</th>
+    <th align="left">TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+OneOf a b
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+import('../Untagged.Union').OneOf<A, B>
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+`~/Untagged/Union.purs`
+```hs
+foreign import data OneOf
+  :: Type -> Type -> Type
+```
+
+</td>
+<td valign="top">
+
+
+`output/Untagged.Union/index.d.ts`
+```ts
+export type OneOf<A, B> = A | B
 ```
 
 
