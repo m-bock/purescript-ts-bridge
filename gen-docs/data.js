@@ -192,7 +192,7 @@ export const data = [
   [
     "OneOf",
     [
-      "From the [nullable](https://pursuit.purescript.org/packages/purescript-nullable) library.",
+      "From the [untagged-union](https://pursuit.purescript.org/packages/purescript-untagged-union) library.",
       "",
       "`OneOf` is represented as TypeScript untagged union.",
     ].join("\n"),
