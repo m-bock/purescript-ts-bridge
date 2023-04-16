@@ -1,6 +1,17 @@
 # Changelog
 
+
 ## [Unreleased]
+
+### Added
+
+## [2.0.5]
+
+### Added
+
+- support foe `OneOf` type
+
+## [2.0.4]
 
 ### Added
 
@@ -18,5 +29,7 @@
 
 ### Removed
 
-[unreleased]: https://github.com/thought2/purescript-ts-bridge/compare/v2.0.3...HEAD
+[unreleased]: https://github.com/thought2/purescript-ts-bridge/compare/v2.0.5...HEAD
+[2.0.5]: https://github.com/thought2/purescript-ts-bridge/compare/v2.0.4...v2.0.5
+[2.0.4]: https://github.com/thought2/purescript-ts-bridge/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/thought2/purescript-ts-bridge/releases/tag/v2.0.3
