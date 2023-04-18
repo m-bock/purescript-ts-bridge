@@ -9,7 +9,7 @@
 
 ### Added
 
-- support foe `OneOf` type
+- support for `OneOf` type
 
 ## [2.0.4]
 
