@@ -8,7 +8,6 @@
   , "effect"
   , "either"
   , "foldable-traversable"
-  , "heterogeneous"
   , "maybe"
   , "newtype"
   , "node-buffer"

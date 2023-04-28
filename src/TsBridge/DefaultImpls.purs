@@ -51,9 +51,7 @@ import Data.Tuple (Tuple, fst, snd)
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Variant (Variant)
 import Data.Variant.Encodings.Flat (VariantEncFlat)
-import Data.Variant.Encodings.Flat as VarEncFlat
 import Effect (Effect)
-import Heterogeneous.Mapping (class HMapWithIndex, hmapWithIndex)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
