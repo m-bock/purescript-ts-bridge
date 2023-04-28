@@ -15,6 +15,7 @@
 - [Variant](#variant)
 - [VariantEncFlat](#variantencflat)
 - [VariantEncNested](#variantencnested)
+- [VariantEncNested](#variantencnested-1)
 - [Function](#function)
 - [Promise](#promise)
 - [Effect](#effect)
@@ -881,6 +882,79 @@ VariantEncFlat "kind"
 ```hs
 foreign import data VariantEncFlat
   :: Symbol -> Row (Row Type) -> Type
+```
+
+</td>
+<td valign="top">
+
+
+`<builtin>`
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+  <tr>
+    <td colspan=3>
+      <h2>VariantEncNested</h2>
+
+From the [variant-encodings](https://pursuit.purescript.org/packages/purescript-variant-encodings) library.
+
+Variants with custom nested encoding are represented as TypeScript tagged unions.
+
+</td>
+  </tr>
+  <tr></tr>
+  <tr>
+    <th></th>
+    <th align="left">PureScript</th>
+    <th align="left">TypeScript</th>
+  </tr>
+  <tr></tr>
+
+
+<tr>
+  <td valign="top">Ref</td>
+  <td valign="top">
+
+```ts
+VariantEncNested "kind" "payload"
+  ( one :: Number
+  , two :: String
+  )
+```
+
+</td>
+<td valign="top">
+
+
+```ts
+| {
+    readonly kind: 'one';
+    readonly payload: number;
+  }
+| {
+    readonly kind: 'two';
+    readonly payload: string;
+  }
+```
+
+
+  </td>
+</tr>
+<tr></tr>
+
+
+<tr>
+  <td valign="top">Def</td>
+  <td valign="top">
+
+`~/Data/Variant/Encodings/Nested.purs`
+```hs
+foreign import data VariantEncNested
+  :: Symbol -> Symbol -> Row Type -> Type
 ```
 
 </td>

@@ -3,11 +3,15 @@ module TsBridge.DefaultImpls
   , class TsBridgeRecord
   , class TsBridgeRecordRL
   , class TsBridgeVariant
+  , class TsBridgeVariantRL 
   , class TsBridgeVariantEncFlat
   , class TsBridgeVariantEncFlatRL
-  , class TsBridgeVariantRL
+  , class TsBridgeVariantEncNested
+  , class TsBridgeVariantEncNestedRL
   , tsBridgeVariantEncFlat
   , tsBridgeVariantEncFlatRL
+  , tsBridgeVariantEncNested
+  , tsBridgeVariantEncNestedRL
   , tsBridgeArray
   , tsBridgeBoolean
   , tsBridgeChar
@@ -51,6 +55,7 @@ import Data.Tuple (Tuple, fst, snd)
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Variant (Variant)
 import Data.Variant.Encodings.Flat (VariantEncFlat)
+import Data.Variant.Encodings.Nested (VariantEncNested)
 import Effect (Effect)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
@@ -285,6 +290,11 @@ tsBridgeOneOf tok _ = do
 
 class TsBridgeVariantEncFlat :: Type -> Symbol -> Row (Row Type) -> Constraint
 class TsBridgeVariantEncFlat tok symTag r where
+  -- | `tsBridge` type class method implementation for the `TsBridgeVariantEncFlat` type
+  -- |
+  -- | See [this
+  -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#variantencflat)
+  -- | for details.
   tsBridgeVariantEncFlat :: tok -> Proxy (VariantEncFlat symTag r) -> TsBridgeM DTS.TsType
 
 instance (RowToList r rl, TsBridgeVariantEncFlatRL tok symTag rl) => TsBridgeVariantEncFlat tok symTag r where
@@ -296,6 +306,11 @@ instance (RowToList r rl, TsBridgeVariantEncFlatRL tok symTag rl) => TsBridgeVar
 
 class TsBridgeVariantEncFlatRL :: Type -> Symbol -> RowList (Row Type) -> Constraint
 class TsBridgeVariantEncFlatRL tok symTag rl where
+  -- | `tsBridge` type class method implementation for the `TsBridgeVariantEncNested` type
+  -- |
+  -- | See [this
+  -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#variantencnested)
+  -- | for details.
   tsBridgeVariantEncFlatRL :: tok -> Proxy symTag -> Proxy rl -> TsBridgeM (Array DTS.TsType)
 
 instance TsBridgeVariantEncFlatRL tok symTag Nil where
@@ -513,6 +528,58 @@ instance
                   { readonly: true, optional: false }
                   (DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ s))
               , DTS.TsRecordField "value"
+                  { readonly: true, optional: false }
+                  x
+              ]
+          )
+          xs
+
+-------------------------------------------------------------------------------
+-- tsBridge methods / class TsBridgeVariantEncNested
+-------------------------------------------------------------------------------
+
+class TsBridgeVariantEncNested :: Type -> Symbol -> Symbol -> Row Type -> Constraint
+class TsBridgeVariantEncNested tok symTag symVal r where
+  -- | `tsBridge` type class method implementation for the VariantEncNested type
+  -- |
+  -- | See [this
+  -- | reference](https://github.com/thought2/purescript-ts-bridge/blob/main/docs/type-comparison.md#VariantEncNested)
+  -- | for details.
+  tsBridgeVariantEncNested :: tok -> Proxy (VariantEncNested symTag symVal r) -> TsBridgeM DTS.TsType
+
+instance (RowToList r rl, TsBridgeVariantEncNestedRL tok symTag symVal rl) => TsBridgeVariantEncNested tok symTag symVal r where
+  tsBridgeVariantEncNested tok _ = DTS.TsTypeUnion <$> tsBridgeVariantEncNestedRL tok (Proxy :: _ symTag) (Proxy :: _ symVal) (Proxy :: _ rl)
+
+-------------------------------------------------------------------------------
+-- tsBridge methods / class TsBridgeVariantEncNestedRL
+-------------------------------------------------------------------------------
+
+class TsBridgeVariantEncNestedRL :: Type -> Symbol -> Symbol -> RowList Type -> Constraint
+class TsBridgeVariantEncNestedRL tok symTag symVal rl where
+  tsBridgeVariantEncNestedRL :: tok -> Proxy symTag -> Proxy symVal -> Proxy rl -> TsBridgeM (Array DTS.TsType)
+
+instance TsBridgeVariantEncNestedRL tok symTag symVal Nil where
+  tsBridgeVariantEncNestedRL _ _ _ _ = pure []
+
+instance
+  ( TsBridgeBy tok t
+  , TsBridgeVariantEncNestedRL tok symTag symVal rl
+  , IsSymbol s
+  , IsSymbol symTag
+  , IsSymbol symVal
+  ) =>
+  TsBridgeVariantEncNestedRL tok symTag symVal (Cons s t rl) where
+  tsBridgeVariantEncNestedRL tok prxSymTag prxSymVal _ =
+    do
+      x <- tsBridgeBy tok (Proxy :: _ t)
+      xs <- tsBridgeVariantEncNestedRL tok prxSymTag prxSymVal (Proxy :: _ rl)
+      pure $
+        A.cons
+          ( DTS.TsTypeRecord
+              [ DTS.TsRecordField (reflectSymbol prxSymTag)
+                  { readonly: true, optional: false }
+                  (DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ s))
+              , DTS.TsRecordField (reflectSymbol prxSymVal)
                   { readonly: true, optional: false }
                   x
               ]

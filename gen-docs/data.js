@@ -340,6 +340,46 @@ export const data = [
         "Ref",
         [
           "VariantEncNested \"kind\" \"payload\"",
+          "  ( one :: Number",
+          "  , two :: String",
+          "  )",
+        ].join("\n"),
+        [
+          "| {",
+          "    readonly kind: 'one';",
+          "    readonly payload: number;",
+          "  }",
+          "| {",
+          "    readonly kind: 'two';",
+          "    readonly payload: string;",
+          "  }",
+        ].join("\n"),
+      ],
+      [
+        "Def",
+        [
+          "~/Data/Variant/Encodings/Nested.purs",
+          [
+            "foreign import data VariantEncNested",
+            "  :: Symbol -> Symbol -> Row Type -> Type",
+          ].join("\n"),
+        ],
+        null,
+      ],
+    ],
+  ],
+  [
+    "VariantEncNested",
+    [
+      "From the [variant-encodings](https://pursuit.purescript.org/packages/purescript-variant-encodings) library.",
+      "",
+      "Variants with custom nested encoding are represented as TypeScript tagged unions.",
+    ].join("\n"),
+    [
+      [
+        "Ref",
+        [
+          "VariantEncNested \"kind\" \"payload\"",
           "  ( one :: String",
           "  , two :: Number",
           "  )",
