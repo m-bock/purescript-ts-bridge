@@ -5,11 +5,13 @@
 
 ### Added
 
+- support for `variant-encodings`
+
 ## [2.0.5]
 
 ### Added
 
-- support foe `OneOf` type
+- support for `OneOf` type
 
 ## [2.0.4]
 

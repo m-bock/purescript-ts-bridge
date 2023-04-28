@@ -3,7 +3,7 @@ module TsBridge.DefaultImpls
   , class TsBridgeRecord
   , class TsBridgeRecordRL
   , class TsBridgeVariant
-  , class TsBridgeVariantRL 
+  , class TsBridgeVariantRL
   , class TsBridgeVariantEncFlat
   , class TsBridgeVariantEncFlatRL
   , class TsBridgeVariantEncNested
