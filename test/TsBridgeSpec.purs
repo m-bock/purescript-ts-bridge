@@ -19,9 +19,11 @@ import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple, fst)
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Variant (Variant)
+import Data.Variant.Encodings.Flat (VariantEncFlat)
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
+import Test.Util as U
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
 import Type.Proxy (Proxy(..))
@@ -59,6 +61,9 @@ instance (TSB.TsBridgeRecord Tok r) => TsBridge (Record r) where
 
 instance (TSB.TsBridgeVariant Tok r) => TsBridge (Variant r) where
   tsBridge = TSB.tsBridgeVariant Tok
+
+instance (TSB.TsBridgeVariantEncFlat Tok symTag r) => TsBridge (VariantEncFlat symTag r) where
+  tsBridge = TSB.tsBridgeVariantEncFlat Tok
 
 instance TsBridge a => TsBridge (Maybe a) where
   tsBridge = TSB.tsBridgeMaybe Tok
@@ -223,8 +228,12 @@ spec = do
           "(string) | ((boolean) | (Array<string>))"
 
       describe "Variant" do
-        testTypePrint (tsBridge (Proxy :: _ (Variant (a :: String, b :: Boolean))))
+        testTypePrint' (tsBridge (Proxy :: _ (Variant (a :: String, b :: Boolean))))
           "({ readonly 'type': 'a'; readonly 'value': string; }) | ({ readonly 'type': 'b'; readonly 'value': boolean; })"
+
+      describe "VariantEncFlat" do
+        testTypePrint' (tsBridge (Proxy :: _ (VariantEncFlat "kind" (a :: (x :: Number), b :: (y :: String)))))
+          "(({ readonly 'kind': 'a'; })&({ readonly 'x': number; })) | (({ readonly 'kind': 'b'; })&({ readonly 'y': string; }))"
 
 testDeclPrint :: TsBridgeM (Array DTS.TsDeclaration) -> Array String -> Spec Unit
 testDeclPrint x s =
@@ -238,6 +247,16 @@ testTypePrint :: TsBridgeM DTS.TsType -> String -> Spec Unit
 testTypePrint x s =
   it "prints the correct type" do
     shouldEqual
+      ( TSB.runTsBridgeM x
+          <#> (fst >>> printTsType)
+          # fromRight (DTS.TsSource "")
+      )
+      (DTS.TsSource s)
+
+testTypePrint' :: TsBridgeM DTS.TsType -> String -> Spec Unit
+testTypePrint' x s =
+  it "prints the correct type" do
+    U.shouldEqual
       ( TSB.runTsBridgeM x
           <#> (fst >>> printTsType)
           # fromRight (DTS.TsSource "")

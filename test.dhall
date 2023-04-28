@@ -1,9 +1,11 @@
-{ name = "ts-bridge"
+{ name = "ts-bridge-test"
 , dependencies =
   [ "aff"
   , "aff-promise"
   , "argonaut-core"
   , "arrays"
+  , "classless"
+  , "classless-encode-json"
   , "console"
   , "dts"
   , "effect"
@@ -24,6 +26,8 @@
   , "prelude"
   , "record"
   , "safe-coerce"
+  , "spec"
+  , "spec-discovery"
   , "strings"
   , "transformers"
   , "tuples"
@@ -32,5 +36,5 @@
   , "variant-encodings"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs" ]
+, sources = [ "src/**/*.purs", "test/**/*.purs" ]
 }
