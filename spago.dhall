@@ -2,7 +2,6 @@
 , dependencies =
   [ "aff"
   , "aff-promise"
-  , "argonaut-core"
   , "arrays"
   , "console"
   , "dts"
