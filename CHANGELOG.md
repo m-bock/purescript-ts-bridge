@@ -5,6 +5,7 @@
 
 ### Added
 
+- default type class
 - support for `variant-encodings`
 
 ## [2.0.5]
