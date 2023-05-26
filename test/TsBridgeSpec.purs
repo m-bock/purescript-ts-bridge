@@ -22,6 +22,7 @@ import Data.Variant (Variant)
 import Data.Variant.Encodings.Flat (VariantEncFlat)
 import Data.Variant.Encodings.Nested (VariantEncNested)
 import Effect (Effect)
+import Literals (StringLit)
 import Literals.Undefined as Lit
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -87,6 +88,9 @@ instance TsBridge Unit where
 
 instance TsBridge Lit.Undefined where
   tsBridge = TSB.tsBridgeLitUndefined
+
+instance IsSymbol sym => TsBridge (StringLit sym) where
+  tsBridge = TSB.tsBridgeStringLit
 
 newtype MyNT = MyNT Number
 
@@ -234,6 +238,10 @@ spec = do
       describe "Lit.Undefined" do
         testTypePrint (tsBridge (Proxy :: _ Lit.Undefined))
           "undefined"
+
+      describe "StringLit" do
+        testTypePrint (tsBridge (Proxy :: _ (StringLit "abc")))
+          "'abc'"
 
       describe "OneOf" do
         testTypePrint (tsBridge (Proxy :: _ (String |+| Boolean |+| Array String)))

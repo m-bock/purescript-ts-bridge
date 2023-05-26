@@ -15,6 +15,7 @@ module TsBridge.DefaultImpls
   , tsBridgeEither
   , tsBridgeFunction
   , tsBridgeInt
+  , tsBridgeStringLit
   , tsBridgeLitUndefined
   , tsBridgeMaybe
   , tsBridgeNewtype
@@ -59,6 +60,7 @@ import Data.Variant (Variant)
 import Data.Variant.Encodings.Flat (VariantEncFlat)
 import Data.Variant.Encodings.Nested (VariantEncNested)
 import Effect (Effect)
+import Literals (StringLit)
 import Literals.Undefined as Lit
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
@@ -287,11 +289,13 @@ tsBridgeOneOf tok _ = do
 
   pure $ DTS.TsTypeUnion [ x, y ]
 
--------------------------------------------------------------------------------
-
--- | `tsBridge` type class method implementation for the `Undefined` type. 
+-- | `tsBridge` type class method implementation for the `Undefined` type.
 tsBridgeLitUndefined :: Proxy Lit.Undefined -> TsBridgeM DTS.TsType
 tsBridgeLitUndefined _ = pure $ DTS.TsTypeVar (DTS.TsName "undefined")
+
+-- | `tsBridge` type class method implementation for string literal types.
+tsBridgeStringLit :: forall sym. IsSymbol sym => Proxy (StringLit sym) -> TsBridgeM DTS.TsType
+tsBridgeStringLit _ = pure $ DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ sym)
 
 -------------------------------------------------------------------------------
 -- tsBridge methods / class VariantEncFlat 
