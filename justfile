@@ -20,7 +20,7 @@ check-format:
     purs-tidy check 'test/**/*.purs'    
 
 test:
-    spago test
+    spago --config test.dhall test
 
 gen-docs:
     node gen-docs/gen-md.js
