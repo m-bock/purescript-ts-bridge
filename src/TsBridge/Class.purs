@@ -13,6 +13,7 @@ import Data.Variant (Variant)
 import Effect (Effect)
 import TsBridge as TSB
 import Type.Proxy (Proxy)
+import Untagged.Union (OneOf)
 
 class TsBridge (a :: Type) where
   tsBridge :: Proxy a -> TSB.TsBridgeM DTS.TsType
@@ -72,3 +73,6 @@ instance TsBridge a => TsBridge (Promise a) where
 
 instance IsSymbol sym => TsBridge (TSB.TypeVar sym) where
   tsBridge = TSB.tsBridgeTypeVar
+
+instance (TsBridge a, TsBridge b) => TsBridge (OneOf a b) where
+  tsBridge = TSB.tsBridgeOneOf Tok
