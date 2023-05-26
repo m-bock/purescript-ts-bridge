@@ -10,6 +10,8 @@ import Data.Nullable (Nullable)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple)
 import Data.Variant (Variant)
+import Data.Variant.Encodings.Flat (VariantEncFlat)
+import Data.Variant.Encodings.Nested (VariantEncNested)
 import Effect (Effect)
 import TsBridge as TSB
 import Type.Proxy (Proxy)
@@ -76,3 +78,9 @@ instance IsSymbol sym => TsBridge (TSB.TypeVar sym) where
 
 instance (TsBridge a, TsBridge b) => TsBridge (OneOf a b) where
   tsBridge = TSB.tsBridgeOneOf Tok
+
+instance (TSB.TsBridgeVariantEncFlat Tok symTag r) => TsBridge (VariantEncFlat symTag r) where
+  tsBridge = TSB.tsBridgeVariantEncFlat Tok
+
+instance (TSB.TsBridgeVariantEncNested Tok symTag symVal r) => TsBridge (VariantEncNested symTag symVal r) where
+  tsBridge = TSB.tsBridgeVariantEncNested Tok
