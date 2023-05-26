@@ -299,8 +299,8 @@ export const data = [
         "Ref",
         [
           "VariantEncFlat \"kind\"",
-          "  ( one :: (name :: String, size :: Number)",
-          "  , two :: (hobbies :: Array String)",
+          "  ( one :: {name :: String, size :: Number}",
+          "  , two :: {hobbies :: Array String}",
           "  )",
         ].join("\n"),
         [

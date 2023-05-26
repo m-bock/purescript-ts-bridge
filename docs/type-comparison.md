@@ -847,8 +847,8 @@ Flat encoded Variants are represented as TypeScript tagged unions.
 
 ```ts
 VariantEncFlat "kind"
-  ( one :: (name :: String, size :: Number)
-  , two :: (hobbies :: Array String)
+  ( one :: {name :: String, size :: Number}
+  , two :: {hobbies :: Array String}
   )
 ```
 
