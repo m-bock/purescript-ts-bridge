@@ -288,7 +288,7 @@ tsBridgeOneOf tok _ = do
 -- tsBridge methods / class VariantEncFlat 
 -------------------------------------------------------------------------------
 
-class TsBridgeVariantEncFlat :: Type -> Symbol -> Row (Row Type) -> Constraint
+class TsBridgeVariantEncFlat :: Type -> Symbol -> Row Type -> Constraint
 class TsBridgeVariantEncFlat tok symTag r where
   -- | `tsBridge` type class method implementation for the `TsBridgeVariantEncFlat` type
   -- |
@@ -304,7 +304,7 @@ instance (RowToList r rl, TsBridgeVariantEncFlatRL tok symTag rl) => TsBridgeVar
 -- CltsBridge methods / class TsBridgeVariantRL
 -------------------------------------------------------------------------------
 
-class TsBridgeVariantEncFlatRL :: Type -> Symbol -> RowList (Row Type) -> Constraint
+class TsBridgeVariantEncFlatRL :: Type -> Symbol -> RowList Type -> Constraint
 class TsBridgeVariantEncFlatRL tok symTag rl where
   -- | `tsBridge` type class method implementation for the `TsBridgeVariantEncNested` type
   -- |
@@ -322,7 +322,7 @@ instance
   , IsSymbol s
   , IsSymbol symTag
   ) =>
-  TsBridgeVariantEncFlatRL tok symTag (Cons s r rl) where
+  TsBridgeVariantEncFlatRL tok symTag (Cons s (Record r) rl) where
   tsBridgeVariantEncFlatRL tok prxSymTag _ =
     do
       x <- tsBridgeBy tok (Proxy :: _ (Record r))

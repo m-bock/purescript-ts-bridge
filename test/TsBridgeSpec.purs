@@ -236,7 +236,7 @@ spec = do
           "({ readonly 'type': 'a'; readonly 'value': string; }) | ({ readonly 'type': 'b'; readonly 'value': boolean; })"
 
       describe "VariantEncFlat" do
-        testTypePrint' (tsBridge (Proxy :: _ (VariantEncFlat "kind" (a :: (x :: Number), b :: (y :: String)))))
+        testTypePrint' (tsBridge (Proxy :: _ (VariantEncFlat "kind" (a :: { x :: Number }, b :: { y :: String }))))
           "(({ readonly 'kind': 'a'; })&({ readonly 'x': number; })) | (({ readonly 'kind': 'b'; })&({ readonly 'y': string; }))"
 
       describe "VariantEncNested" do
