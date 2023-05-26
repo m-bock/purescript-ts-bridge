@@ -3,15 +3,11 @@ module TsBridge.DefaultImpls
   , class TsBridgeRecord
   , class TsBridgeRecordRL
   , class TsBridgeVariant
-  , class TsBridgeVariantRL
   , class TsBridgeVariantEncFlat
   , class TsBridgeVariantEncFlatRL
   , class TsBridgeVariantEncNested
   , class TsBridgeVariantEncNestedRL
-  , tsBridgeVariantEncFlat
-  , tsBridgeVariantEncFlatRL
-  , tsBridgeVariantEncNested
-  , tsBridgeVariantEncNestedRL
+  , class TsBridgeVariantRL
   , tsBridgeArray
   , tsBridgeBoolean
   , tsBridgeChar
@@ -19,6 +15,7 @@ module TsBridge.DefaultImpls
   , tsBridgeEither
   , tsBridgeFunction
   , tsBridgeInt
+  , tsBridgeLitUndefined
   , tsBridgeMaybe
   , tsBridgeNewtype
   , tsBridgeNullable
@@ -33,8 +30,13 @@ module TsBridge.DefaultImpls
   , tsBridgeTypeVar
   , tsBridgeUnit
   , tsBridgeVariant
+  , tsBridgeVariantEncFlat
+  , tsBridgeVariantEncFlatRL
+  , tsBridgeVariantEncNested
+  , tsBridgeVariantEncNestedRL
   , tsBridgeVariantRL
-  ) where
+  )
+  where
 
 import Prelude
 
@@ -57,6 +59,7 @@ import Data.Variant (Variant)
 import Data.Variant.Encodings.Flat (VariantEncFlat)
 import Data.Variant.Encodings.Nested (VariantEncNested)
 import Effect (Effect)
+import Literals.Undefined as Lit
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
@@ -285,6 +288,12 @@ tsBridgeOneOf tok _ = do
   pure $ DTS.TsTypeUnion [ x, y ]
 
 -------------------------------------------------------------------------------
+
+-- | `tsBridge` type class method implementation for the `Undefined` type. 
+tsBridgeLitUndefined :: Proxy Lit.Undefined -> TsBridgeM DTS.TsType
+tsBridgeLitUndefined _ = pure $ DTS.TsTypeVar (DTS.TsName "undefined")
+
+-------------------------------------------------------------------------------
 -- tsBridge methods / class VariantEncFlat 
 -------------------------------------------------------------------------------
 
@@ -301,7 +310,7 @@ instance (RowToList r rl, TsBridgeVariantEncFlatRL tok symTag rl) => TsBridgeVar
   tsBridgeVariantEncFlat tok _ = DTS.TsTypeUnion <$> tsBridgeVariantEncFlatRL tok (Proxy :: _ symTag) (Proxy :: _ rl)
 
 -------------------------------------------------------------------------------
--- CltsBridge methods / class TsBridgeVariantRL
+-- tsBridge methods / class TsBridgeVariantRL
 -------------------------------------------------------------------------------
 
 class TsBridgeVariantEncFlatRL :: Type -> Symbol -> RowList Type -> Constraint

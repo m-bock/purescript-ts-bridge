@@ -13,6 +13,7 @@ import Data.Variant (Variant)
 import Data.Variant.Encodings.Flat (VariantEncFlat)
 import Data.Variant.Encodings.Nested (VariantEncNested)
 import Effect (Effect)
+import Literals.Undefined as Lit
 import TsBridge as TSB
 import Type.Proxy (Proxy)
 import Untagged.Union (OneOf)
@@ -84,3 +85,6 @@ instance (TSB.TsBridgeVariantEncFlat Tok symTag r) => TsBridge (VariantEncFlat s
 
 instance (TSB.TsBridgeVariantEncNested Tok symTag symVal r) => TsBridge (VariantEncNested symTag symVal r) where
   tsBridge = TSB.tsBridgeVariantEncNested Tok
+
+instance TsBridge Lit.Undefined where
+  tsBridge = TSB.tsBridgeLitUndefined

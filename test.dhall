@@ -12,6 +12,7 @@
   , "either"
   , "foldable-traversable"
   , "heterogeneous"
+  , "literals"
   , "maybe"
   , "newtype"
   , "node-buffer"
