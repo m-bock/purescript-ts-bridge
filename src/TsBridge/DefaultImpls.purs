@@ -36,8 +36,7 @@ module TsBridge.DefaultImpls
   , tsBridgeVariantEncNested
   , tsBridgeVariantEncNestedRL
   , tsBridgeVariantRL
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -51,6 +50,7 @@ import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable)
+import Data.Set as Set
 import Data.Set.Ordered as OSet
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (sequence, traverse)
@@ -66,7 +66,7 @@ import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
 import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
-import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM)
+import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, getAccum)
 import TsBridge.Types (AppError(..), mapErr, mkName, toTsName)
 import Type.Proxy (Proxy(..))
 import Untagged.Union (OneOf)
@@ -430,29 +430,37 @@ tsBridgeNewtype tok { moduleName, typeName, typeArgs } _ =
       let
         targNames = map fst typeArgs
         targs = map snd typeArgs
-
-      args <- sequence targs
-      x <- tsBridgeBy tok (Proxy :: _ t)
-      let
         filePath = DTS.TsFilePath (moduleName <> "/index.d.ts")
         filePathRef = DTS.TsImportPath ("../" <> moduleName)
 
       name <- mkName typeName
-      args' <- OSet.fromFoldable <$> map toTsName <$> traverse mkName targNames
+      args <- sequence targs
 
-      let
-        typeDefs =
-          [ DTS.TsModuleFile
-              filePath
-              ( DTS.TsModule
-                  [ DTS.TsDeclTypeDef (toTsName name) DTS.Public (coerce args') x
-                  ]
-              )
-          ]
+      TsBridgeAccum accum <- getAccum
 
-      tell
-        $ TsBridgeAccum
-        $ R.union mempty { typeDefs }
+      unless (Set.member { moduleName, typeName } accum.registeredTypes) do
+
+        tell
+          $ TsBridgeAccum
+          $ R.union mempty { registeredTypes: Set.singleton { moduleName, typeName } }
+
+        x <- tsBridgeBy tok (Proxy :: _ t)
+
+        args' <- OSet.fromFoldable <$> map toTsName <$> traverse mkName targNames
+
+        let
+          typeDefs =
+            [ DTS.TsModuleFile
+                filePath
+                ( DTS.TsModule
+                    [ DTS.TsDeclTypeDef (toTsName name) DTS.Public (coerce args') x
+                    ]
+                )
+            ]
+
+        tell
+          $ TsBridgeAccum
+          $ R.union mempty { typeDefs, registeredTypes: Set.singleton { moduleName, typeName } }
 
       pure
         $ DTS.TsTypeConstructor (DTS.TsQualName (Just filePathRef) (toTsName name)) (DTS.TsTypeArgs args)

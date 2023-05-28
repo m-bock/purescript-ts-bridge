@@ -65,8 +65,6 @@ tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Either 
 tsModuleFile n xs =
   mapErr (AtModule n)
     do
-      -- TODO: check for duplicate identifiers
-
       _ <- mkPursModuleName n
 
       (xs' /\ TsBridgeAccum { typeDefs }) <- runTsBridgeM $ join <$> sequence xs
@@ -120,10 +118,7 @@ tsOpaqueType tok x = do
   _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ tsBridgeBy tok x
   case A.uncons modules of
     Just { head: (DTS.TsModuleFile _ (DTS.TsModule decls)), tail: [] } -> do
-      tell $ TsBridgeAccum
-        { typeDefs: mempty
-        , scope: mempty
-        }
+      tell mempty
       pure decls
     _ -> pure []
 

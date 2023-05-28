@@ -279,39 +279,39 @@ spec = do
         testTypePrint' (tsBridge (Proxy :: _ (VariantEncNested "kind" "payload" (a :: Number, b :: String))))
           "({ readonly 'kind': 'a'; readonly 'payload': number; }) | ({ readonly 'kind': 'b'; readonly 'payload': string; })"
 
-      -- describe "Recursive type" do
-      --   pending' "should handle recursive types without stack overflow" do
-      --     shouldEqual
-      --       ( TSB.tsProgram
-      --           [ TSB.tsModuleFile "Foo.Bar"
-      --               [ TSB.tsValue Tok "someList"
-      --                   ( RecListStr $ V.inj (Proxy :: _ "cons")
-      --                       { head: "A"
-      --                       , tail:
-      --                           RecListStr $ V.inj (Proxy :: _ "cons")
-      --                             { head: "B"
-      --                             , tail: RecListStr $ V.inj (Proxy :: _ "nil") {}
-      --                             }
-      --                       }
-      --                   )
-      --               ]
-      --           ]
-      --           <#> printTsProgram
-      --       )
-      --       ( Right $ Map.fromFoldable
-      --           [ textFile "Foo.Bar/index.d.ts"
-      --               [ "export const someList : import('../Data.RecListStr').RecListStr"
-      --               ]
-      --           , textFile "Data.RecListStr/index.d.ts"
-      --               [ fold
-      --                   [ "export type RecListStr = "
-      --                   , "({ readonly 'type': 'cons'; readonly 'value': { readonly 'head': string; readonly 'tail': import('../Data.RecListStr').RecListStr; }; })"
-      --                   , " | "
-      --                   , "({ readonly 'type': 'nil'; readonly 'value': {}; })"
-      --                   ]
-      --               ]
-      --           ]
-      --       )
+      describe "Recursive type" do
+        it "should handle recursive types without stack overflow" do
+          shouldEqual
+            ( TSB.tsProgram
+                [ TSB.tsModuleFile "Foo.Bar"
+                    [ TSB.tsValue Tok "someList"
+                        ( RecListStr $ V.inj (Proxy :: _ "cons")
+                            { head: "A"
+                            , tail:
+                                RecListStr $ V.inj (Proxy :: _ "cons")
+                                  { head: "B"
+                                  , tail: RecListStr $ V.inj (Proxy :: _ "nil") {}
+                                  }
+                            }
+                        )
+                    ]
+                ]
+                <#> printTsProgram
+            )
+            ( Right $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export const someList : import('../Data.RecListStr').RecListStr"
+                    ]
+                , textFile "Data.RecListStr/index.d.ts"
+                    [ fold
+                        [ "export type RecListStr = "
+                        , "({ readonly 'type': 'cons'; readonly 'value': { readonly 'head': string; readonly 'tail': import('../Data.RecListStr').RecListStr; }; })"
+                        , " | "
+                        , "({ readonly 'type': 'nil'; readonly 'value': {}; })"
+                        ]
+                    ]
+                ]
+            )
 
 testDeclPrint :: TsBridgeM (Array DTS.TsDeclaration) -> Array String -> Spec Unit
 testDeclPrint x s =
