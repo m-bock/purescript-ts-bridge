@@ -61,8 +61,8 @@ instance
   , Row.Cons sym a_ r' r
   , Row.Lacks sym r'
   , IsSymbol sym
-  , Row.Cons "optional" required modsx mods
-  , If required (Maybe a) a a_
+  , GetKey "optional" mods False optional
+  , If optional (Maybe a) a a_
   ) =>
   ToRecordBuilder (RL.Cons sym (Mod mods a) rl') rts r
   where
@@ -73,6 +73,22 @@ instance
 
     prxRl' = Proxy :: _ rl'
     prxSym = Proxy :: _ sym
+
+-------------------------------------------------------------------------------
+
+class GetKey :: forall k. Symbol -> Row k -> k -> k -> Constraint
+class GetKey sym r fail match | sym r fail -> match
+
+instance (RowToList r rl, GetKeyRL sym rl fail match) => GetKey sym r fail match
+
+class GetKeyRL :: forall k. Symbol -> RowList k -> k -> k -> Constraint
+class GetKeyRL sym rl fail match | sym rl fail -> match
+
+instance GetKeyRL sym RL.Nil fail fail
+
+instance GetKeyRL sym (RL.Cons sym a rl') fail a
+
+else instance (GetKeyRL sym' rl' fail match) => GetKeyRL sym' (RL.Cons sym a rl') fail match
 
 -------------------------------------------------------------------------------
 -- TsBridgeTsRecord
@@ -177,4 +193,15 @@ test1
        , baz :: Int
        )
 test1 = toRecord
+
+test2
+  :: TsRecord
+       ( foo :: Mod () Int
+       , bar :: Mod (optional :: True) Int
+       )
+  -> Record
+       ( foo :: Int
+       , bar :: Maybe Int
+       )
+test2 = toRecord
 
