@@ -10,6 +10,7 @@
   , "dts"
   , "effect"
   , "either"
+  , "exceptions"
   , "foldable-traversable"
   , "heterogeneous"
   , "literals"

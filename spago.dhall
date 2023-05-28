@@ -7,6 +7,7 @@
   , "dts"
   , "effect"
   , "either"
+  , "exceptions"
   , "foldable-traversable"
   , "literals"
   , "maybe"

@@ -4,9 +4,11 @@ module Test.TsBridgeSpec
 
 import Prelude
 
+import Control.Monad.Error.Class (catchError)
 import DTS as DTS
 import DTS.Print (printTsDeclarations, printTsType)
 import Data.Either (Either(..), fromRight)
+import Data.Foldable (fold)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -19,12 +21,13 @@ import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple, fst)
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Variant (Variant)
+import Data.Variant as V
 import Data.Variant.Encodings.Flat (VariantEncFlat)
 import Data.Variant.Encodings.Nested (VariantEncNested)
 import Effect (Effect)
 import Literals (StringLit)
 import Literals.Undefined as Lit
-import Test.Spec (Spec, describe, it)
+import Test.Spec (Spec, describe, it, pending, pending')
 import Test.Spec.Assertions (shouldEqual)
 import Test.Util as U
 import TsBridge as TSB
@@ -100,6 +103,23 @@ instance TsBridge MyNT where
   tsBridge =
     TSB.tsBridgeNewtype Tok
       { moduleName: "Foo.Bar", typeName: "MyNT", typeArgs: [] }
+
+--
+
+newtype RecListStr = RecListStr
+  ( Variant
+      ( cons :: { head :: String, tail :: RecListStr }
+      , nil :: {}
+      )
+  )
+
+derive instance Newtype RecListStr _
+
+instance TsBridge RecListStr where
+  tsBridge x =
+    TSB.tsBridgeNewtype Tok
+      { moduleName: "Data.RecListStr", typeName: "RecListStr", typeArgs: [] }
+      x
 
 --
 
@@ -258,6 +278,40 @@ spec = do
       describe "VariantEncNested" do
         testTypePrint' (tsBridge (Proxy :: _ (VariantEncNested "kind" "payload" (a :: Number, b :: String))))
           "({ readonly 'kind': 'a'; readonly 'payload': number; }) | ({ readonly 'kind': 'b'; readonly 'payload': string; })"
+
+      -- describe "Recursive type" do
+      --   pending' "should handle recursive types without stack overflow" do
+      --     shouldEqual
+      --       ( TSB.tsProgram
+      --           [ TSB.tsModuleFile "Foo.Bar"
+      --               [ TSB.tsValue Tok "someList"
+      --                   ( RecListStr $ V.inj (Proxy :: _ "cons")
+      --                       { head: "A"
+      --                       , tail:
+      --                           RecListStr $ V.inj (Proxy :: _ "cons")
+      --                             { head: "B"
+      --                             , tail: RecListStr $ V.inj (Proxy :: _ "nil") {}
+      --                             }
+      --                       }
+      --                   )
+      --               ]
+      --           ]
+      --           <#> printTsProgram
+      --       )
+      --       ( Right $ Map.fromFoldable
+      --           [ textFile "Foo.Bar/index.d.ts"
+      --               [ "export const someList : import('../Data.RecListStr').RecListStr"
+      --               ]
+      --           , textFile "Data.RecListStr/index.d.ts"
+      --               [ fold
+      --                   [ "export type RecListStr = "
+      --                   , "({ readonly 'type': 'cons'; readonly 'value': { readonly 'head': string; readonly 'tail': import('../Data.RecListStr').RecListStr; }; })"
+      --                   , " | "
+      --                   , "({ readonly 'type': 'nil'; readonly 'value': {}; })"
+      --                   ]
+      --               ]
+      --           ]
+      --       )
 
 testDeclPrint :: TsBridgeM (Array DTS.TsDeclaration) -> Array String -> Spec Unit
 testDeclPrint x s =
