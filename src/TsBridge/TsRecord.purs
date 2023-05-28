@@ -17,6 +17,7 @@ import TsBridge.Monad (TsBridgeM)
 import Type.Data.Boolean (class If)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
+import Data.Variant.Encodings.Flat as VarEnc
 
 -------------------------------------------------------------------------------
 --- Types
@@ -33,6 +34,9 @@ type role ModField representational
 foreign import data Mod :: Row Boolean -> Type -> ModField Type
 
 type role Mod phantom representational
+
+instance (ToRecord rts r) => VarEnc.ToRecord (TsRecord rts) r where
+  toRecord = toRecord
 
 -------------------------------------------------------------------------------
 --- ToRecord

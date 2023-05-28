@@ -1,6 +1,5 @@
 module TsBridge.DefaultImpls
   ( TypeVar(..)
-  , class ToRecord
   , class TsBridgeRecord
   , class TsBridgeRecordRL
   , class TsBridgeVariant
@@ -9,7 +8,6 @@ module TsBridge.DefaultImpls
   , class TsBridgeVariantEncNested
   , class TsBridgeVariantEncNestedRL
   , class TsBridgeVariantRL
-  , toRecord
   , tsBridgeArray
   , tsBridgeBoolean
   , tsBridgeChar
@@ -334,8 +332,7 @@ instance TsBridgeVariantEncFlatRL tok symTag Nil where
   tsBridgeVariantEncFlatRL _ _ _ = pure []
 
 instance
-  ( TsBridgeBy tok (Record r)
-  , ToRecord a r
+  ( TsBridgeBy tok a
   , TsBridgeVariantEncFlatRL tok symTag rl
   , IsSymbol s
   , IsSymbol symTag
@@ -343,7 +340,7 @@ instance
   TsBridgeVariantEncFlatRL tok symTag (Cons s a rl) where
   tsBridgeVariantEncFlatRL tok prxSymTag _ =
     do
-      x <- tsBridgeBy tok (Proxy :: _ (Record r))
+      x <- tsBridgeBy tok (Proxy :: _ a)
       xs <- tsBridgeVariantEncFlatRL tok prxSymTag (Proxy :: _ rl)
       pure $
         A.cons
@@ -357,17 +354,6 @@ instance
               ]
           )
           xs
-
----
-
-class ToRecord a r | a -> r where
-  toRecord :: a -> Record r
-
-instance ToRecord (Record r) r where
-  toRecord = identity
-
-instance (TsRecord.ToRecord tsr r) => ToRecord (TsRecord tsr) r where
-  toRecord = TsRecord.toRecord
 
 --------------------------------------------------------------------------------
 
