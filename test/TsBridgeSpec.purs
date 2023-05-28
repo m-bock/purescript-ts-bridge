@@ -4,7 +4,6 @@ module Test.TsBridgeSpec
 
 import Prelude
 
-import Control.Monad.Error.Class (catchError)
 import DTS as DTS
 import DTS.Print (printTsDeclarations, printTsType)
 import Data.Either (Either(..), fromRight)
@@ -27,11 +26,13 @@ import Data.Variant.Encodings.Nested (VariantEncNested)
 import Effect (Effect)
 import Literals (StringLit)
 import Literals.Undefined as Lit
-import Test.Spec (Spec, describe, it, pending, pending')
+import Prim.Boolean (False, True)
+import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Util as U
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
+import TsBridge.TsRecord (Mod, TsRecord)
 import Type.Proxy (Proxy(..))
 import Untagged.Union (type (|+|), OneOf)
 
@@ -64,6 +65,9 @@ instance (TsBridge a, TsBridge b) => TsBridge (a -> b) where
 
 instance (TSB.TsBridgeRecord Tok r) => TsBridge (Record r) where
   tsBridge = TSB.tsBridgeRecord Tok
+
+instance (TSB.TsBridgeTsRecord Tok r) => TsBridge (TsRecord r) where
+  tsBridge = TSB.tsBridgeTsRecord Tok
 
 instance (TSB.TsBridgeVariant Tok r) => TsBridge (Variant r) where
   tsBridge = TSB.tsBridgeVariant Tok
@@ -309,6 +313,94 @@ spec = do
                         , " | "
                         , "({ readonly 'type': 'nil'; readonly 'value': {}; })"
                         ]
+                    ]
+                ]
+            )
+
+      describe "TsRecord" do
+        it "should work with no modifiers" do
+          shouldEqual
+            ( TSB.tsProgram
+                [ TSB.tsModuleFile "Foo.Bar"
+                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                        (Proxy :: _ (TsRecord (field1 :: Mod () Number)))
+                    ]
+                ]
+                <#> printTsProgram
+            )
+            ( Right $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export type SomeRecord = { 'field1': number; }"
+                    ]
+                ]
+            )
+        it "should work with optional modifier" do
+          shouldEqual
+            ( TSB.tsProgram
+                [ TSB.tsModuleFile "Foo.Bar"
+                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                        ( Proxy
+                            :: _
+                                 ( TsRecord
+                                     ( field1 :: Mod (optional :: True) Number
+                                     , field2 :: Mod (optional :: False) Number
+                                     )
+                                 )
+                        )
+                    ]
+                ]
+                <#> printTsProgram
+            )
+            ( Right $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export type SomeRecord = { 'field1'?: number; 'field2': number; }"
+                    ]
+                ]
+            )
+
+        it "it should work with readonly modifier" do
+          shouldEqual
+            ( TSB.tsProgram
+                [ TSB.tsModuleFile "Foo.Bar"
+                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                        ( Proxy
+                            :: _
+                                 ( TsRecord
+                                     ( field1 :: Mod (readonly :: True) Number
+                                     , field2 :: Mod (readonly :: False) Number
+                                     )
+                                 )
+                        )
+                    ]
+                ]
+                <#> printTsProgram
+            )
+            ( Right $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export type SomeRecord = { readonly 'field1': number; 'field2': number; }"
+                    ]
+                ]
+            )
+
+        it "should work with readonly and optional" do
+          shouldEqual
+            ( TSB.tsProgram
+                [ TSB.tsModuleFile "Foo.Bar"
+                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                        ( Proxy
+                            :: _
+                                 ( TsRecord
+                                     ( field1 :: Mod (readonly :: True, optional :: True) Number
+                                     )
+                                 )
+                        )
+                    ]
+                ]
+                <#> printTsProgram
+            )
+            ( Right $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export type SomeRecord = { readonly 'field1'?: number; }"
                     ]
                 ]
             )

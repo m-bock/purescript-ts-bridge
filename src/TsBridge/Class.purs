@@ -15,6 +15,7 @@ import Data.Variant.Encodings.Nested (VariantEncNested)
 import Effect (Effect)
 import Literals (StringLit)
 import Literals.Undefined as Lit
+import TsBridge (TsRecord)
 import TsBridge as TSB
 import Type.Proxy (Proxy)
 import Untagged.Union (OneOf)
@@ -38,6 +39,9 @@ instance TsBridge Number where
 
 instance (TSB.TsBridgeRecord Tok r) => TsBridge (Record r) where
   tsBridge = TSB.tsBridgeRecord Tok
+
+instance (TSB.TsBridgeTsRecord Tok r) => TsBridge (TsRecord r) where
+  tsBridge = TSB.tsBridgeTsRecord Tok
 
 instance (TSB.TsBridgeVariant Tok r) => TsBridge (Variant r) where
   tsBridge = TSB.tsBridgeVariant Tok
