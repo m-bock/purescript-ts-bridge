@@ -1,5 +1,6 @@
 module TsBridge.DefaultImpls
   ( TypeVar(..)
+  , class ToRecord
   , class TsBridgeRecord
   , class TsBridgeRecordRL
   , class TsBridgeVariant
@@ -8,6 +9,7 @@ module TsBridge.DefaultImpls
   , class TsBridgeVariantEncNested
   , class TsBridgeVariantEncNestedRL
   , class TsBridgeVariantRL
+  , toRecord
   , tsBridgeArray
   , tsBridgeBoolean
   , tsBridgeChar
@@ -15,7 +17,6 @@ module TsBridge.DefaultImpls
   , tsBridgeEither
   , tsBridgeFunction
   , tsBridgeInt
-  , tsBridgeStringLit
   , tsBridgeLitUndefined
   , tsBridgeMaybe
   , tsBridgeNewtype
@@ -27,6 +28,7 @@ module TsBridge.DefaultImpls
   , tsBridgeRecord
   , tsBridgeRecordRL
   , tsBridgeString
+  , tsBridgeStringLit
   , tsBridgeTuple
   , tsBridgeTypeVar
   , tsBridgeUnit
@@ -65,6 +67,8 @@ import Literals.Undefined as Lit
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
+import TsBridge.TsRecord (TsRecord)
+import TsBridge.TsRecord as TsRecord
 import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, getAccum)
 import TsBridge.Types (AppError(..), mapErr, mkName, toTsName)
@@ -331,11 +335,12 @@ instance TsBridgeVariantEncFlatRL tok symTag Nil where
 
 instance
   ( TsBridgeBy tok (Record r)
+  , ToRecord a r
   , TsBridgeVariantEncFlatRL tok symTag rl
   , IsSymbol s
   , IsSymbol symTag
   ) =>
-  TsBridgeVariantEncFlatRL tok symTag (Cons s (Record r) rl) where
+  TsBridgeVariantEncFlatRL tok symTag (Cons s a rl) where
   tsBridgeVariantEncFlatRL tok prxSymTag _ =
     do
       x <- tsBridgeBy tok (Proxy :: _ (Record r))
@@ -352,6 +357,17 @@ instance
               ]
           )
           xs
+
+---
+
+class ToRecord a r | a -> r where
+  toRecord :: a -> Record r
+
+instance ToRecord (Record r) r where
+  toRecord = identity
+
+instance (TsRecord.ToRecord tsr r) => ToRecord (TsRecord tsr) r where
+  toRecord = TsRecord.toRecord
 
 --------------------------------------------------------------------------------
 
