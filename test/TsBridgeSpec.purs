@@ -21,8 +21,8 @@ import Data.Tuple (Tuple, fst)
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Variant (Variant)
 import Data.Variant as V
-import Data.Variant.Encodings.Flat (VariantEncFlat)
-import Data.Variant.Encodings.Nested (VariantEncNested)
+import Data.Variant.Encodings.Flat (VariantEncodedFlat)
+import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
 import Literals (StringLit)
 import Literals.Undefined as Lit
@@ -72,11 +72,11 @@ instance (TSB.TsBridgeTsRecord Tok r) => TsBridge (TsRecord r) where
 instance (TSB.TsBridgeVariant Tok r) => TsBridge (Variant r) where
   tsBridge = TSB.tsBridgeVariant Tok
 
-instance (TSB.TsBridgeVariantEncFlat Tok symTag r) => TsBridge (VariantEncFlat symTag r) where
-  tsBridge = TSB.tsBridgeVariantEncFlat Tok
+instance (TSB.TsBridgeVariantEncodedFlat Tok symTag r) => TsBridge (VariantEncodedFlat symTag r) where
+  tsBridge = TSB.tsBridgeVariantEncodedFlat Tok
 
-instance (TSB.TsBridgeVariantEncNested Tok symTag symVal r) => TsBridge (VariantEncNested symTag symVal r) where
-  tsBridge = TSB.tsBridgeVariantEncNested Tok
+instance (TSB.TsBridgeVariantEncodedNested Tok symTag symVal r) => TsBridge (VariantEncodedNested symTag symVal r) where
+  tsBridge = TSB.tsBridgeVariantEncodedNested Tok
 
 instance TsBridge a => TsBridge (Maybe a) where
   tsBridge = TSB.tsBridgeMaybe Tok
@@ -275,12 +275,12 @@ spec = do
         testTypePrint' (tsBridge (Proxy :: _ (Variant (a :: String, b :: Boolean))))
           "({ readonly 'type': 'a'; readonly 'value': string; }) | ({ readonly 'type': 'b'; readonly 'value': boolean; })"
 
-      describe "VariantEncFlat" do
-        testTypePrint' (tsBridge (Proxy :: _ (VariantEncFlat "kind" (a :: { x :: Number }, b :: { y :: String }))))
+      describe "VariantEncodedFlat" do
+        testTypePrint' (tsBridge (Proxy :: _ (VariantEncodedFlat "kind" (a :: { x :: Number }, b :: { y :: String }))))
           "(({ readonly 'kind': 'a'; })&({ readonly 'x': number; })) | (({ readonly 'kind': 'b'; })&({ readonly 'y': string; }))"
 
-      describe "VariantEncNested" do
-        testTypePrint' (tsBridge (Proxy :: _ (VariantEncNested "kind" "payload" (a :: Number, b :: String))))
+      describe "VariantEncodedNested" do
+        testTypePrint' (tsBridge (Proxy :: _ (VariantEncodedNested "kind" "payload" (a :: Number, b :: String))))
           "({ readonly 'kind': 'a'; readonly 'payload': number; }) | ({ readonly 'kind': 'b'; readonly 'payload': string; })"
 
       describe "Recursive type" do

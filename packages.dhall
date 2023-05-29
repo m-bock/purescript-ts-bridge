@@ -36,22 +36,22 @@ with virtual-dom-halogen =
 
 with marked =
   { repo = "ssh://git@github.com/thought2/purescript-marked.git"
-  , version = "06651dfa5ae9de5e9bd83e1977d38fa36c8d92c9"
-  , dependencies = [ "console", "dts", "effect", "either", "maybe", "newtype", "nullable", "prelude", "unsafe-coerce", "untagged-union", "variant", "variant-encodings", "ts-bridge" ]
+  , version = "c210acc15223b7e150109a40e2618322f597e291"
+  , dependencies = [ "console", "dts", "effect", "either", "integers", "maybe", "newtype", "nullable", "prelude", "ts-bridge", "unsafe-coerce", "untagged-union", "variant", "variant-encodings" ]
   }
 
 
 with variant-encodings =
   { repo = "https://github.com/thought2/purescript-variant-encodings.git"
-  , version = "7ef981093530938721c08f3f7f24cbcaeeee688d"
+  , version = "a4ad3a69e3f1fa6a50d511ae9035ca49c04f36ae"
   , dependencies = [ "prelude", "unsafe-coerce", "variant" ]
   }
 
 
 with ts-bridge =
   { repo = "https://github.com/thought2/purescript-ts-bridge.git"
-  , version = "8b70087ef50e300113b5456bc251b68c56e12509"
-  , dependencies = [ "aff", "aff-promise", "arrays", "console", "dts", "effect", "either", "foldable-traversable", "literals", "maybe", "newtype", "node-buffer", "node-fs", "node-fs-aff", "node-path", "node-process", "nullable", "optparse", "ordered-collections", "ordered-set", "prelude", "record", "safe-coerce", "strings", "transformers", "tuples", "typelevel-prelude", "unsafe-coerce", "untagged-union", "variant", "variant-encodings" ]
+  , version = "46879c3a2353274d9b886243950a85e1782058e3"
+  , dependencies = [ "aff", "aff-promise", "arrays", "console", "dts", "effect", "either", "foldable-traversable", "literals", "maybe", "newtype", "node-buffer", "node-fs", "node-fs-aff", "node-path", "node-process", "nullable", "optparse", "ordered-collections", "ordered-set", "partial", "prelude", "record", "safe-coerce", "strings", "transformers", "tuples", "typelevel-prelude", "unsafe-coerce", "untagged-union", "variant", "variant-encodings" ]
   }
 
 
