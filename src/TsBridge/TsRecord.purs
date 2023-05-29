@@ -4,9 +4,11 @@ import Prelude
 
 import DTS as DTS
 import Data.Array as Array
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe, fromJust)
 import Data.Reflectable (class Reflectable, reflectType)
 import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Variant.Encodings.Flat (class IsRecordWithoutKey)
+import Partial.Unsafe (unsafePartial)
 import Prim.Boolean (False, True)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, RowList)
@@ -17,7 +19,7 @@ import TsBridge.Monad (TsBridgeM)
 import Type.Data.Boolean (class If)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
-import Data.Variant.Encodings.Flat as VarEnc
+import Untagged.Union (UndefinedOr, uorToMaybe)
 
 -------------------------------------------------------------------------------
 --- Types
@@ -35,8 +37,8 @@ foreign import data Mod :: Row Boolean -> Type -> ModField Type
 
 type role Mod phantom representational
 
-instance (ToRecord rts r) => VarEnc.ToRecord (TsRecord rts) r where
-  toRecord = toRecord
+instance (Row.Lacks sym rts) => IsRecordWithoutKey sym (TsRecord rts) where
+  isRecordWithoutKey _ = Proxy
 
 -------------------------------------------------------------------------------
 --- ToRecord
@@ -65,18 +67,58 @@ instance
   , Row.Cons sym a_ r' r
   , Row.Lacks sym r'
   , IsSymbol sym
-  , GetKey "optional" mods False optional
-  , If optional (Maybe a) a a_
+  , Get sym rts a_
   ) =>
   ToRecordBuilder (RL.Cons sym (Mod mods a) rl') rts r
   where
-  toRecordBuilder _ x = buildHead <<< buildTail
+  toRecordBuilder _ tsRec = buildHead <<< buildTail
     where
-    buildHead = RB.insert prxSym (unsafeCoerce 1)
-    buildTail = toRecordBuilder prxRl' x
+    val :: a_
+    val = get prxSym tsRec
+
+    buildHead = RB.insert prxSym val
+    buildTail = toRecordBuilder prxRl' tsRec
 
     prxRl' = Proxy :: _ rl'
     prxSym = Proxy :: _ sym
+
+-------------------------------------------------------------------------------
+
+class Get :: Symbol -> Row (ModField Type) -> Type -> Constraint
+class
+  Get sym rts a
+  | sym rts
+    sym rts -> a
+  where
+  get :: Proxy sym -> TsRecord rts -> a
+
+instance
+  ( GetKey "optional" mods False optional
+  , If optional (Maybe a) a a_
+  , Row.Cons sym (Mod mods a) rtsx rts
+  , Reflectable optional Boolean
+  , IsSymbol sym
+  ) =>
+  Get sym rts a_ where
+  get _ tsRec =
+    if isOptional then
+      unsafeCoerce $ getKeyMaybe key tsRec
+    else
+      unsafeCoerce $ unsafeGetKey key tsRec
+    where
+    key = reflectSymbol prxSym
+    isOptional = reflectType prxOptional
+
+    prxOptional = Proxy :: _ optional
+    prxSym = Proxy :: _ sym
+
+foreign import getKeyImpl :: forall rts a. String -> TsRecord rts -> UndefinedOr a
+
+getKeyMaybe :: forall rts a. String -> TsRecord rts -> Maybe a
+getKeyMaybe key = getKeyImpl key >>> uorToMaybe
+
+unsafeGetKey :: forall rts a. String -> TsRecord rts -> a
+unsafeGetKey key = unsafePartial (getKeyImpl key >>> uorToMaybe >>> fromJust)
 
 -------------------------------------------------------------------------------
 

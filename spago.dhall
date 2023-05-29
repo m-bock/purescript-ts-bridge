@@ -20,6 +20,7 @@
   , "optparse"
   , "ordered-collections"
   , "ordered-set"
+  , "partial"
   , "prelude"
   , "record"
   , "safe-coerce"
