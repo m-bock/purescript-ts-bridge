@@ -20,6 +20,7 @@ module TsBridge.DefaultImpls
   , tsBridgeNewtype
   , tsBridgeNullable
   , tsBridgeNumber
+  , tsBridgeObject
   , tsBridgeOneOf
   , tsBridgeOpaqueType
   , tsBridgePromise
@@ -60,6 +61,7 @@ import Data.Variant (Variant)
 import Data.Variant.Encodings.Flat (VariantEncodedFlat)
 import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
+import Foreign.Object (Object)
 import Literals (StringLit)
 import Literals.Undefined as Lit
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
@@ -187,6 +189,13 @@ tsBridgeEffect tok _ = censor mapAccum ado
 -- | for details.
 tsBridgeArray :: forall a tok. TsBridgeBy tok a => tok -> Proxy (Array a) -> TsBridgeM DTS.TsType
 tsBridgeArray tok _ = DTS.TsTypeArray <$> tsBridgeBy tok (Proxy :: _ a)
+
+tsBridgeObject :: forall tok a. TsBridgeBy tok a => tok -> Proxy (Object a) -> TsBridgeM DTS.TsType
+tsBridgeObject tok _ = do
+  x <- tsBridgeBy tok (Proxy :: _ a)
+  pure $ DTS.TsTypeConstructor
+    (DTS.TsQualName Nothing $ DTS.TsName "Record")
+    (DTS.TsTypeArgs [ DTS.TsTypeString, x ])
 
 -- | tsBridge type class method implementation for the `Tuple` type
 -- |

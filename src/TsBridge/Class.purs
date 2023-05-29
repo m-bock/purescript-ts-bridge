@@ -13,6 +13,7 @@ import Data.Variant (Variant)
 import Data.Variant.Encodings.Flat (VariantEncodedFlat)
 import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
+import Foreign.Object (Object)
 import Literals (StringLit)
 import Literals.Undefined as Lit
 import TsBridge (Intersection, TsRecord)
@@ -63,6 +64,9 @@ instance TsBridge Unit where
 
 instance TsBridge a => TsBridge (Array a) where
   tsBridge = TSB.tsBridgeArray Tok
+
+instance TsBridge a => TsBridge (Object a) where
+  tsBridge = TSB.tsBridgeObject Tok
 
 instance TsBridge a => TsBridge (Effect a) where
   tsBridge = TSB.tsBridgeEffect Tok

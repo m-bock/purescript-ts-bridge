@@ -8,6 +8,7 @@
   , "effect"
   , "either"
   , "foldable-traversable"
+  , "foreign-object"
   , "literals"
   , "maybe"
   , "newtype"
