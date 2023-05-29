@@ -15,7 +15,8 @@ import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
 import Foreign.Object (Object)
 import Literals (StringLit)
-import Literals.Undefined as Lit
+import Literals.Null (Null)
+import Literals.Undefined (Undefined)
 import TsBridge (Intersection, TsRecord)
 import TsBridge as TSB
 import Type.Proxy (Proxy)
@@ -98,8 +99,11 @@ instance (TSB.TsBridgeVariantEncodedFlat Tok symTag r) => TsBridge (VariantEncod
 instance (TSB.TsBridgeVariantEncodedNested Tok symTag symVal r) => TsBridge (VariantEncodedNested symTag symVal r) where
   tsBridge = TSB.tsBridgeVariantEncodedNested Tok
 
-instance TsBridge Lit.Undefined where
-  tsBridge = TSB.tsBridgeLitUndefined
+instance TsBridge Undefined where
+  tsBridge = TSB.tsBridgeUndefined
+
+instance TsBridge Null where
+  tsBridge = TSB.tsBridgeNull
 
 instance IsSymbol sym => TsBridge (StringLit sym) where
   tsBridge = TSB.tsBridgeStringLit

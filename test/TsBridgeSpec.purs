@@ -94,7 +94,7 @@ instance TsBridge Unit where
   tsBridge = TSB.tsBridgeUnit
 
 instance TsBridge Lit.Undefined where
-  tsBridge = TSB.tsBridgeLitUndefined
+  tsBridge = TSB.tsBridgeUndefined
 
 instance IsSymbol sym => TsBridge (StringLit sym) where
   tsBridge = TSB.tsBridgeStringLit

@@ -15,9 +15,9 @@ module TsBridge.DefaultImpls
   , tsBridgeEither
   , tsBridgeFunction
   , tsBridgeInt
-  , tsBridgeLitUndefined
   , tsBridgeMaybe
   , tsBridgeNewtype
+  , tsBridgeNull
   , tsBridgeNullable
   , tsBridgeNumber
   , tsBridgeObject
@@ -30,6 +30,7 @@ module TsBridge.DefaultImpls
   , tsBridgeStringLit
   , tsBridgeTuple
   , tsBridgeTypeVar
+  , tsBridgeUndefined
   , tsBridgeUnit
   , tsBridgeVariant
   , tsBridgeVariantEncodedFlat
@@ -63,6 +64,7 @@ import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
 import Foreign.Object (Object)
 import Literals (StringLit)
+import Literals.Null (Null)
 import Literals.Undefined as Lit
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
@@ -299,8 +301,11 @@ tsBridgeOneOf tok _ = do
   pure $ DTS.TsTypeUnion [ x, y ]
 
 -- | `tsBridge` type class method implementation for the `Undefined` type.
-tsBridgeLitUndefined :: Proxy Lit.Undefined -> TsBridgeM DTS.TsType
-tsBridgeLitUndefined _ = pure $ DTS.TsTypeVar (DTS.TsName "undefined")
+tsBridgeUndefined :: Proxy Lit.Undefined -> TsBridgeM DTS.TsType
+tsBridgeUndefined _ = pure $ DTS.TsTypeVar (DTS.TsName "undefined")
+
+tsBridgeNull :: Proxy Null -> TsBridgeM DTS.TsType
+tsBridgeNull _ = pure DTS.TsTypeNull
 
 -- | `tsBridge` type class method implementation for string literal types.
 tsBridgeStringLit :: forall sym. IsSymbol sym => Proxy (StringLit sym) -> TsBridgeM DTS.TsType
