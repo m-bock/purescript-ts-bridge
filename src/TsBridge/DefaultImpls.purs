@@ -65,8 +65,6 @@ import Literals.Undefined as Lit
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
-import TsBridge.TsRecord (TsRecord)
-import TsBridge.TsRecord as TsRecord
 import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, getAccum)
 import TsBridge.Types (AppError(..), mapErr, mkName, toTsName)

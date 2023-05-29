@@ -7,4 +7,5 @@ import TsBridge.Core as Exp
 import TsBridge.Monad as Exp
 import TsBridge.DefaultImpls as Exp
 import TsBridge.Types as Exp
-import TsBridge.TsRecord as Exp
+import TsBridge.Types.TsRecord as Exp
+import TsBridge.Types.Intersection as Exp

@@ -32,7 +32,7 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Util as U
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
-import TsBridge.TsRecord (Mod, TsRecord)
+import TsBridge.Types.TsRecord (Mod, TsRecord)
 import Type.Proxy (Proxy(..))
 import Untagged.Union (type (|+|), OneOf)
 

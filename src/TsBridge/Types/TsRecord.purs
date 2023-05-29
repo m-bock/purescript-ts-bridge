@@ -1,4 +1,25 @@
-module TsBridge.TsRecord where
+module TsBridge.Types.TsRecord
+  ( Mod
+  , ModField
+  , TsRecord
+  , class Get
+  , class GetKey
+  , class GetKeyRL
+  , class GetMods
+  , class GetModsRL
+  , class ToRecord
+  , class ToRecordBuilder
+  , class TsBridgeTsRecord
+  , class TsBridgeTsRecordRL
+  , get
+  , getMods
+  , getModsRL
+  , toRecord
+  , toRecordBuilder
+  , tsBridgeTsRecord
+  , tsBridgeTsRecordRL
+  )
+  where
 
 import Prelude
 

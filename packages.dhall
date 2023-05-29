@@ -36,7 +36,7 @@ with virtual-dom-halogen =
 
 with marked =
   { repo = "ssh://git@github.com/thought2/purescript-marked.git"
-  , version = "c210acc15223b7e150109a40e2618322f597e291"
+  , version = "7b9ad3d5f7082d30db59f17f340a3679b3b7d419"
   , dependencies = [ "console", "dts", "effect", "either", "integers", "maybe", "newtype", "nullable", "prelude", "ts-bridge", "unsafe-coerce", "untagged-union", "variant", "variant-encodings" ]
   }
 
@@ -50,7 +50,7 @@ with variant-encodings =
 
 with ts-bridge =
   { repo = "https://github.com/thought2/purescript-ts-bridge.git"
-  , version = "46879c3a2353274d9b886243950a85e1782058e3"
+  , version = "794b33306abe429175f5ed4ac29fc6c3d2c0b33c"
   , dependencies = [ "aff", "aff-promise", "arrays", "console", "dts", "effect", "either", "foldable-traversable", "literals", "maybe", "newtype", "node-buffer", "node-fs", "node-fs-aff", "node-path", "node-process", "nullable", "optparse", "ordered-collections", "ordered-set", "partial", "prelude", "record", "safe-coerce", "strings", "transformers", "tuples", "typelevel-prelude", "unsafe-coerce", "untagged-union", "variant", "variant-encodings" ]
   }
 
@@ -59,6 +59,13 @@ with dts =
   { repo = "https://github.com/thought2/purescript-dts.git"
   , version = "62184ea266bfe6a980471e3e3bf64ff57b19fa7c"
   , dependencies = [ "arrays", "console", "effect", "maybe", "newtype", "ordered-collections", "ordered-set", "prelude", "tuples" ]
+  }
+
+
+with labeled-data =
+  { repo = "https://github.com/thought2/purescript-labeled-data.git"
+  , version = "fde21ec576f265a777f7a78fa1a8f5f582696641"
+  , dependencies = [ "aff", "effect", "either", "maybe", "prelude", "record", "tuples", "type-equality", "unsafe-coerce", "variant" ]
   }
 
 
