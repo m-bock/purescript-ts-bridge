@@ -7,8 +7,7 @@ module TsBridge.Types.Intersection
   , tsBridgeIntersection
   , type (|&|)
   , toTuples
-  )
-  where
+  ) where
 
 import Prelude
 
