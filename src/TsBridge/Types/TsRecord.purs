@@ -29,7 +29,7 @@ import Data.Reflectable (class Reflectable, reflectType)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant.Encodings.Flat (class IsRecordWithoutKey)
 import Partial.Unsafe (unsafePartial)
-import Prim.Boolean (False, True)
+import Prim.Boolean (False)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
@@ -242,32 +242,3 @@ instance
 
     prxRl' = Proxy :: _ rl'
     prxReadonly = Proxy :: _ readonly
-
--------------------------------------------------------------------------------
---- Tests
--------------------------------------------------------------------------------
-
-test1
-  :: TsRecord
-       ( foo :: Mod (optional :: True) Int
-       , bar :: Mod (optional :: True) Int
-       , baz :: Mod (optional :: False) Int
-       )
-  -> Record
-       ( foo :: Maybe Int
-       , bar :: Maybe Int
-       , baz :: Int
-       )
-test1 = toRecord
-
-test2
-  :: TsRecord
-       ( foo :: Mod () Int
-       , bar :: Mod (optional :: True) Int
-       )
-  -> Record
-       ( foo :: Int
-       , bar :: Maybe Int
-       )
-test2 = toRecord
-

@@ -13,7 +13,6 @@ import Prelude
 
 import DTS as DTS
 import Data.Tuple (Tuple(..))
-import Data.Tuple.Nested (type (/\))
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import Type.Proxy (Proxy(..))
