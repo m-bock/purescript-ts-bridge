@@ -59,6 +59,3 @@ instance ToTuples b b' => ToTuples (Intersection a b) (Tuple a b') where
 
 else instance ToTuples a a where
   toTuples = identity
-
-test1 :: Int |&| String |&| Boolean |&| Char -> Int /\ String /\ Boolean /\ Char
-test1 = toTuples
