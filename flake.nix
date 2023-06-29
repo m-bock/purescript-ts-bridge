@@ -16,7 +16,7 @@
         overlays = [
           (prev: final: {
             inherit (easy-purescript-nix) purs-tidy psa;
-            purescript = easy-purescript-nix.purs-0_15_8;
+            purescript = easy-purescript-nix.purs-0_15_9;
           })
         ];
 
