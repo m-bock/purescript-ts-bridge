@@ -1,14 +1,5 @@
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.15.8-20230425/packages.dhall
-        sha256:74bd0986f8c25c67be10cd702466425caaefe495981a49b21092cb746ca63768
+      https://github.com/purescript/package-sets/releases/download/psc-0.15.9-20230629/packages.dhall
+        sha256:f91d36c7e4793fe4d7e042c57fef362ff3f9e9ba88454cd38686701e30bf545a
 
-in upstream
-
-with variant-encodings =
-      { dependencies =
-          [ "prelude", "unsafe-coerce", "variant" ]
-      , repo =
-          "https://github.com/thought2/purescript-variant-encodings.git"
-      , version =
-          "main"
-      }
+in  upstream

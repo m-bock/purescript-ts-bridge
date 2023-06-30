@@ -38,12 +38,6 @@ import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, runTsBridgeM)
 import TsBridge.Types (AppError(..), mapErr, mkName, mkPursModuleName, toTsName)
 import Type.Proxy (Proxy(..))
 
--- | A `StandaloneTsType` represents a TypeScript type with everything it needs
--- | to be placed inside complete TS program: If the type references nominal
--- | types from other modules, all information is contained that is needed to
--- | render those references.
---type StandaloneTsType = TsBridgeM DTS.TsType
-
 -- | Type Class that is used by the type generator to recursively traverse
 -- | types.
 -- | Instances for the specific types will be defined on the user's side with a
@@ -71,8 +65,6 @@ tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Either 
 tsModuleFile n xs =
   mapErr (AtModule n)
     do
-      -- TODO: check for duplicate identifiers
-
       _ <- mkPursModuleName n
 
       (xs' /\ TsBridgeAccum { typeDefs }) <- runTsBridgeM $ join <$> sequence xs
@@ -126,10 +118,7 @@ tsOpaqueType tok x = do
   _ /\ modules <- listens (un TsBridgeAccum >>> _.typeDefs) $ tsBridgeBy tok x
   case A.uncons modules of
     Just { head: (DTS.TsModuleFile _ (DTS.TsModule decls)), tail: [] } -> do
-      tell $ TsBridgeAccum
-        { typeDefs: mempty
-        , scope: mempty
-        }
+      tell mempty
       pure decls
     _ -> pure []
 

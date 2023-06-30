@@ -10,9 +10,14 @@ import Data.Nullable (Nullable)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple)
 import Data.Variant (Variant)
-import Data.Variant.Encodings.Flat (VariantEncFlat)
-import Data.Variant.Encodings.Nested (VariantEncNested)
+import Data.Variant.Encodings.Flat (VariantEncodedFlat)
+import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
+import Foreign.Object (Object)
+import Literals (StringLit)
+import Literals.Null (Null)
+import Literals.Undefined (Undefined)
+import TsBridge (Intersection, TsRecord)
 import TsBridge as TSB
 import Type.Proxy (Proxy)
 import Untagged.Union (OneOf)
@@ -37,6 +42,9 @@ instance TsBridge Number where
 instance (TSB.TsBridgeRecord Tok r) => TsBridge (Record r) where
   tsBridge = TSB.tsBridgeRecord Tok
 
+instance (TSB.TsBridgeTsRecord Tok r) => TsBridge (TsRecord r) where
+  tsBridge = TSB.tsBridgeTsRecord Tok
+
 instance (TSB.TsBridgeVariant Tok r) => TsBridge (Variant r) where
   tsBridge = TSB.tsBridgeVariant Tok
 
@@ -57,6 +65,9 @@ instance TsBridge Unit where
 
 instance TsBridge a => TsBridge (Array a) where
   tsBridge = TSB.tsBridgeArray Tok
+
+instance TsBridge a => TsBridge (Object a) where
+  tsBridge = TSB.tsBridgeObject Tok
 
 instance TsBridge a => TsBridge (Effect a) where
   tsBridge = TSB.tsBridgeEffect Tok
@@ -79,8 +90,20 @@ instance IsSymbol sym => TsBridge (TSB.TypeVar sym) where
 instance (TsBridge a, TsBridge b) => TsBridge (OneOf a b) where
   tsBridge = TSB.tsBridgeOneOf Tok
 
-instance (TSB.TsBridgeVariantEncFlat Tok symTag r) => TsBridge (VariantEncFlat symTag r) where
-  tsBridge = TSB.tsBridgeVariantEncFlat Tok
+instance (TsBridge a, TsBridge b) => TsBridge (Intersection a b) where
+  tsBridge = TSB.tsBridgeIntersection Tok
 
-instance (TSB.TsBridgeVariantEncNested Tok symTag symVal r) => TsBridge (VariantEncNested symTag symVal r) where
-  tsBridge = TSB.tsBridgeVariantEncNested Tok
+instance (TSB.TsBridgeVariantEncodedFlat Tok symTag r) => TsBridge (VariantEncodedFlat symTag r) where
+  tsBridge = TSB.tsBridgeVariantEncodedFlat Tok
+
+instance (TSB.TsBridgeVariantEncodedNested Tok symTag symVal r) => TsBridge (VariantEncodedNested symTag symVal r) where
+  tsBridge = TSB.tsBridgeVariantEncodedNested Tok
+
+instance TsBridge Undefined where
+  tsBridge = TSB.tsBridgeUndefined
+
+instance TsBridge Null where
+  tsBridge = TSB.tsBridgeNull
+
+instance IsSymbol sym => TsBridge (StringLit sym) where
+  tsBridge = TSB.tsBridgeStringLit

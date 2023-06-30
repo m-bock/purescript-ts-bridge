@@ -7,6 +7,7 @@ import Prelude
 import DTS as DTS
 import DTS.Print (printTsDeclarations, printTsType)
 import Data.Either (Either(..), fromRight)
+import Data.Foldable (fold)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -19,14 +20,19 @@ import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple, fst)
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Variant (Variant)
-import Data.Variant.Encodings.Flat (VariantEncFlat)
-import Data.Variant.Encodings.Nested (VariantEncNested)
+import Data.Variant as V
+import Data.Variant.Encodings.Flat (VariantEncodedFlat)
+import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
+import Literals (StringLit)
+import Literals.Undefined as Lit
+import Prim.Boolean (False, True)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Util as U
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
+import TsBridge.Types.TsRecord (Mod, TsRecord)
 import Type.Proxy (Proxy(..))
 import Untagged.Union (type (|+|), OneOf)
 
@@ -60,14 +66,17 @@ instance (TsBridge a, TsBridge b) => TsBridge (a -> b) where
 instance (TSB.TsBridgeRecord Tok r) => TsBridge (Record r) where
   tsBridge = TSB.tsBridgeRecord Tok
 
+instance (TSB.TsBridgeTsRecord Tok r) => TsBridge (TsRecord r) where
+  tsBridge = TSB.tsBridgeTsRecord Tok
+
 instance (TSB.TsBridgeVariant Tok r) => TsBridge (Variant r) where
   tsBridge = TSB.tsBridgeVariant Tok
 
-instance (TSB.TsBridgeVariantEncFlat Tok symTag r) => TsBridge (VariantEncFlat symTag r) where
-  tsBridge = TSB.tsBridgeVariantEncFlat Tok
+instance (TSB.TsBridgeVariantEncodedFlat Tok symTag r) => TsBridge (VariantEncodedFlat symTag r) where
+  tsBridge = TSB.tsBridgeVariantEncodedFlat Tok
 
-instance (TSB.TsBridgeVariantEncNested Tok symTag symVal r) => TsBridge (VariantEncNested symTag symVal r) where
-  tsBridge = TSB.tsBridgeVariantEncNested Tok
+instance (TSB.TsBridgeVariantEncodedNested Tok symTag symVal r) => TsBridge (VariantEncodedNested symTag symVal r) where
+  tsBridge = TSB.tsBridgeVariantEncodedNested Tok
 
 instance TsBridge a => TsBridge (Maybe a) where
   tsBridge = TSB.tsBridgeMaybe Tok
@@ -84,6 +93,12 @@ instance IsSymbol sym => TsBridge (TSB.TypeVar sym) where
 instance TsBridge Unit where
   tsBridge = TSB.tsBridgeUnit
 
+instance TsBridge Lit.Undefined where
+  tsBridge = TSB.tsBridgeUndefined
+
+instance IsSymbol sym => TsBridge (StringLit sym) where
+  tsBridge = TSB.tsBridgeStringLit
+
 newtype MyNT = MyNT Number
 
 derive instance Newtype MyNT _
@@ -92,6 +107,23 @@ instance TsBridge MyNT where
   tsBridge =
     TSB.tsBridgeNewtype Tok
       { moduleName: "Foo.Bar", typeName: "MyNT", typeArgs: [] }
+
+--
+
+newtype RecListStr = RecListStr
+  ( Variant
+      ( cons :: { head :: String, tail :: RecListStr }
+      , nil :: {}
+      )
+  )
+
+derive instance Newtype RecListStr _
+
+instance TsBridge RecListStr where
+  tsBridge x =
+    TSB.tsBridgeNewtype Tok
+      { moduleName: "Data.RecListStr", typeName: "RecListStr", typeArgs: [] }
+      x
 
 --
 
@@ -227,6 +259,14 @@ spec = do
         testTypePrint (tsBridge (Proxy :: _ (Nullable String)))
           "(null) | (string)"
 
+      describe "Lit.Undefined" do
+        testTypePrint (tsBridge (Proxy :: _ Lit.Undefined))
+          "undefined"
+
+      describe "StringLit" do
+        testTypePrint (tsBridge (Proxy :: _ (StringLit "abc")))
+          "'abc'"
+
       describe "OneOf" do
         testTypePrint (tsBridge (Proxy :: _ (String |+| Boolean |+| Array String)))
           "(string) | ((boolean) | (Array<string>))"
@@ -235,13 +275,135 @@ spec = do
         testTypePrint' (tsBridge (Proxy :: _ (Variant (a :: String, b :: Boolean))))
           "({ readonly 'type': 'a'; readonly 'value': string; }) | ({ readonly 'type': 'b'; readonly 'value': boolean; })"
 
-      describe "VariantEncFlat" do
-        testTypePrint' (tsBridge (Proxy :: _ (VariantEncFlat "kind" (a :: { x :: Number }, b :: { y :: String }))))
+      describe "VariantEncodedFlat" do
+        testTypePrint' (tsBridge (Proxy :: _ (VariantEncodedFlat "kind" (a :: { x :: Number }, b :: { y :: String }))))
           "(({ readonly 'kind': 'a'; })&({ readonly 'x': number; })) | (({ readonly 'kind': 'b'; })&({ readonly 'y': string; }))"
 
-      describe "VariantEncNested" do
-        testTypePrint' (tsBridge (Proxy :: _ (VariantEncNested "kind" "payload" (a :: Number, b :: String))))
+      describe "VariantEncodedNested" do
+        testTypePrint' (tsBridge (Proxy :: _ (VariantEncodedNested "kind" "payload" (a :: Number, b :: String))))
           "({ readonly 'kind': 'a'; readonly 'payload': number; }) | ({ readonly 'kind': 'b'; readonly 'payload': string; })"
+
+      describe "Recursive type" do
+        it "should handle recursive types without stack overflow" do
+          shouldEqual
+            ( TSB.tsProgram
+                [ TSB.tsModuleFile "Foo.Bar"
+                    [ TSB.tsValue Tok "someList"
+                        ( RecListStr $ V.inj (Proxy :: _ "cons")
+                            { head: "A"
+                            , tail:
+                                RecListStr $ V.inj (Proxy :: _ "cons")
+                                  { head: "B"
+                                  , tail: RecListStr $ V.inj (Proxy :: _ "nil") {}
+                                  }
+                            }
+                        )
+                    ]
+                ]
+                <#> printTsProgram
+            )
+            ( Right $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export const someList : import('../Data.RecListStr').RecListStr"
+                    ]
+                , textFile "Data.RecListStr/index.d.ts"
+                    [ fold
+                        [ "export type RecListStr = "
+                        , "({ readonly 'type': 'cons'; readonly 'value': { readonly 'head': string; readonly 'tail': import('../Data.RecListStr').RecListStr; }; })"
+                        , " | "
+                        , "({ readonly 'type': 'nil'; readonly 'value': {}; })"
+                        ]
+                    ]
+                ]
+            )
+
+      describe "TsRecord" do
+        it "should work with no modifiers" do
+          shouldEqual
+            ( TSB.tsProgram
+                [ TSB.tsModuleFile "Foo.Bar"
+                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                        (Proxy :: _ (TsRecord (field1 :: Mod () Number)))
+                    ]
+                ]
+                <#> printTsProgram
+            )
+            ( Right $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export type SomeRecord = { 'field1': number; }"
+                    ]
+                ]
+            )
+        it "should work with optional modifier" do
+          shouldEqual
+            ( TSB.tsProgram
+                [ TSB.tsModuleFile "Foo.Bar"
+                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                        ( Proxy
+                            :: _
+                                 ( TsRecord
+                                     ( field1 :: Mod (optional :: True) Number
+                                     , field2 :: Mod (optional :: False) Number
+                                     )
+                                 )
+                        )
+                    ]
+                ]
+                <#> printTsProgram
+            )
+            ( Right $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export type SomeRecord = { 'field1'?: number; 'field2': number; }"
+                    ]
+                ]
+            )
+
+        it "it should work with readonly modifier" do
+          shouldEqual
+            ( TSB.tsProgram
+                [ TSB.tsModuleFile "Foo.Bar"
+                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                        ( Proxy
+                            :: _
+                                 ( TsRecord
+                                     ( field1 :: Mod (readonly :: True) Number
+                                     , field2 :: Mod (readonly :: False) Number
+                                     )
+                                 )
+                        )
+                    ]
+                ]
+                <#> printTsProgram
+            )
+            ( Right $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export type SomeRecord = { readonly 'field1': number; 'field2': number; }"
+                    ]
+                ]
+            )
+
+        it "should work with readonly and optional" do
+          shouldEqual
+            ( TSB.tsProgram
+                [ TSB.tsModuleFile "Foo.Bar"
+                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                        ( Proxy
+                            :: _
+                                 ( TsRecord
+                                     ( field1 :: Mod (readonly :: True, optional :: True) Number
+                                     )
+                                 )
+                        )
+                    ]
+                ]
+                <#> printTsProgram
+            )
+            ( Right $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export type SomeRecord = { readonly 'field1'?: number; }"
+                    ]
+                ]
+            )
 
 testDeclPrint :: TsBridgeM (Array DTS.TsDeclaration) -> Array String -> Spec Unit
 testDeclPrint x s =
