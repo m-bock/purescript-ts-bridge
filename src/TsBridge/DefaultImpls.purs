@@ -463,11 +463,15 @@ tsBridgeNewtype tok { moduleName, typeName, typeArgs } _ =
         args' <- OSet.fromFoldable <$> map toTsName <$> traverse mkName targNames
 
         let
+          removeQuant =
+            DTS.mapQuantifier $ coerce $ OSet.filter (_ `OSet.notElem` args')
+
+        let
           typeDefs =
             [ DTS.TsModuleFile
                 filePath
                 ( DTS.TsModule
-                    [ DTS.TsDeclTypeDef (toTsName name) DTS.Public (coerce args') x
+                    [ DTS.TsDeclTypeDef (toTsName name) DTS.Public (coerce args') (removeQuant x)
                     ]
                 )
             ]
