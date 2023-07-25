@@ -314,7 +314,7 @@ spec = do
                         [ "export type RecListStr = "
                         , "({ readonly 'type': 'cons'; readonly 'value': { readonly 'head': string; readonly 'tail': import('../Data.RecListStr').RecListStr; }; })"
                         , " | "
-                        , "({ readonly 'type': 'nil'; readonly 'value': {}; })"
+                        , "({ readonly 'type': 'nil'; readonly 'value': Record<string, never>; })"
                         ]
                     ]
                 ]
