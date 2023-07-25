@@ -243,7 +243,7 @@ spec = do
         testTypePrint (tsBridge (Proxy :: _ { bar :: String, foo :: Number }))
           "{ readonly 'bar': string; readonly 'foo': number; }"
 
-        testTypePrint (tsBridge (Proxy :: _ { }))
+        testTypePrint (tsBridge (Proxy :: _ {}))
           "Record<string, never>"
 
       describe "Maybe" do
