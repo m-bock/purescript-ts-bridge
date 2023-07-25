@@ -3,3 +3,9 @@ let upstream =
         sha256:f91d36c7e4793fe4d7e042c57fef362ff3f9e9ba88454cd38686701e30bf545a
 
 in  upstream
+
+with dts =
+  { repo = "https://github.com/thought2/purescript-dts.git"
+  , version = "973692ff220694d6f75df57025bb846362747cdf"
+  , dependencies = [ "arrays", "console", "effect", "maybe", "newtype", "ordered-collections", "ordered-set", "prelude", "tuples" ]
+  }
