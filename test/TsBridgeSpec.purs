@@ -243,6 +243,9 @@ spec = do
         testTypePrint (tsBridge (Proxy :: _ { bar :: String, foo :: Number }))
           "{ readonly 'bar': string; readonly 'foo': number; }"
 
+        testTypePrint (tsBridge (Proxy :: _ {}))
+          "Record<string, never>"
+
       describe "Maybe" do
         testTypePrint (tsBridge (Proxy :: _ (Maybe Boolean)))
           "import('../Data.Maybe').Maybe<boolean>"
@@ -311,13 +314,29 @@ spec = do
                         [ "export type RecListStr = "
                         , "({ readonly 'type': 'cons'; readonly 'value': { readonly 'head': string; readonly 'tail': import('../Data.RecListStr').RecListStr; }; })"
                         , " | "
-                        , "({ readonly 'type': 'nil'; readonly 'value': {}; })"
+                        , "({ readonly 'type': 'nil'; readonly 'value': Record<string, never>; })"
                         ]
                     ]
                 ]
             )
 
       describe "TsRecord" do
+        it "should work with an empty TsRecord" do
+          shouldEqual
+            ( TSB.tsProgram
+                [ TSB.tsModuleFile "Foo.Bar"
+                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                        (Proxy :: _ (TsRecord ()))
+                    ]
+                ]
+                <#> printTsProgram
+            )
+            ( Right $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export type SomeRecord = Record<string, never>"
+                    ]
+                ]
+            )
         it "should work with no modifiers" do
           shouldEqual
             ( TSB.tsProgram
