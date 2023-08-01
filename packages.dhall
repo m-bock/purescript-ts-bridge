@@ -1,11 +1,13 @@
-let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.15.9-20230629/packages.dhall
-        sha256:f91d36c7e4793fe4d7e042c57fef362ff3f9e9ba88454cd38686701e30bf545a
 
-in  upstream
+let upstream =
+  https://github.com/purescript/package-sets/releases/download/psc-0.15.8-20230517/packages.dhall
+    sha256:8b94a0cd7f86589a6bd06d48cb9a61d69b66a94b668657b2f10c8b14c16e028c
+
+in upstream
 
 with dts =
   { repo = "https://github.com/thought2/purescript-dts.git"
-  , version = "973692ff220694d6f75df57025bb846362747cdf"
-  , dependencies = [ "arrays", "console", "effect", "maybe", "newtype", "ordered-collections", "ordered-set", "prelude", "tuples" ]
+  , version = "v0.2.0"
+  , dependencies = [ "arrays", "console", "effect", "maybe", "newtype", "ordered-collections", "ordered-set", "prelude", "tuples" ] : List Text
   }
+
