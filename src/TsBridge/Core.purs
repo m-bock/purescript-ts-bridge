@@ -15,7 +15,7 @@ module TsBridge.Core
 import Prelude
 
 import Control.Monad.Error.Class (throwError)
-import Control.Monad.Writer (listens, tell)
+import Control.Monad.Writer (censor, listens, tell)
 import DTS (TsDeclaration(..))
 import DTS as DTS
 import Data.Array as A
@@ -128,21 +128,23 @@ tsValue tok n _ = tsValue' tok n (Proxy :: _ a)
 
 tsValue' :: forall tok a. TsBridgeBy tok a => tok -> String -> Proxy a -> TsBridgeM (Array DTS.TsDeclaration)
 tsValue' tok n _ =
-  mapErr (AtValue n)
-    do
-      let t = tsBridgeBy tok (Proxy :: _ a)
-      x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
+  censor (\(TsBridgeAccum acc) -> TsBridgeAccum acc { scope = mempty })
+    $
+      mapErr (AtValue n)
+        do
+          let t = tsBridgeBy tok (Proxy :: _ a)
+          x /\ scope <- listens (un TsBridgeAccum >>> _.scope >>> un Scope) t
 
-      name <- mkName n
+          name <- mkName n
 
-      when (OSet.length scope.floating /= 0)
-        ( throwError
-            $ ErrUnquantifiedTypeVariables
-            $ (Set.fromFoldable :: Array _ -> _)
-            $ OSet.toUnfoldable scope.floating
-        )
+          when (OSet.length scope.floating /= 0)
+            ( throwError
+                $ ErrUnquantifiedTypeVariables
+                $ (Set.fromFoldable :: Array _ -> _)
+                $ OSet.toUnfoldable scope.floating
+            )
 
-      pure [ DTS.TsDeclValueDef (toTsName name) DTS.Public x ]
+          pure [ DTS.TsDeclValueDef (toTsName name) DTS.Public x ]
 
 --------------------------------------------------------------------------------
 -- class TsValues
