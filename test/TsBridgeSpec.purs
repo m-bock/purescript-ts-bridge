@@ -239,6 +239,26 @@ spec = do
         testTypePrint (tsBridge (Proxy :: _ (Array A -> Array B -> Array (Tuple A B))))
           "<A>(_: Array<A>) => <B>(_: Array<B>) => Array<import('../Data.Tuple').Tuple<A, B>>"
 
+      describe "Function" do
+        it "" do
+          ( TSB.tsProgram
+              [ TSB.tsModuleFile "Foo.Bar"
+                  [ TSB.tsValue Tok "foo" ((\_ _ -> unit) :: A -> B -> Unit)
+                  , TSB.tsValue Tok "bar" ((\_ _ -> unit) :: A -> B -> Unit)
+                  ]
+              ]
+              <#> printTsProgram
+          )
+            `shouldEqual`
+              ( Right $ Map.fromFoldable
+                  [ textFile "Foo.Bar/index.d.ts"
+                      [ "export const foo: <a>(_: a) => <b>(_: b) => void;"
+                      , "export const bar: <a>(_: a) => <b>(_: b) => void;"
+                      ]
+                  ]
+              )
+
+
       describe "Record" do
         testTypePrint (tsBridge (Proxy :: _ { bar :: String, foo :: Number }))
           "{ readonly 'bar': string; readonly 'foo': number; }"
