@@ -31,7 +31,7 @@ check-spell:
     yarn run cspell "docs/**/*.md" || true
     yarn run cspell "README.md" || true
 
-ci: clean check-format gen-docs build-strict test check-git-clean
+ci: clean check-format build-strict test gen-docs check-git-clean
 
 check-git-clean:
     [ -z "$(git status --porcelain)" ]
