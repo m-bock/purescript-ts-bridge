@@ -1,3 +1,4 @@
+export PATH := "node_modules/.bin:" + env_var('PATH')
 set shell := ["bash", "-c"]
 
 build:
