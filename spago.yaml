@@ -1,0 +1,51 @@
+package:
+  dependencies:
+    [ "aff"
+    , "aff-promise"
+    , "arrays"
+    , "console"
+    , "dts"
+    , "effect"
+    , "either"
+    , "foldable-traversable"
+    , "foreign-object"
+    , "literals"
+    , "maybe"
+    , "newtype"
+    , "node-buffer"
+    , "node-fs"
+    , "node-fs-aff"
+    , "node-path"
+    , "node-process"
+    , "nullable"
+    , "optparse"
+    , "ordered-collections"
+    , "ordered-set"
+    , "partial"
+    , "prelude"
+    , "record"
+    , "safe-coerce"
+    , "strings"
+    , "transformers"
+    , "tuples"
+    , "typelevel-prelude"
+    , "unsafe-coerce"
+    , "untagged-union"
+    , "variant"
+    , "variant-encodings"
+    ]
+  name: ts-bridge
+  test:
+    dependencies:
+      [ "spec-discovery"
+      , "aff"
+      , "spec"
+      , "classless-encode-json"
+      , "argonaut-core"
+      , "classless"
+      ]
+    main: Test.Main
+workspace:
+  extra_packages: {}
+  package_set:
+    registry: 35.1.0

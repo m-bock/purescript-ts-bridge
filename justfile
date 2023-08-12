@@ -1,12 +1,10 @@
 set shell := ["bash", "-c"]
 
-allowed_warnings := "ImplicitQualifiedImport"
-
 build:
-    spago build --purs-args '--stash --censor-lib --censor-codes={{allowed_warnings}}'
+    spago build
 
 build-strict:
-    spago build --purs-args '--stash --censor-lib --strict --censor-codes={{allowed_warnings}}'
+    spago build
 
 clean:
     rm -rf .spago output .psa-stash
