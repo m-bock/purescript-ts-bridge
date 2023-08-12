@@ -18,7 +18,7 @@ check-format:
     purs-tidy check 'test/**/*.purs'    
 
 test:
-    spago --config test.dhall test
+    spago test
 
 gen-docs:
     node gen-docs/gen-md.js
@@ -29,7 +29,19 @@ check-spell:
     yarn run cspell "docs/**/*.md" || true
     yarn run cspell "README.md" || true
 
-ci: clean check-format build-strict test gen-docs check-git-clean
+install-git-hooks:
+    rm -rf .git/hooks
+    ln -s ../git-hooks .git/hooks
+
+# CI
+
+ci_: install check-format build-strict test gen-docs check-git-clean
+
+ci: clean
+    just ci_
+
+install:
+    yarn install
 
 check-git-clean:
     [ -z "$(git status --porcelain)" ]

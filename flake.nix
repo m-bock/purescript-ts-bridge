@@ -16,7 +16,7 @@
         overlays = [
           (prev: final: {
             inherit (easy-purescript-nix) purs-tidy psa;
-            purescript = easy-purescript-nix.purs-0_15_9;
+            purescript = easy-purescript-nix.purs-0_15_10;
           })
         ];
 
@@ -37,7 +37,6 @@
             pkgs.purescript
             pkgs.purs-tidy
             pkgs.bashInteractive
-            pkgs.spago
             pkgs.nodePackages.prettier
             pkgs.just
             pkgs.yarn
