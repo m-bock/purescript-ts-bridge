@@ -39,8 +39,7 @@ module TsBridge.DefaultImpls
   , tsBridgeVariantEncodedNested
   , tsBridgeVariantEncodedNestedRL
   , tsBridgeVariantRL
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -417,7 +416,7 @@ tsBridgeFn2 tok _ = censor mapAccum ado
   ret /\ TsBridgeAccum { scope: Scope scopeRet } <- listen $ tsBridgeBy tok (Proxy :: _ b)
   let
     newFixed =
-      ( scopeRet.fixed 
+      ( scopeRet.fixed
           # OSet.intersect scopeArg1.fixed
           # OSet.intersect scopeArg2.fixed
       )
