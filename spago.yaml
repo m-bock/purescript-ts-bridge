@@ -45,7 +45,14 @@ package:
       , "classless"
       ]
     main: Test.Main
+  strict:
+      true
+  build:
+    censor_project_warnings:
+      - ImplicitQualifiedImport
 workspace:
   extra_packages: {}
   package_set:
     registry: 35.1.0
+  build_opts:
+    censor_library_warnings: all

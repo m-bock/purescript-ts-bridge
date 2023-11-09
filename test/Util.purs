@@ -5,7 +5,6 @@ import Prelude
 import Classless (class Init, class InitRecord, initRecord)
 import Classless.EncodeJson as CEJ
 import DTS (TsSource(..))
-import DTS as DTS
 import Data.Argonaut.Core (Json)
 import Effect.Aff (Aff, error, throwError)
 

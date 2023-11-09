@@ -50,7 +50,7 @@ import DTS as DTS
 import Data.Array (mapWithIndex, (:))
 import Data.Array as A
 import Data.Either (Either)
-import Data.Function.Uncurried (Fn1, Fn2)
+import Data.Function.Uncurried (Fn2)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable)
