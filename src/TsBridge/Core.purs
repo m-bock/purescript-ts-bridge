@@ -7,10 +7,12 @@ module TsBridge.Core
   , tsOpaqueType
   , tsProgram
   , tsTypeAlias
+  , tsTypeAliasFromValue
   , tsValue
   , tsValues
   , tsValuesRL
-  ) where
+  )
+  where
 
 import Prelude
 
@@ -109,6 +111,9 @@ tsTypeAlias tok aliasName x = ado
   in [ DTS.TsDeclTypeDef (toTsName name) DTS.Public (coerce scope.floating) x ]
   where
   t = tsBridgeBy tok x
+
+tsTypeAliasFromValue :: forall tok a. TsBridgeBy tok a => tok -> String -> a -> TsBridgeM (Array DTS.TsDeclaration)
+tsTypeAliasFromValue tok aliasName _ = tsTypeAlias tok aliasName (Proxy :: _ a)
 
 -- | For rare cases where you want to manually export an opaque type. Once you export a
 -- | value that contains a reference to this type, the type will be generated
