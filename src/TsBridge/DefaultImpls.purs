@@ -14,6 +14,7 @@ module TsBridge.DefaultImpls
   , tsBridgeEffect
   , tsBridgeEither
   , tsBridgeFn2
+  , tsBridgeFn3
   , tsBridgeFunction
   , tsBridgeInt
   , tsBridgeMaybe
@@ -50,7 +51,7 @@ import DTS as DTS
 import Data.Array (mapWithIndex, (:))
 import Data.Array as A
 import Data.Either (Either)
-import Data.Function.Uncurried (Fn2)
+import Data.Function.Uncurried (Fn2, Fn3)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable)
@@ -431,6 +432,45 @@ tsBridgeFn2 tok _ = censor mapAccum ado
     DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
       [ DTS.TsFnArg (DTS.TsName "arg1") (removeQuant arg1)
       , DTS.TsFnArg (DTS.TsName "arg2") (removeQuant arg2)
+      ]
+      (removeQuant ret)
+  where
+  mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
+
+tsBridgeFn3
+  :: forall tok a1 a2 a3 b
+   . TsBridgeBy tok a1
+  => TsBridgeBy tok a2
+  => TsBridgeBy tok a3
+  => TsBridgeBy tok b
+  => tok
+  -> Proxy (Fn3 a1 a2 a3 b)
+  -> TsBridgeM DTS.TsType
+tsBridgeFn3 tok _ = censor mapAccum ado
+  arg1 /\ TsBridgeAccum { scope: Scope scopeArg1 } <- listen $ tsBridgeBy tok (Proxy :: _ a1)
+  arg2 /\ TsBridgeAccum { scope: Scope scopeArg2 } <- listen $ tsBridgeBy tok (Proxy :: _ a2)
+  arg3 /\ TsBridgeAccum { scope: Scope scopeArg3 } <- listen $ tsBridgeBy tok (Proxy :: _ a3)
+  ret /\ TsBridgeAccum { scope: Scope scopeRet } <- listen $ tsBridgeBy tok (Proxy :: _ b)
+  let
+    newFixed =
+      ( scopeRet.fixed
+          # OSet.intersect scopeArg1.fixed
+          # OSet.intersect scopeArg2.fixed
+          # OSet.intersect scopeArg3.fixed
+      )
+        <> scopeArg1.floating
+        <> scopeArg2.floating
+        <> scopeArg3.floating
+        <> scopeRet.floating
+
+    removeQuant =
+      DTS.mapQuantifier $ coerce $ OSet.filter (_ `OSet.notElem` newFixed)
+
+  in
+    DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
+      [ DTS.TsFnArg (DTS.TsName "arg1") (removeQuant arg1)
+      , DTS.TsFnArg (DTS.TsName "arg2") (removeQuant arg2)
+      , DTS.TsFnArg (DTS.TsName "arg3") (removeQuant arg3)
       ]
       (removeQuant ret)
   where

@@ -8,6 +8,7 @@ import DTS as DTS
 import DTS.Print (printTsDeclarations, printTsType)
 import Data.Either (Either(..), fromRight)
 import Data.Foldable (fold)
+import Data.Function.Uncurried (Fn2, Fn3)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -62,6 +63,12 @@ instance (TsBridge a, TsBridge b) => TsBridge (OneOf a b) where
 
 instance (TsBridge a, TsBridge b) => TsBridge (a -> b) where
   tsBridge = TSB.tsBridgeFunction Tok
+
+instance (TsBridge a, TsBridge b, TsBridge c) => TsBridge (Fn2 a b c) where
+  tsBridge = TSB.tsBridgeFn2 Tok
+
+instance (TsBridge a, TsBridge b, TsBridge c, TsBridge d) => TsBridge (Fn3 a b c d) where
+  tsBridge = TSB.tsBridgeFn3 Tok
 
 instance (TSB.TsBridgeRecord Tok r) => TsBridge (Record r) where
   tsBridge = TSB.tsBridgeRecord Tok
@@ -234,6 +241,14 @@ spec = do
       describe "Function" do
         testTypePrint (tsBridge (Proxy :: _ (String -> Number -> Boolean)))
           "(_: string) => (_: number) => boolean"
+
+      describe "Fn2" do
+        testTypePrint (tsBridge (Proxy :: _ (Fn2 String Number Boolean)))
+          "(arg1: string, arg2: number) => boolean"
+
+      describe "Fn3" do
+        testTypePrint (tsBridge (Proxy :: _ (Fn3 String Number Number Boolean)))
+          "(arg1: string, arg2: number, arg3: number) => boolean"
 
       describe "Function" do
         testTypePrint (tsBridge (Proxy :: _ (Array A -> Array B -> Array (Tuple A B))))

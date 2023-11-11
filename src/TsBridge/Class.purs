@@ -5,6 +5,7 @@ import Prelude
 import Control.Promise (Promise)
 import DTS as DTS
 import Data.Either (Either)
+import Data.Function.Uncurried (Fn2, Fn3)
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable)
 import Data.Symbol (class IsSymbol)
@@ -77,6 +78,12 @@ instance TsBridge a => TsBridge (Nullable a) where
 
 instance (TsBridge a, TsBridge b) => TsBridge (a -> b) where
   tsBridge = TSB.tsBridgeFunction Tok
+
+instance (TsBridge a, TsBridge b, TsBridge c) => TsBridge (Fn2 a b c) where
+  tsBridge = TSB.tsBridgeFn2 Tok
+
+instance (TsBridge a, TsBridge b, TsBridge c, TsBridge d) => TsBridge (Fn3 a b c d) where
+  tsBridge = TSB.tsBridgeFn3 Tok
 
 instance TsBridge a => TsBridge (Maybe a) where
   tsBridge = TSB.tsBridgeMaybe Tok
