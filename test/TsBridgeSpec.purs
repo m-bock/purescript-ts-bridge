@@ -25,6 +25,7 @@ import Data.Variant as V
 import Data.Variant.Encodings.Flat (VariantEncodedFlat)
 import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
+import Effect.Uncurried (EffectFn2, EffectFn3)
 import Literals (StringLit)
 import Literals.Undefined as Lit
 import Prim.Boolean (False, True)
@@ -69,6 +70,12 @@ instance (TsBridge a, TsBridge b, TsBridge c) => TsBridge (Fn2 a b c) where
 
 instance (TsBridge a, TsBridge b, TsBridge c, TsBridge d) => TsBridge (Fn3 a b c d) where
   tsBridge = TSB.tsBridgeFn3 Tok
+
+instance (TsBridge a, TsBridge b, TsBridge c) => TsBridge (EffectFn2 a b c) where
+  tsBridge = TSB.tsBridgeEffectFn2 Tok
+
+instance (TsBridge a, TsBridge b, TsBridge c, TsBridge d) => TsBridge (EffectFn3 a b c d) where
+  tsBridge = TSB.tsBridgeEffectFn3 Tok
 
 instance (TSB.TsBridgeRecord Tok r) => TsBridge (Record r) where
   tsBridge = TSB.tsBridgeRecord Tok
@@ -248,6 +255,14 @@ spec = do
 
       describe "Fn3" do
         testTypePrint (tsBridge (Proxy :: _ (Fn3 String Number Number Boolean)))
+          "(arg1: string, arg2: number, arg3: number) => boolean"
+
+      describe "EffectFn2" do
+        testTypePrint (tsBridge (Proxy :: _ (EffectFn2 String Number Boolean)))
+          "(arg1: string, arg2: number) => boolean"
+
+      describe "EffectFn3" do
+        testTypePrint (tsBridge (Proxy :: _ (EffectFn3 String Number Number Boolean)))
           "(arg1: string, arg2: number, arg3: number) => boolean"
 
       describe "Function" do

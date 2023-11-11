@@ -12,6 +12,8 @@ module TsBridge.DefaultImpls
   , tsBridgeBoolean
   , tsBridgeChar
   , tsBridgeEffect
+  , tsBridgeEffectFn2
+  , tsBridgeEffectFn3
   , tsBridgeEither
   , tsBridgeFn2
   , tsBridgeFn3
@@ -65,6 +67,7 @@ import Data.Variant (Variant)
 import Data.Variant.Encodings.Flat (VariantEncodedFlat)
 import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
+import Effect.Uncurried (EffectFn2, EffectFn3)
 import Foreign.Object (Object)
 import Literals (StringLit)
 import Literals.Null (Null)
@@ -475,6 +478,27 @@ tsBridgeFn3 tok _ = censor mapAccum ado
       (removeQuant ret)
   where
   mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
+
+tsBridgeEffectFn2
+  :: forall tok a1 a2 b
+   . TsBridgeBy tok a1
+  => TsBridgeBy tok a2
+  => TsBridgeBy tok b
+  => tok
+  -> Proxy (EffectFn2 a1 a2 b)
+  -> TsBridgeM DTS.TsType
+tsBridgeEffectFn2 tok _ = tsBridgeFn2 tok (Proxy :: _ (Fn2 a1 a2 b))
+
+tsBridgeEffectFn3
+  :: forall tok a1 a2 a3 b
+   . TsBridgeBy tok a1
+  => TsBridgeBy tok a2
+  => TsBridgeBy tok a3
+  => TsBridgeBy tok b
+  => tok
+  -> Proxy (EffectFn3 a1 a2 a3 b)
+  -> TsBridgeM DTS.TsType
+tsBridgeEffectFn3 tok _ = tsBridgeFn3 tok (Proxy :: _ (Fn3 a1 a2 a3 b))
 
 -- | `tsBridge` type class method implementation for opaque types
 tsBridgeOpaqueType :: forall a. { moduleName :: String, typeName :: String, typeArgs :: Array (String /\ TsBridgeM DTS.TsType) } -> Proxy a -> TsBridgeM DTS.TsType
