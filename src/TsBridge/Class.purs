@@ -19,17 +19,20 @@ import Foreign.Object (Object)
 import Literals (StringLit)
 import Literals.Null (Null)
 import Literals.Undefined (Undefined)
-import TsBridge (Intersection, TsRecord)
-import TsBridge as TSB
+import TsBridge.Types.Intersection (Intersection, tsBridgeIntersection)
+import TsBridge.Core (class TsBridgeBy)
+import TsBridge.DefaultImpls as TSB
+import TsBridge.Monad (TsBridgeM)
+import TsBridge.Types.TsRecord (TsRecord, class TsBridgeTsRecord, tsBridgeTsRecord)
 import Type.Proxy (Proxy)
 import Untagged.Union (OneOf)
 
 class TsBridge (a :: Type) where
-  tsBridge :: Proxy a -> TSB.TsBridgeM DTS.TsType
+  tsBridge :: Proxy a -> TsBridgeM DTS.TsType
 
 data Tok = Tok
 
-instance TsBridge a => TSB.TsBridgeBy Tok a where
+instance TsBridge a => TsBridgeBy Tok a where
   tsBridgeBy _ = tsBridge
 
 instance (TsBridge a, TsBridge b) => TsBridge (Either a b) where
@@ -44,8 +47,8 @@ instance TsBridge Number where
 instance (TSB.TsBridgeRecord Tok r) => TsBridge (Record r) where
   tsBridge = TSB.tsBridgeRecord Tok
 
-instance (TSB.TsBridgeTsRecord Tok r) => TsBridge (TsRecord r) where
-  tsBridge = TSB.tsBridgeTsRecord Tok
+instance (TsBridgeTsRecord Tok r) => TsBridge (TsRecord r) where
+  tsBridge = tsBridgeTsRecord Tok
 
 instance (TSB.TsBridgeVariant Tok r) => TsBridge (Variant r) where
   tsBridge = TSB.tsBridgeVariant Tok
@@ -105,7 +108,7 @@ instance (TsBridge a, TsBridge b) => TsBridge (OneOf a b) where
   tsBridge = TSB.tsBridgeOneOf Tok
 
 instance (TsBridge a, TsBridge b) => TsBridge (Intersection a b) where
-  tsBridge = TSB.tsBridgeIntersection Tok
+  tsBridge = tsBridgeIntersection Tok
 
 instance (TSB.TsBridgeVariantEncodedFlat Tok symTag r) => TsBridge (VariantEncodedFlat symTag r) where
   tsBridge = TSB.tsBridgeVariantEncodedFlat Tok
