@@ -61,11 +61,11 @@ workspace:
     # Fork until merged upstream:
     optparse:
       git: https://github.com/thought2/purescript-optparse.git
-      ref: ba4e04a5b254a15c080841c4564fd7fb34fb8445
+      ref: a9b227110c34ae4f8c1b2fcb07de6f1327ce5826
     # Fork until merged upstream:
     spec-discovery:
       git: https://github.com/thought2/purescript-spec-discovery.git
-      ref: a3ab090388b45ff4a0e9a52ebf3f1033415e4340
+      ref: 1c417a77153e892f817f2a4e9d58deebd24507f6
   package_set:
     registry: 43.3.0
   build_opts:
