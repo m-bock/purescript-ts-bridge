@@ -5,7 +5,7 @@ import Prelude
 import Control.Promise (Promise)
 import DTS as DTS
 import Data.Either (Either)
-import Data.Function.Uncurried (Fn2, Fn3)
+import Data.Function.Uncurried (Fn2, Fn3, Fn4)
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable)
 import Data.Symbol (class IsSymbol)
@@ -14,15 +14,15 @@ import Data.Variant (Variant)
 import Data.Variant.Encodings.Flat (VariantEncodedFlat)
 import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
-import Effect.Uncurried (EffectFn2, EffectFn3)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, EffectFn4)
 import Foreign.Object (Object)
 import Literals (StringLit)
 import Literals.Null (Null)
 import Literals.Undefined (Undefined)
-import TsBridge.Types.Intersection (Intersection, tsBridgeIntersection)
 import TsBridge.Core (class TsBridgeBy)
 import TsBridge.DefaultImpls as TSB
 import TsBridge.Monad (TsBridgeM)
+import TsBridge.Types.Intersection (Intersection, tsBridgeIntersection)
 import TsBridge.Types.TsRecord (TsRecord, class TsBridgeTsRecord, tsBridgeTsRecord)
 import Type.Proxy (Proxy)
 import Untagged.Union (OneOf)
@@ -89,11 +89,20 @@ instance (TsBridge a, TsBridge b, TsBridge c) => TsBridge (Fn2 a b c) where
 instance (TsBridge a, TsBridge b, TsBridge c, TsBridge d) => TsBridge (Fn3 a b c d) where
   tsBridge = TSB.tsBridgeFn3 Tok
 
+instance (TsBridge a, TsBridge b, TsBridge c, TsBridge d, TsBridge e) => TsBridge (Fn4 a b c d e) where
+  tsBridge = TSB.tsBridgeFn4 Tok
+
+instance (TsBridge a, TsBridge b) => TsBridge (EffectFn1 a b) where
+  tsBridge = TSB.tsBridgeEffectFn1 Tok
+
 instance (TsBridge a, TsBridge b, TsBridge c) => TsBridge (EffectFn2 a b c) where
   tsBridge = TSB.tsBridgeEffectFn2 Tok
 
 instance (TsBridge a, TsBridge b, TsBridge c, TsBridge d) => TsBridge (EffectFn3 a b c d) where
   tsBridge = TSB.tsBridgeEffectFn3 Tok
+
+instance (TsBridge a, TsBridge b, TsBridge c, TsBridge d, TsBridge e) => TsBridge (EffectFn4 a b c d e) where
+  tsBridge = TSB.tsBridgeEffectFn4 Tok
 
 instance TsBridge a => TsBridge (Maybe a) where
   tsBridge = TSB.tsBridgeMaybe Tok

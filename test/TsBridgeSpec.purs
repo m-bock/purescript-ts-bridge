@@ -8,7 +8,7 @@ import DTS as DTS
 import DTS.Print (printTsDeclarations, printTsType)
 import Data.Either (Either(..), fromRight)
 import Data.Foldable (fold)
-import Data.Function.Uncurried (Fn2, Fn3)
+import Data.Function.Uncurried (Fn2, Fn3, Fn4)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -24,7 +24,7 @@ import Data.Variant as V
 import Data.Variant.Encodings.Flat (VariantEncodedFlat)
 import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
-import Effect.Uncurried (EffectFn2, EffectFn3)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, EffectFn4)
 import Literals (StringLit)
 import Literals.Undefined as Lit
 import Prim.Boolean (False, True)
@@ -175,6 +175,14 @@ spec = do
         testTypePrint (tsBridge (Proxy :: _ (Fn3 String Number Number Boolean)))
           "(arg1: string, arg2: number, arg3: number) => boolean"
 
+      describe "Fn4" do
+        testTypePrint (tsBridge (Proxy :: _ (Fn4 String Number Number String Boolean)))
+          "(arg1: string, arg2: number, arg3: number, arg4: string) => boolean"
+
+      describe "EffectFn1" do
+        testTypePrint (tsBridge (Proxy :: _ (EffectFn1 String Boolean)))
+          "(_: string) => boolean"
+
       describe "EffectFn2" do
         testTypePrint (tsBridge (Proxy :: _ (EffectFn2 String Number Boolean)))
           "(arg1: string, arg2: number) => boolean"
@@ -182,6 +190,10 @@ spec = do
       describe "EffectFn3" do
         testTypePrint (tsBridge (Proxy :: _ (EffectFn3 String Number Number Boolean)))
           "(arg1: string, arg2: number, arg3: number) => boolean"
+
+      describe "EffectFn4" do
+        testTypePrint (tsBridge (Proxy :: _ (EffectFn4 String Number Number String Boolean)))
+          "(arg1: string, arg2: number, arg3: number, arg4: string) => boolean"
 
       describe "Function" do
         testTypePrint (tsBridge (Proxy :: _ (Array A -> Array B -> Array (Tuple A B))))

@@ -12,11 +12,14 @@ module TsBridge.DefaultImpls
   , tsBridgeBoolean
   , tsBridgeChar
   , tsBridgeEffect
+  , tsBridgeEffectFn1
   , tsBridgeEffectFn2
   , tsBridgeEffectFn3
+  , tsBridgeEffectFn4
   , tsBridgeEither
   , tsBridgeFn2
   , tsBridgeFn3
+  , tsBridgeFn4
   , tsBridgeFunction
   , tsBridgeInt
   , tsBridgeMaybe
@@ -53,7 +56,7 @@ import DTS as DTS
 import Data.Array (mapWithIndex, (:))
 import Data.Array as A
 import Data.Either (Either)
-import Data.Function.Uncurried (Fn2, Fn3)
+import Data.Function.Uncurried (Fn2, Fn3, Fn4)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable)
@@ -67,7 +70,7 @@ import Data.Variant (Variant)
 import Data.Variant.Encodings.Flat (VariantEncodedFlat)
 import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
-import Effect.Uncurried (EffectFn2, EffectFn3)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, EffectFn4)
 import Foreign.Object (Object)
 import Literals (StringLit)
 import Literals.Null (Null)
@@ -479,6 +482,59 @@ tsBridgeFn3 tok _ = censor mapAccum ado
   where
   mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
 
+tsBridgeFn4
+  :: forall tok a1 a2 a3 a4 b
+   . TsBridgeBy tok a1
+  => TsBridgeBy tok a2
+  => TsBridgeBy tok a3
+  => TsBridgeBy tok a4
+  => TsBridgeBy tok b
+  => tok
+  -> Proxy (Fn4 a1 a2 a3 a4 b)
+  -> TsBridgeM DTS.TsType
+tsBridgeFn4 tok _ = censor mapAccum ado
+  arg1 /\ TsBridgeAccum { scope: Scope scopeArg1 } <- listen $ tsBridgeBy tok (Proxy :: _ a1)
+  arg2 /\ TsBridgeAccum { scope: Scope scopeArg2 } <- listen $ tsBridgeBy tok (Proxy :: _ a2)
+  arg3 /\ TsBridgeAccum { scope: Scope scopeArg3 } <- listen $ tsBridgeBy tok (Proxy :: _ a3)
+  arg4 /\ TsBridgeAccum { scope: Scope scopeArg4 } <- listen $ tsBridgeBy tok (Proxy :: _ a4)
+  ret /\ TsBridgeAccum { scope: Scope scopeRet } <- listen $ tsBridgeBy tok (Proxy :: _ b)
+  let
+    newFixed =
+      ( scopeRet.fixed
+          # OSet.intersect scopeArg1.fixed
+          # OSet.intersect scopeArg2.fixed
+          # OSet.intersect scopeArg3.fixed
+          # OSet.intersect scopeArg4.fixed
+      )
+        <> scopeArg1.floating
+        <> scopeArg2.floating
+        <> scopeArg3.floating
+        <> scopeArg4.floating
+        <> scopeRet.floating
+
+    removeQuant =
+      DTS.mapQuantifier $ coerce $ OSet.filter (_ `OSet.notElem` newFixed)
+
+  in
+    DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
+      [ DTS.TsFnArg (DTS.TsName "arg1") (removeQuant arg1)
+      , DTS.TsFnArg (DTS.TsName "arg2") (removeQuant arg2)
+      , DTS.TsFnArg (DTS.TsName "arg3") (removeQuant arg3)
+      , DTS.TsFnArg (DTS.TsName "arg4") (removeQuant arg4)
+      ]
+      (removeQuant ret)
+  where
+  mapAccum = over TsBridgeAccum (\x -> x { scope = fixScope x.scope })
+
+tsBridgeEffectFn1
+  :: forall tok a1 b
+   . TsBridgeBy tok a1
+  => TsBridgeBy tok b
+  => tok
+  -> Proxy (EffectFn1 a1 b)
+  -> TsBridgeM DTS.TsType
+tsBridgeEffectFn1 tok _ = tsBridgeFunction tok (Proxy :: _ (a1 -> b))
+
 tsBridgeEffectFn2
   :: forall tok a1 a2 b
    . TsBridgeBy tok a1
@@ -499,6 +555,18 @@ tsBridgeEffectFn3
   -> Proxy (EffectFn3 a1 a2 a3 b)
   -> TsBridgeM DTS.TsType
 tsBridgeEffectFn3 tok _ = tsBridgeFn3 tok (Proxy :: _ (Fn3 a1 a2 a3 b))
+
+tsBridgeEffectFn4
+  :: forall tok a1 a2 a3 a4 b
+   . TsBridgeBy tok a1
+  => TsBridgeBy tok a2
+  => TsBridgeBy tok a3
+  => TsBridgeBy tok a4
+  => TsBridgeBy tok b
+  => tok
+  -> Proxy (EffectFn4 a1 a2 a3 a4 b)
+  -> TsBridgeM DTS.TsType
+tsBridgeEffectFn4 tok _ = tsBridgeFn4 tok (Proxy :: _ (Fn4 a1 a2 a3 a4 b))
 
 -- | `tsBridge` type class method implementation for opaque types
 tsBridgeOpaqueType :: forall a. { moduleName :: String, typeName :: String, typeArgs :: Array (String /\ TsBridgeM DTS.TsType) } -> Proxy a -> TsBridgeM DTS.TsType
