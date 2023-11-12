@@ -42,7 +42,6 @@ package:
   test:
     dependencies:
       [
-        "spec-discovery",
         "aff",
         "spec",
         "classless-encode-json",
@@ -55,15 +54,7 @@ package:
     censor_project_warnings:
       - ImplicitQualifiedImport
 workspace:
-  extra_packages:
-    # Fork until merged upstream:
-    optparse:
-      git: https://github.com/thought2/purescript-optparse.git
-      ref: a9b227110c34ae4f8c1b2fcb07de6f1327ce5826
-    # Fork until merged upstream:
-    spec-discovery:
-      git: https://github.com/thought2/purescript-spec-discovery.git
-      ref: 1c417a77153e892f817f2a4e9d58deebd24507f6
+  extra_packages: {}
   package_set:
     registry: 43.3.0
   build_opts:

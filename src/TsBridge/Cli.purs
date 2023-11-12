@@ -74,7 +74,7 @@ mkTypeGenCliAff eitherTsProg = do
       log ""
       log "Cannot generate TypeScript Code. The following error happened:"
       log ""
-      log $ show $ printError err
+      log $ {- show $ -}  printError err
       log ""
       liftEffect $ Process.exit' 1
     Right tsProg -> writeTsProgramToDisk cliOpts tsProg

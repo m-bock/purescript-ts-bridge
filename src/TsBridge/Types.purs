@@ -31,8 +31,6 @@ import Data.String.Regex as Reg
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (noFlags)
 import Data.String.Regex.Unsafe (unsafeRegex)
-import Text.PrettyPrint.Leijen (Doc)
-import Text.PrettyPrint.Leijen as P
 
 data AppError
   = ErrInvalidPursModuleName String
@@ -96,28 +94,28 @@ mkPursModuleName s = do
 pursModuleNameRegex :: Regex
 pursModuleNameRegex = unsafeRegex "^([A-Z][A-Za-z0-9_]*)(\\.[A-Z][A-Za-z0-9_]*)*$" noFlags
 
-printError :: AppError -> Doc
+printError :: AppError -> String
 printError = case _ of
   AtModule name err -> fold
-    [ P.text ("At module `" <> name <> "`")
-    , P.line
-    , P.indent 2 $ printError err
+    [ "At module `" <> name <> "`"
+    , "\n"
+    , printError err
     ]
 
   AtValue name err -> fold
-    [ P.text ("At value `" <> name <> "`")
-    , P.line
-    , P.indent 2 $ printError err
+    [ "At value `" <> name <> "`"
+    , "\n"
+    , printError err
     ]
 
   AtType name err -> fold
-    [ P.text ("At type `" <> name <> "`")
-    , P.line
-    , P.indent 2 $ printError err
+    [ "At type `" <> name <> "`"
+    , "\n"
+    , printError err
     ]
 
   ErrUnquantifiedTypeVariables vars ->
-    P.text $ fold
+    fold
       [ "Type variables"
       , " "
       , vars
@@ -128,15 +126,59 @@ printError = case _ of
       , "are not behind a function. This is not possible in TypeScript. E.g. `Maybe a` needs to be exported as `Unit -> Maybe a`."
       ]
   ErrInvalidPursModuleName _ ->
-    P.text "Invalid PureScript module name"
+    "Invalid PureScript module name"
 
-  ErrTsName err -> P.text case err of
+  ErrTsName err -> case err of
     ErrEmpty -> "Identifier is empty"
     ErrReserveredWord s -> s <> " is a reserved word."
     ErrInvalidBeginning s -> "Identifer cannot start with `" <> s <> "`"
     ErrInvalidCharacter s -> "Identifier cannot contain `" <> Char.singleton s <> "`"
 
-  ErrDuplicateIdentifier (DTS.TsName s) -> P.text ("Duplicate identifier: `" <> s <> "`")
+  ErrDuplicateIdentifier (DTS.TsName s) -> ("Duplicate identifier: `" <> s <> "`")
+
+-- Temporarily disabled until dodo-printer is back in the package set:
+
+-- printError :: AppError -> Doc
+-- printError = case _ of
+--   AtModule name err -> fold
+--     [ P.text ("At module `" <> name <> "`")
+--     , P.line
+--     , P.indent 2 $ printError err
+--     ]
+
+--   AtValue name err -> fold
+--     [ P.text ("At value `" <> name <> "`")
+--     , P.line
+--     , P.indent 2 $ printError err
+--     ]
+
+--   AtType name err -> fold
+--     [ P.text ("At type `" <> name <> "`")
+--     , P.line
+--     , P.indent 2 $ printError err
+--     ]
+
+--   ErrUnquantifiedTypeVariables vars ->
+--     P.text $ fold
+--       [ "Type variables"
+--       , " "
+--       , vars
+--           # Set.toUnfoldable
+--           <#> DTS.printTsName >>> (\s -> "`" <> s <> "`")
+--           # Str.joinWith ", "
+--       , " "
+--       , "are not behind a function. This is not possible in TypeScript. E.g. `Maybe a` needs to be exported as `Unit -> Maybe a`."
+--       ]
+--   ErrInvalidPursModuleName _ ->
+--     P.text "Invalid PureScript module name"
+
+--   ErrTsName err -> P.text case err of
+--     ErrEmpty -> "Identifier is empty"
+--     ErrReserveredWord s -> s <> " is a reserved word."
+--     ErrInvalidBeginning s -> "Identifer cannot start with `" <> s <> "`"
+--     ErrInvalidCharacter s -> "Identifier cannot contain `" <> Char.singleton s <> "`"
+
+--   ErrDuplicateIdentifier (DTS.TsName s) -> P.text ("Duplicate identifier: `" <> s <> "`")
 
 mapErr :: forall e m a. MonadError e m => (e -> e) -> m a -> m a
 mapErr f ma = catchError ma (f >>> throwError)
