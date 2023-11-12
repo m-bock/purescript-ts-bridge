@@ -5,10 +5,13 @@ module TsBridge.Cli (mkTypeGenCli) where
 
 import Prelude
 
+import ArgParse.Basic (ArgParser)
+import ArgParse.Basic as Arg
 import DTS (TsProgram)
 import DTS.Print (Path(..), TsSource(..), printTsProgram)
+import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Foldable (fold, for_)
+import Data.Foldable (for_)
 import Data.Map as Map
 import Data.Newtype (un)
 import Data.Tuple.Nested ((/\))
@@ -16,13 +19,12 @@ import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
+import Effect.Class.Console as Console
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (mkdir', writeTextFile)
 import Node.FS.Perms (all, mkPerms)
 import Node.Path (dirname)
 import Node.Process as Process
-import Options.Applicative (help, helper, info, long, metavar, strOption, value, (<**>))
-import Options.Applicative as O
 import TsBridge.Types (AppError, printError)
 
 -------------------------------------------------------------------------------
@@ -35,33 +37,37 @@ type TsBridgeCliOpts =
 -------------------------------------------------------------------------------
 -- CLI Options
 -------------------------------------------------------------------------------
-parserTsBridgeCliOpts :: O.Parser TsBridgeCliOpts
-parserTsBridgeCliOpts = ado
-  outputDir <-
-    Path <$>
-      ( strOption
-          $ fold
-              [ long "output-dir"
-              , metavar "OUTPUT_DIR"
-              , help "Dictionary the CLI will write the output d.ts files to."
-              , value $ "output"
-              ]
-      )
-  in { outputDir }
 
-parserInfoTsBridgeCliOpts :: O.ParserInfo TsBridgeCliOpts
-parserInfoTsBridgeCliOpts = info (parserTsBridgeCliOpts <**> helper)
-  ( O.fullDesc
-      <> O.progDesc "Print a greeting for TARGET"
-      <> O.header "hello - a test for purescript-optparse"
-  )
+cliParser :: ArgParser TsBridgeCliOpts
+cliParser = Arg.fromRecord
+  { outputDir: Path <$> Arg.argument [ "--output-dir" ]
+      "Dictionary the CLI will write the output d.ts files to."
+  }
+
+getArgs :: Effect TsBridgeCliOpts
+getArgs = do
+  args <- Array.drop 2 <$> liftEffect Process.argv
+
+  let result = Arg.parseArgs "ts-bridge-cli" "Generates TypeScript Types from PureScript code" cliParser args
+
+  case result of
+    Left err -> do
+      Console.log $ Arg.printArgError err
+      case err of
+        Arg.ArgError _ Arg.ShowHelp ->
+          Process.exit' 0
+        Arg.ArgError _ (Arg.ShowInfo _) ->
+          Process.exit' 0
+        _ ->
+          Process.exit' 1
+    Right val -> pure val
 
 -------------------------------------------------------------------------------
 -- App
 -------------------------------------------------------------------------------
 mkTypeGenCliAff :: Either AppError TsProgram -> Aff Unit
 mkTypeGenCliAff eitherTsProg = do
-  cliOpts <- liftEffect $ O.execParser parserInfoTsBridgeCliOpts
+  cliOpts <- liftEffect getArgs
 
   case eitherTsProg of
     Left err -> do
