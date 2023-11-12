@@ -1,15 +1,18 @@
 module TsBridge.Core
-  ( class TsBridgeBy
-  , class TsValues
-  , class TsValuesRL
+  ( class RecordDef
+  , class RecordDefRL
+  , class TsBridgeBy
+  , recordDef
+  , recordDefRL
   , tsBridgeBy
   , tsModuleFile
   , tsOpaqueType
   , tsProgram
   , tsTypeAlias
+  , tsTypeAliasFromValue
+  , tsTypeAliasesFromValues
   , tsValue
   , tsValues
-  , tsValuesRL
   ) where
 
 import Prelude
@@ -110,6 +113,9 @@ tsTypeAlias tok aliasName x = ado
   where
   t = tsBridgeBy tok x
 
+tsTypeAliasFromValue :: forall tok a. TsBridgeBy tok a => tok -> String -> a -> TsBridgeM (Array DTS.TsDeclaration)
+tsTypeAliasFromValue tok aliasName _ = tsTypeAlias tok aliasName (Proxy :: _ a)
+
 -- | For rare cases where you want to manually export an opaque type. Once you export a
 -- | value that contains a reference to this type, the type will be generated
 -- | and exported automatically. Thus in most cases you don't need this.
@@ -146,38 +152,54 @@ tsValue' tok n _ =
 
           pure [ DTS.TsDeclValueDef (toTsName name) DTS.Public x ]
 
+tsValues :: forall tok r. RecordDef tok r => tok -> Record r -> TsBridgeM (Array DTS.TsDeclaration)
+tsValues = recordDef { handleRow: tsValue' }
+
+tsTypeAliasesFromValues :: forall tok r. RecordDef tok r => tok -> Record r -> TsBridgeM (Array DTS.TsDeclaration)
+tsTypeAliasesFromValues = recordDef { handleRow: tsTypeAlias }
+
 --------------------------------------------------------------------------------
--- class TsValues
+-- class RecordDef
 --------------------------------------------------------------------------------
 
-class TsValues tok r where
+class RecordDef tok r where
   -- | Useful for declaring multiple PureScript values to be used by TypeScript.
   -- | Through record punning the risk of exporting them with wrong names can be eliminated.  
   -- | ```tsValues Tok { foo, bar, baz }```
-  tsValues :: tok -> Record r -> TsBridgeM (Array DTS.TsDeclaration)
+  recordDef
+    :: { handleRow :: forall (a :: Type). TsBridgeBy tok a => tok -> String -> Proxy a -> TsBridgeM (Array TsDeclaration) }
+    -> tok
+    -> Record r
+    -> TsBridgeM (Array DTS.TsDeclaration)
 
-instance (TsValuesRL tok r rl, RowToList r rl) => TsValues tok r where
-  tsValues tok r = tsValuesRL tok r (Proxy :: _ rl)
+instance (RecordDefRL tok r rl, RowToList r rl) => RecordDef tok r where
+  recordDef ifc tok r = recordDefRL ifc tok r (Proxy :: _ rl)
 
 --------------------------------------------------------------------------------
--- class TsValuesRL
+-- class RecordDefRL
 --------------------------------------------------------------------------------
 
-class TsValuesRL :: Type -> Row Type -> RowList Type -> Constraint
-class TsValuesRL tok r rl where
-  tsValuesRL :: tok -> Record r -> Proxy rl -> TsBridgeM (Array DTS.TsDeclaration)
+class RecordDefRL :: Type -> Row Type -> RowList Type -> Constraint
+class RecordDefRL tok r rl where
+  recordDefRL
+    :: { handleRow :: forall (a :: Type). TsBridgeBy tok a => tok -> String -> Proxy a -> TsBridgeM (Array TsDeclaration) }
+    -> tok
+    -> Record r
+    -> Proxy rl
+    -> TsBridgeM (Array DTS.TsDeclaration)
 
-instance TsValuesRL tok r RL.Nil where
-  tsValuesRL _ _ _ = pure []
+instance RecordDefRL tok r RL.Nil where
+  recordDefRL _ _ _ _ = pure []
 
 instance
-  ( TsValuesRL tok r rl
+  ( RecordDefRL tok r rl
   , TsBridgeBy tok a
   , Row.Cons sym a rx r
   , IsSymbol sym
   ) =>
-  TsValuesRL tok r (RL.Cons sym a rl) where
-  tsValuesRL tok r _ = (<>) <$> head <*> tail
+  RecordDefRL tok r (RL.Cons sym a rl)
+  where
+  recordDefRL ifc tok r _ = (<>) <$> head <*> tail
     where
-    tail = tsValuesRL tok r (Proxy :: _ rl)
-    head = tsValue' tok (reflectSymbol (Proxy :: _ sym)) (Proxy :: _ a)
+    tail = recordDefRL ifc tok r (Proxy :: _ rl)
+    head = ifc.handleRow tok (reflectSymbol (Proxy :: _ sym)) (Proxy :: _ a)

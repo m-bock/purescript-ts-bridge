@@ -3,6 +3,12 @@
 
 ## [Unreleased]
 
+## [2.2.0]
+
+### Added
+
+- support for `EffectFnN` types and `FnN` types
+
 ## [2.1.0]
 
 ### Added
