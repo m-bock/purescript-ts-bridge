@@ -70,7 +70,7 @@ mkTypeGenCliAff eitherTsProg = do
       log ""
       log $ show $ printError err
       log ""
-      liftEffect $ Process.exit 1
+      liftEffect $ Process.exit' 1
     Right tsProg -> writeTsProgramToDisk cliOpts tsProg
 
 writeTsProgramToDisk :: TsBridgeCliOpts -> TsProgram -> Aff Unit

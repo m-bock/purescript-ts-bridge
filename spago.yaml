@@ -14,7 +14,6 @@ package:
     , "newtype"
     , "node-buffer"
     , "node-fs"
-    , "node-fs-aff"
     , "node-path"
     , "node-process"
     , "nullable"
@@ -35,6 +34,12 @@ package:
     , "variant-encodings"
     ]
   name: ts-bridge
+  publish:
+    version: 2.2.0
+    license: BSD-3-Clause
+    location:
+      githubOwner: thought2
+      githubRepo: purescript-ts-bridge
   test:
     dependencies:
       [ "spec-discovery"
@@ -51,8 +56,16 @@ package:
     censor_project_warnings:
       - ImplicitQualifiedImport
 workspace:
-  extra_packages: {}
+  extra_packages:
+    # Fork until merged upstream:
+    optparse:
+      git: https://github.com/thought2/purescript-optparse.git
+      ref: ba4e04a5b254a15c080841c4564fd7fb34fb8445
+    # Fork until merged upstream:
+    spec-discovery:
+      git: https://github.com/thought2/purescript-spec-discovery.git
+      ref: a3ab090388b45ff4a0e9a52ebf3f1033415e4340
   package_set:
-    registry: 35.1.0
+    registry: 43.3.0
   build_opts:
     censor_library_warnings: all
