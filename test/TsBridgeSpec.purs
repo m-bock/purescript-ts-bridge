@@ -17,7 +17,6 @@ import Data.Nullable (Nullable)
 import Data.Set as Set
 import Data.String (Pattern(..))
 import Data.String as String
-import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple, fst)
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Variant (Variant)
@@ -32,86 +31,12 @@ import Prim.Boolean (False, True)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Util as U
+import TsBridge (class TsBridge, tsBridge)
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Types.TsRecord (Mod, TsRecord)
 import Type.Proxy (Proxy(..))
-import Untagged.Union (type (|+|), OneOf)
-
-class TsBridge (a :: Type) where
-  tsBridge :: Proxy a -> TSB.TsBridgeM DTS.TsType
-
-instance TsBridge Number where
-  tsBridge = TSB.tsBridgeNumber
-
-instance TsBridge String where
-  tsBridge = TSB.tsBridgeString
-
-instance TsBridge Boolean where
-  tsBridge = TSB.tsBridgeBoolean
-
-instance TsBridge a => TsBridge (Array a) where
-  tsBridge = TSB.tsBridgeArray Tok
-
-instance TsBridge a => TsBridge (Effect a) where
-  tsBridge = TSB.tsBridgeEffect Tok
-
-instance TsBridge a => TsBridge (Nullable a) where
-  tsBridge = TSB.tsBridgeNullable Tok
-
-instance (TsBridge a, TsBridge b) => TsBridge (OneOf a b) where
-  tsBridge = TSB.tsBridgeOneOf Tok
-
-instance (TsBridge a, TsBridge b) => TsBridge (a -> b) where
-  tsBridge = TSB.tsBridgeFunction Tok
-
-instance (TsBridge a, TsBridge b, TsBridge c) => TsBridge (Fn2 a b c) where
-  tsBridge = TSB.tsBridgeFn2 Tok
-
-instance (TsBridge a, TsBridge b, TsBridge c, TsBridge d) => TsBridge (Fn3 a b c d) where
-  tsBridge = TSB.tsBridgeFn3 Tok
-
-instance (TsBridge a, TsBridge b, TsBridge c) => TsBridge (EffectFn2 a b c) where
-  tsBridge = TSB.tsBridgeEffectFn2 Tok
-
-instance (TsBridge a, TsBridge b, TsBridge c, TsBridge d) => TsBridge (EffectFn3 a b c d) where
-  tsBridge = TSB.tsBridgeEffectFn3 Tok
-
-instance (TSB.TsBridgeRecord Tok r) => TsBridge (Record r) where
-  tsBridge = TSB.tsBridgeRecord Tok
-
-instance (TSB.TsBridgeTsRecord Tok r) => TsBridge (TsRecord r) where
-  tsBridge = TSB.tsBridgeTsRecord Tok
-
-instance (TSB.TsBridgeVariant Tok r) => TsBridge (Variant r) where
-  tsBridge = TSB.tsBridgeVariant Tok
-
-instance (TSB.TsBridgeVariantEncodedFlat Tok symTag r) => TsBridge (VariantEncodedFlat symTag r) where
-  tsBridge = TSB.tsBridgeVariantEncodedFlat Tok
-
-instance (TSB.TsBridgeVariantEncodedNested Tok symTag symVal r) => TsBridge (VariantEncodedNested symTag symVal r) where
-  tsBridge = TSB.tsBridgeVariantEncodedNested Tok
-
-instance TsBridge a => TsBridge (Maybe a) where
-  tsBridge = TSB.tsBridgeMaybe Tok
-
-instance (TsBridge a, TsBridge b) => TsBridge (Tuple a b) where
-  tsBridge = TSB.tsBridgeTuple Tok
-
-instance (TsBridge a, TsBridge b) => TsBridge (Either a b) where
-  tsBridge = TSB.tsBridgeEither Tok
-
-instance IsSymbol sym => TsBridge (TSB.TypeVar sym) where
-  tsBridge = TSB.tsBridgeTypeVar
-
-instance TsBridge Unit where
-  tsBridge = TSB.tsBridgeUnit
-
-instance TsBridge Lit.Undefined where
-  tsBridge = TSB.tsBridgeUndefined
-
-instance IsSymbol sym => TsBridge (StringLit sym) where
-  tsBridge = TSB.tsBridgeStringLit
+import Untagged.Union (type (|+|))
 
 newtype MyNT = MyNT Number
 
@@ -119,7 +44,7 @@ derive instance Newtype MyNT _
 
 instance TsBridge MyNT where
   tsBridge =
-    TSB.tsBridgeNewtype Tok
+    TSB.tsBridgeNewtype TSB.Tok
       { moduleName: "Foo.Bar", typeName: "MyNT", typeArgs: [] }
 
 --
@@ -135,16 +60,9 @@ derive instance Newtype RecListStr _
 
 instance TsBridge RecListStr where
   tsBridge x =
-    TSB.tsBridgeNewtype Tok
+    TSB.tsBridgeNewtype TSB.Tok
       { moduleName: "Data.RecListStr", typeName: "RecListStr", typeArgs: [] }
       x
-
---
-
-data Tok = Tok
-
-instance TsBridge a => TSB.TsBridgeBy Tok a where
-  tsBridgeBy _ = tsBridge
 
 --
 
@@ -161,7 +79,7 @@ spec = do
         it "generates a type and adds the type module" do
           ( TSB.tsProgram
               [ TSB.tsModuleFile "Foo.Bar"
-                  [ TSB.tsValue Tok "a" (Left "" :: Either String Boolean) ]
+                  [ TSB.tsValue TSB.Tok "a" (Left "" :: Either String Boolean) ]
               ]
               <#> printTsProgram
           )
@@ -180,8 +98,8 @@ spec = do
         it "does not allow duplicate identifiers in a module" do
           ( TSB.tsProgram
               [ TSB.tsModuleFile "Foo.Bar"
-                  [ TSB.tsValue Tok "a" (MyNT 0.0)
-                  , TSB.tsValue Tok "a" (MyNT 0.0)
+                  [ TSB.tsValue TSB.Tok "a" (MyNT 0.0)
+                  , TSB.tsValue TSB.Tok "a" (MyNT 0.0)
                   ]
               ]
               <#> printTsProgram
@@ -193,7 +111,7 @@ spec = do
         it "does not allow identifiers to be reserved words" do
           ( TSB.tsProgram
               [ TSB.tsModuleFile "Foo.Bar"
-                  [ TSB.tsValues Tok { const: "" }
+                  [ TSB.tsValues TSB.Tok { const: "" }
                   ]
               ]
               <#> printTsProgram
@@ -205,12 +123,12 @@ spec = do
       describe "tsValue" do
         describe "Number" do
           testDeclPrint
-            (TSB.tsValue Tok "foo" 13.0)
+            (TSB.tsValue TSB.Tok "foo" 13.0)
             [ "export const foo : number" ]
 
         describe "Number" do
           it "prints the correct declaration" do
-            ( TSB.tsValue Tok "foo'" 0.0
+            ( TSB.tsValue TSB.Tok "foo'" 0.0
                 # TSB.runTsBridgeM
                 <#> (fst >>> printTsDeclarations)
             )
@@ -218,7 +136,7 @@ spec = do
 
         describe "Number" do
           it "prints the correct declaration" do
-            ( TSB.tsValue Tok "foo" (Nothing :: Maybe A)
+            ( TSB.tsValue TSB.Tok "foo" (Nothing :: Maybe A)
                 # TSB.runTsBridgeM
                 <#> (fst >>> printTsDeclarations)
             )
@@ -273,8 +191,8 @@ spec = do
         it "Scope is dropped" do
           ( TSB.tsProgram
               [ TSB.tsModuleFile "Foo.Bar"
-                  [ TSB.tsValue Tok "foo" ((\_ _ -> unit) :: A -> B -> Unit)
-                  , TSB.tsValue Tok "bar" ((\_ _ -> unit) :: C -> D -> Unit)
+                  [ TSB.tsValue TSB.Tok "foo" ((\_ _ -> unit) :: A -> B -> Unit)
+                  , TSB.tsValue TSB.Tok "bar" ((\_ _ -> unit) :: C -> D -> Unit)
                   ]
               ]
               <#> printTsProgram
@@ -341,7 +259,7 @@ spec = do
           shouldEqual
             ( TSB.tsProgram
                 [ TSB.tsModuleFile "Foo.Bar"
-                    [ TSB.tsValue Tok "someList"
+                    [ TSB.tsValue TSB.Tok "someList"
                         ( RecListStr $ V.inj (Proxy :: _ "cons")
                             { head: "A"
                             , tail:
@@ -375,7 +293,7 @@ spec = do
           shouldEqual
             ( TSB.tsProgram
                 [ TSB.tsModuleFile "Foo.Bar"
-                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                    [ TSB.tsTypeAlias TSB.Tok "SomeRecord"
                         (Proxy :: _ (TsRecord ()))
                     ]
                 ]
@@ -391,7 +309,7 @@ spec = do
           shouldEqual
             ( TSB.tsProgram
                 [ TSB.tsModuleFile "Foo.Bar"
-                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                    [ TSB.tsTypeAlias TSB.Tok "SomeRecord"
                         (Proxy :: _ (TsRecord (field1 :: Mod () Number)))
                     ]
                 ]
@@ -407,7 +325,7 @@ spec = do
           shouldEqual
             ( TSB.tsProgram
                 [ TSB.tsModuleFile "Foo.Bar"
-                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                    [ TSB.tsTypeAlias TSB.Tok "SomeRecord"
                         ( Proxy
                             :: _
                                  ( TsRecord
@@ -431,7 +349,7 @@ spec = do
           shouldEqual
             ( TSB.tsProgram
                 [ TSB.tsModuleFile "Foo.Bar"
-                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                    [ TSB.tsTypeAlias TSB.Tok "SomeRecord"
                         ( Proxy
                             :: _
                                  ( TsRecord
@@ -455,7 +373,7 @@ spec = do
           shouldEqual
             ( TSB.tsProgram
                 [ TSB.tsModuleFile "Foo.Bar"
-                    [ TSB.tsTypeAlias Tok "SomeRecord"
+                    [ TSB.tsTypeAlias TSB.Tok "SomeRecord"
                         ( Proxy
                             :: _
                                  ( TsRecord
