@@ -40,8 +40,11 @@ type TsBridgeCliOpts =
 
 cliParser :: ArgParser TsBridgeCliOpts
 cliParser = Arg.fromRecord
-  { outputDir: Path <$> Arg.argument [ "--output-dir" ]
-      "Dictionary the CLI will write the output d.ts files to."
+  { outputDir:
+      Arg.argument [ "--output-dir" ]
+        "Dictionary the CLI will write the output d.ts files to."
+        # Arg.default "output"
+        <#> Path
   }
 
 getArgs :: Effect TsBridgeCliOpts
