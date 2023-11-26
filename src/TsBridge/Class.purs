@@ -19,6 +19,7 @@ import Foreign.Object (Object)
 import Literals (StringLit)
 import Literals.Null (Null)
 import Literals.Undefined (Undefined)
+import NTuple (NTuple)
 import TsBridge.Core (class TsBridgeBy)
 import TsBridge.DefaultImpls as TSB
 import TsBridge.Monad (TsBridgeM)
@@ -130,6 +131,9 @@ instance TsBridge Undefined where
 
 instance TsBridge Null where
   tsBridge = TSB.tsBridgeNull
+
+instance (TSB.NTupleList Tok as) => TsBridge (NTuple as) where
+  tsBridge = TSB.tsBridgeNTuple Tok
 
 instance IsSymbol sym => TsBridge (StringLit sym) where
   tsBridge = TSB.tsBridgeStringLit

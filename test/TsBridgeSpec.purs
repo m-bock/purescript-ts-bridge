@@ -27,6 +27,7 @@ import Effect (Effect)
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, EffectFn4)
 import Literals (StringLit)
 import Literals.Undefined as Lit
+import NTuple (NTuple)
 import Prim.Boolean (False, True)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -35,6 +36,7 @@ import TsBridge (class TsBridge, tsBridge)
 import TsBridge as TSB
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Types.TsRecord (Mod, TsRecord)
+import Type.Data.List (type (:>), Nil')
 import Type.Proxy (Proxy(..))
 import Untagged.Union (type (|+|))
 
@@ -260,7 +262,7 @@ spec = do
 
       describe "VariantEncodedFlat" do
         testTypePrint' (tsBridge (Proxy :: _ (VariantEncodedFlat "kind" (a :: { x :: Number }, b :: { y :: String }))))
-          "(({ readonly 'kind': 'a'; })&({ readonly 'x': number; })) | (({ readonly 'kind': 'b'; })&({ readonly 'y': string; }))"
+          "({ readonly 'kind': 'a'; readonly 'x': number; }) | ({ readonly 'kind': 'b'; readonly 'y': string; })"
 
       describe "VariantEncodedNested" do
         testTypePrint' (tsBridge (Proxy :: _ (VariantEncodedNested "kind" "payload" (a :: Number, b :: String))))
@@ -296,6 +298,24 @@ spec = do
                         , " | "
                         , "({ readonly 'type': 'nil'; readonly 'value': Record<string, never>; })"
                         ]
+                    ]
+                ]
+            )
+
+      describe "NTuple" do
+        it "works for 3 types" do
+          shouldEqual
+            ( TSB.tsProgram
+                [ TSB.tsModuleFile "Foo.Bar"
+                    [ TSB.tsTypeAlias TSB.Tok "T"
+                        (Proxy :: _ (NTuple (String :> Number :> Boolean :> Nil')))
+                    ]
+                ]
+                <#> printTsProgram
+            )
+            ( Right $ Map.fromFoldable
+                [ textFile "Foo.Bar/index.d.ts"
+                    [ "export type T = readonly [string, number, boolean]"
                     ]
                 ]
             )

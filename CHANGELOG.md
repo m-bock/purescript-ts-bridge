@@ -3,6 +3,23 @@
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Fixed
+
+
+## [2.3.0]
+
+### Added
+
+- Support for TS tuples
+
+### Fixed
+
+- Flat encoded variants with empty record values. 
+
 ## [2.2.0]
 
 ### Added
