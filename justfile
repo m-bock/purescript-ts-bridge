@@ -38,7 +38,11 @@ install-git-hooks:
 
 ci_: install check-format build-strict test gen-docs check-git-clean
 
-ci: clean
+ci:
+    DIR=`pwd`; \
+    TMP_DIR=`mktemp -d`; \
+    git clone . ${TMP_DIR}; \
+    cd ${TMP_DIR}; \
     just ci_
 
 install:
