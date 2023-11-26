@@ -1,5 +1,6 @@
 module TsBridge.DefaultImpls
   ( TypeVar(..)
+  , class NTupleList
   , class TsBridgeRecord
   , class TsBridgeRecordRL
   , class TsBridgeVariant
@@ -23,6 +24,7 @@ module TsBridge.DefaultImpls
   , tsBridgeFunction
   , tsBridgeInt
   , tsBridgeMaybe
+  , tsBridgeNTuple
   , tsBridgeNewtype
   , tsBridgeNull
   , tsBridgeNullable
@@ -45,6 +47,7 @@ module TsBridge.DefaultImpls
   , tsBridgeVariantEncodedNested
   , tsBridgeVariantEncodedNestedRL
   , tsBridgeVariantRL
+  , tsBridgeNTupleList
   ) where
 
 import Prelude
@@ -75,12 +78,16 @@ import Foreign.Object (Object)
 import Literals (StringLit)
 import Literals.Null (Null)
 import Literals.Undefined as Lit
+import NTuple (NTuple)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
 import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, getAccum)
 import TsBridge.Types (AppError(..), mapErr, mkName, toTsName)
+import TsBridge.Types.TsRecord (TsRecord)
+import TsBridge.Types.TsRecord as TsRecord
+import Type.Data.List (type (:>), List', Nil')
 import Type.Proxy (Proxy(..))
 import Untagged.Union (OneOf)
 
@@ -353,28 +360,53 @@ instance TsBridgeVariantEncodedFlatRL tok symTag Nil where
   tsBridgeVariantEncodedFlatRL _ _ _ = pure []
 
 instance
-  ( TsBridgeBy tok a
+  ( RowToList r rl'
+  , TsBridgeRecordRL tok rl'
   , TsBridgeVariantEncodedFlatRL tok symTag rl
   , IsSymbol s
   , IsSymbol symTag
   ) =>
-  TsBridgeVariantEncodedFlatRL tok symTag (Cons s a rl) where
+  TsBridgeVariantEncodedFlatRL tok symTag (Cons s (Record r) rl) where
   tsBridgeVariantEncodedFlatRL tok prxSymTag _ =
     do
-      x <- tsBridgeBy tok (Proxy :: _ a)
+      let
+        tag =
+          DTS.TsRecordField (reflectSymbol prxSymTag)
+            { readonly: true, optional: false }
+            (DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ s))
+
+      x <- tsBridgeRecordRL tok (Proxy :: _ rl')
+        # map \fields -> DTS.TsTypeRecord ([ tag ] <> fields)
+
       xs <- tsBridgeVariantEncodedFlatRL tok prxSymTag (Proxy :: _ rl)
+
       pure $
-        A.cons
-          ( DTS.TsTypeIntersection
-              [ DTS.TsTypeRecord
-                  [ DTS.TsRecordField (reflectSymbol prxSymTag)
-                      { readonly: true, optional: false }
-                      (DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ s))
-                  ]
-              , x
-              ]
-          )
-          xs
+        A.cons x xs
+
+instance
+  ( RowToList rts rl'
+  , TsRecord.ToRecord rts r
+  , TsRecord.TsBridgeTsRecordRL tok rl'
+  , TsBridgeVariantEncodedFlatRL tok symTag rl
+  , IsSymbol s
+  , IsSymbol symTag
+  ) =>
+  TsBridgeVariantEncodedFlatRL tok symTag (Cons s (TsRecord rts) rl) where
+  tsBridgeVariantEncodedFlatRL tok prxSymTag _ =
+    do
+      let
+        tag =
+          DTS.TsRecordField (reflectSymbol prxSymTag)
+            { readonly: true, optional: false }
+            (DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ s))
+
+      x <- TsRecord.tsBridgeTsRecordRL tok (Proxy :: _ rl')
+        # map \fields -> DTS.TsTypeRecord ([ tag ] <> fields)
+
+      xs <- tsBridgeVariantEncodedFlatRL tok prxSymTag (Proxy :: _ rl)
+
+      pure $
+        A.cons x xs
 
 --------------------------------------------------------------------------------
 
@@ -650,6 +682,25 @@ tsBridgeNewtype tok { moduleName, typeName, typeArgs } _ =
 
       pure
         $ DTS.TsTypeConstructor (DTS.TsQualName (Just filePathRef) (toTsName name)) (DTS.TsTypeArgs args)
+
+-------------------------------------------------------------------------------
+
+tsBridgeNTuple :: forall tok xs. NTupleList tok xs => tok -> Proxy (NTuple xs) -> TsBridgeM DTS.TsType
+tsBridgeNTuple tok _ = DTS.TsTypeReadonlyTuple <$> tsBridgeNTupleList tok (Proxy :: _ xs)
+
+class NTupleList tok (xs :: List' Type) where
+  tsBridgeNTupleList :: tok -> Proxy xs -> TsBridgeM (Array DTS.TsType)
+
+instance NTupleList tok Nil' where
+  tsBridgeNTupleList _ _ = pure []
+
+instance (TsBridgeBy tok a, NTupleList tok as) => NTupleList tok (a :> as) where
+  tsBridgeNTupleList tok _ = do
+    x <- tsBridgeBy tok (Proxy :: _ a)
+
+    rest <- tsBridgeNTupleList tok (Proxy :: _ as)
+
+    pure $ A.cons x rest
 
 -------------------------------------------------------------------------------
 -- tsBridge methods / class TsBridgeRecord

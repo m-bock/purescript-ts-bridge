@@ -5,7 +5,7 @@ package:
     - argparse-basic: ">=2.0.0 <3.0.0"
     - arrays: ">=7.2.1 <8.0.0"
     - console: ">=6.1.0 <7.0.0"
-    - dts: ">=0.2.0 <0.3.0"
+    - dts: ">=0.3.0 <0.4.0"
     - effect: ">=4.0.0 <5.0.0"
     - either: ">=6.1.0 <7.0.0"
     - foldable-traversable: ">=6.0.0 <7.0.0"
@@ -27,6 +27,7 @@ package:
     - strings: ">=6.0.1 <7.0.0"
     - transformers: ">=6.0.0 <7.0.0"
     - tuples: ">=7.0.0 <8.0.0"
+    - typelevel-lists: ">=2.1.0 <3.0.0"
     - typelevel-prelude: ">=7.0.0 <8.0.0"
     - unsafe-coerce: ">=6.0.0 <7.0.0"
     - untagged-union: ">=1.0.0 <2.0.0"
@@ -54,7 +55,8 @@ package:
     censor_project_warnings:
       - ImplicitQualifiedImport
 workspace:
-  extra_packages: {}
+  extra_packages:
+    dts: 0.3.0
   package_set:
     registry: 43.3.0
   build_opts:
