@@ -50,8 +50,7 @@ module TsBridge.DefaultImpls
   , tsBridgeVariantEncodedNested
   , tsBridgeVariantEncodedNestedRL
   , tsBridgeVariantRL
-  )
-  where
+  ) where
 
 import Prelude
 
