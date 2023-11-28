@@ -11,6 +11,8 @@ Call your PureScript code from TypeScript.
 - [FAQs](docs/faq.md)
 - [Type Comparison PureScript vs. TypeScript](docs/type-comparison.md)
 - [Demo repo](https://github.com/thought2/purescript-ts-bridge.demo)
+- [Blog post: PureScript's foreign Functions less foreign](https://thought2.github.io/blog/purescript-ffi/)
+  (explains usage of ts-bridge for FFI)
 
 ## Installation
 
