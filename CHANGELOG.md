@@ -10,6 +10,19 @@
 ### Fixed
 
 
+## [3.0.0]
+
+### Added
+  - HasRuntimeType instance for TsRecord
+  - Add boolean literals
+
+### Changed
+  - Revert variant flat printing to intersection types
+
+### Fixed
+  - New empty record printing (tests updated)
+
+
 ## [2.3.0]
 
 ### Added
