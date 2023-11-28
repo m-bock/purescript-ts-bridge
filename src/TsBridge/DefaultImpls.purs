@@ -87,8 +87,6 @@ import Safe.Coerce (coerce)
 import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, getAccum)
 import TsBridge.Types (AppError(..), mapErr, mkName, toTsName)
-import TsBridge.Types.TsRecord (TsRecord)
-import TsBridge.Types.TsRecord as TsRecord
 import Type.Data.List (type (:>), List', Nil')
 import Type.Proxy (Proxy(..))
 import Untagged.Union (OneOf)
