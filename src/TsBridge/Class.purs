@@ -16,7 +16,7 @@ import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, EffectFn4)
 import Foreign.Object (Object)
-import Literals (StringLit)
+import Literals (StringLit, BooleanLit)
 import Literals.Null (Null)
 import Literals.Undefined (Undefined)
 import NTuple (NTuple)
@@ -137,3 +137,9 @@ instance (TSB.NTupleList Tok as) => TsBridge (NTuple as) where
 
 instance IsSymbol sym => TsBridge (StringLit sym) where
   tsBridge = TSB.tsBridgeStringLit
+
+instance TsBridge (BooleanLit "true") where
+  tsBridge = TSB.tsBridgeBooleanLitTrue
+
+instance TsBridge (BooleanLit "false") where
+  tsBridge = TSB.tsBridgeBooleanLitFalse

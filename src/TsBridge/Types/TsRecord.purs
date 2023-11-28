@@ -39,6 +39,7 @@ import TsBridge.Monad (TsBridgeM)
 import Type.Data.Boolean (class If)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
+import Untagged.TypeCheck (class HasRuntimeType)
 import Untagged.Union (UndefinedOr, uorToMaybe)
 
 -------------------------------------------------------------------------------
@@ -59,6 +60,9 @@ type role Mod phantom representational
 
 instance (Row.Lacks sym rts) => IsRecordWithoutKey sym (TsRecord rts) where
   isRecordWithoutKey _ = Proxy
+
+instance HasRuntimeType (TsRecord rts) where
+  hasRuntimeType _ _ = true
 
 -------------------------------------------------------------------------------
 --- ToRecord

@@ -226,7 +226,7 @@ spec = do
           "{ readonly 'bar': string; readonly 'foo': number; }"
 
         testTypePrint (tsBridge (Proxy :: _ {}))
-          "Record<string, never>"
+          "object"
 
       describe "Maybe" do
         testTypePrint (tsBridge (Proxy :: _ (Maybe Boolean)))
@@ -262,7 +262,7 @@ spec = do
 
       describe "VariantEncodedFlat" do
         testTypePrint' (tsBridge (Proxy :: _ (VariantEncodedFlat "kind" (a :: { x :: Number }, b :: { y :: String }))))
-          "({ readonly 'kind': 'a'; readonly 'x': number; }) | ({ readonly 'kind': 'b'; readonly 'y': string; })"
+          "(({ readonly 'kind': 'a'; })&({ readonly 'x': number; })) | (({ readonly 'kind': 'b'; })&({ readonly 'y': string; }))"
 
       describe "VariantEncodedNested" do
         testTypePrint' (tsBridge (Proxy :: _ (VariantEncodedNested "kind" "payload" (a :: Number, b :: String))))
@@ -296,7 +296,7 @@ spec = do
                         [ "export type RecListStr = "
                         , "({ readonly 'type': 'cons'; readonly 'value': { readonly 'head': string; readonly 'tail': import('../Data.RecListStr').RecListStr; }; })"
                         , " | "
-                        , "({ readonly 'type': 'nil'; readonly 'value': Record<string, never>; })"
+                        , "({ readonly 'type': 'nil'; readonly 'value': object; })"
                         ]
                     ]
                 ]
@@ -333,7 +333,7 @@ spec = do
             )
             ( Right $ Map.fromFoldable
                 [ textFile "Foo.Bar/index.d.ts"
-                    [ "export type SomeRecord = Record<string, never>"
+                    [ "export type SomeRecord = object"
                     ]
                 ]
             )

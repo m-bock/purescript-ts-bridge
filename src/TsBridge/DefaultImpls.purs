@@ -11,6 +11,8 @@ module TsBridge.DefaultImpls
   , class TsBridgeVariantRL
   , tsBridgeArray
   , tsBridgeBoolean
+  , tsBridgeBooleanLitFalse
+  , tsBridgeBooleanLitTrue
   , tsBridgeChar
   , tsBridgeEffect
   , tsBridgeEffectFn1
@@ -25,6 +27,7 @@ module TsBridge.DefaultImpls
   , tsBridgeInt
   , tsBridgeMaybe
   , tsBridgeNTuple
+  , tsBridgeNTupleList
   , tsBridgeNewtype
   , tsBridgeNull
   , tsBridgeNullable
@@ -47,8 +50,8 @@ module TsBridge.DefaultImpls
   , tsBridgeVariantEncodedNested
   , tsBridgeVariantEncodedNestedRL
   , tsBridgeVariantRL
-  , tsBridgeNTupleList
-  ) where
+  )
+  where
 
 import Prelude
 
@@ -75,7 +78,7 @@ import Data.Variant.Encodings.Nested (VariantEncodedNested)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, EffectFn4)
 import Foreign.Object (Object)
-import Literals (StringLit)
+import Literals (StringLit, BooleanLit)
 import Literals.Null (Null)
 import Literals.Undefined as Lit
 import NTuple (NTuple)
@@ -327,6 +330,12 @@ tsBridgeNull _ = pure DTS.TsTypeNull
 tsBridgeStringLit :: forall sym. IsSymbol sym => Proxy (StringLit sym) -> TsBridgeM DTS.TsType
 tsBridgeStringLit _ = pure $ DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ sym)
 
+tsBridgeBooleanLitTrue :: Proxy (BooleanLit "true") -> TsBridgeM DTS.TsType
+tsBridgeBooleanLitTrue _ = pure $ DTS.TsTypeVar (DTS.TsName "true")
+
+tsBridgeBooleanLitFalse :: Proxy (BooleanLit "false") -> TsBridgeM DTS.TsType
+tsBridgeBooleanLitFalse _ = pure $ DTS.TsTypeVar (DTS.TsName "false")
+
 -------------------------------------------------------------------------------
 -- tsBridge methods / class VariantEncodedFlat 
 -------------------------------------------------------------------------------
@@ -360,53 +369,28 @@ instance TsBridgeVariantEncodedFlatRL tok symTag Nil where
   tsBridgeVariantEncodedFlatRL _ _ _ = pure []
 
 instance
-  ( RowToList r rl'
-  , TsBridgeRecordRL tok rl'
+  ( TsBridgeBy tok a
   , TsBridgeVariantEncodedFlatRL tok symTag rl
   , IsSymbol s
   , IsSymbol symTag
   ) =>
-  TsBridgeVariantEncodedFlatRL tok symTag (Cons s (Record r) rl) where
+  TsBridgeVariantEncodedFlatRL tok symTag (Cons s a rl) where
   tsBridgeVariantEncodedFlatRL tok prxSymTag _ =
     do
-      let
-        tag =
-          DTS.TsRecordField (reflectSymbol prxSymTag)
-            { readonly: true, optional: false }
-            (DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ s))
-
-      x <- tsBridgeRecordRL tok (Proxy :: _ rl')
-        # map \fields -> DTS.TsTypeRecord ([ tag ] <> fields)
-
+      x <- tsBridgeBy tok (Proxy :: _ a)
       xs <- tsBridgeVariantEncodedFlatRL tok prxSymTag (Proxy :: _ rl)
-
       pure $
-        A.cons x xs
-
-instance
-  ( RowToList rts rl'
-  , TsRecord.ToRecord rts r
-  , TsRecord.TsBridgeTsRecordRL tok rl'
-  , TsBridgeVariantEncodedFlatRL tok symTag rl
-  , IsSymbol s
-  , IsSymbol symTag
-  ) =>
-  TsBridgeVariantEncodedFlatRL tok symTag (Cons s (TsRecord rts) rl) where
-  tsBridgeVariantEncodedFlatRL tok prxSymTag _ =
-    do
-      let
-        tag =
-          DTS.TsRecordField (reflectSymbol prxSymTag)
-            { readonly: true, optional: false }
-            (DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ s))
-
-      x <- TsRecord.tsBridgeTsRecordRL tok (Proxy :: _ rl')
-        # map \fields -> DTS.TsTypeRecord ([ tag ] <> fields)
-
-      xs <- tsBridgeVariantEncodedFlatRL tok prxSymTag (Proxy :: _ rl)
-
-      pure $
-        A.cons x xs
+        A.cons
+          ( DTS.TsTypeIntersection
+              [ DTS.TsTypeRecord
+                  [ DTS.TsRecordField (reflectSymbol prxSymTag)
+                      { readonly: true, optional: false }
+                      (DTS.TsTypeTypelevelString $ reflectSymbol (Proxy :: _ s))
+                  ]
+              , x
+              ]
+          )
+          xs
 
 --------------------------------------------------------------------------------
 
