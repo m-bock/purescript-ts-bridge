@@ -21,8 +21,7 @@ module TsBridge.Types.TsRecord
   , tsBridgeTsRecord
   , tsBridgeTsRecordRL
   , type (~)
-  )
-  where
+  ) where
 
 import Prelude
 

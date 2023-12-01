@@ -1,7 +1,6 @@
 module TsBridge.Types.RecordUnion
   ( RecordUnion(..)
-  )
-  where
+  ) where
 
 import Data.Variant.Encodings.Flat (class IsRecordWithoutKey)
 import TsBridge (class TsBridge)
