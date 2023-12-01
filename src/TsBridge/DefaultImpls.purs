@@ -11,6 +11,7 @@ module TsBridge.DefaultImpls
   , class TsBridgeVariantRL
   , tsBridgeArray
   , tsBridgeBoolean
+  , tsBridgeBooleanLit'
   , tsBridgeBooleanLitFalse
   , tsBridgeBooleanLitTrue
   , tsBridgeChar
@@ -25,6 +26,7 @@ module TsBridge.DefaultImpls
   , tsBridgeFn4
   , tsBridgeFunction
   , tsBridgeInt
+  , tsBridgeIntLit'
   , tsBridgeMaybe
   , tsBridgeNTuple
   , tsBridgeNTupleList
@@ -40,6 +42,7 @@ module TsBridge.DefaultImpls
   , tsBridgeRecordRL
   , tsBridgeString
   , tsBridgeStringLit
+  , tsBridgeStringLit'
   , tsBridgeTuple
   , tsBridgeTypeVar
   , tsBridgeUndefined
@@ -62,9 +65,11 @@ import Data.Array (mapWithIndex, (:))
 import Data.Array as A
 import Data.Either (Either)
 import Data.Function.Uncurried (Fn2, Fn3, Fn4)
+import Data.Int as Int
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable)
+import Data.Reflectable (class Reflectable, reflectType)
 import Data.Set as Set
 import Data.Set.Ordered as OSet
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -87,6 +92,7 @@ import Safe.Coerce (coerce)
 import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, getAccum)
 import TsBridge.Types (AppError(..), mapErr, mkName, toTsName)
+import TsBridge.Types.Lit (Lit)
 import Type.Data.List (type (:>), List', Nil')
 import Type.Proxy (Proxy(..))
 import Untagged.Union (OneOf)
@@ -332,6 +338,16 @@ tsBridgeBooleanLitTrue _ = pure $ DTS.TsTypeVar (DTS.TsName "true")
 
 tsBridgeBooleanLitFalse :: Proxy (BooleanLit "false") -> TsBridgeM DTS.TsType
 tsBridgeBooleanLitFalse _ = pure $ DTS.TsTypeVar (DTS.TsName "false")
+
+tsBridgeStringLit' :: forall h. Reflectable h String => Proxy (Lit h String) -> TsBridgeM DTS.TsType
+tsBridgeStringLit' _ = pure $ DTS.TsTypeTypelevelString $ (reflectType @h Proxy)
+
+tsBridgeBooleanLit' :: forall h. Reflectable h Boolean => Proxy (Lit h Boolean) -> TsBridgeM DTS.TsType
+tsBridgeBooleanLit' _ = pure $ DTS.TsTypeVar $ DTS.TsName
+  (if reflectType @h Proxy then "true" else "false")
+
+tsBridgeIntLit' :: forall h. Reflectable h Int => Proxy (Lit h Int) -> TsBridgeM DTS.TsType
+tsBridgeIntLit' _ = pure $ DTS.TsTypeTypelevelNumber $ (Int.toNumber $ reflectType @h Proxy)
 
 -------------------------------------------------------------------------------
 -- tsBridge methods / class VariantEncodedFlat 

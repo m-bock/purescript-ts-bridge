@@ -8,6 +8,7 @@ import Data.Either (Either)
 import Data.Function.Uncurried (Fn2, Fn3, Fn4)
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable)
+import Data.Reflectable (class Reflectable)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple)
 import Data.Variant (Variant)
@@ -24,6 +25,7 @@ import TsBridge.Core (class TsBridgeBy)
 import TsBridge.DefaultImpls as TSB
 import TsBridge.Monad (TsBridgeM)
 import TsBridge.Types.Intersection (Intersection, tsBridgeIntersection)
+import TsBridge.Types.Lit (Lit)
 import TsBridge.Types.TsRecord (TsRecord, class TsBridgeTsRecord, tsBridgeTsRecord)
 import Type.Proxy (Proxy)
 import Untagged.Union (OneOf)
@@ -143,3 +145,12 @@ instance TsBridge (BooleanLit "true") where
 
 instance TsBridge (BooleanLit "false") where
   tsBridge = TSB.tsBridgeBooleanLitFalse
+
+instance Reflectable h String => TsBridge (Lit h String) where
+  tsBridge = TSB.tsBridgeStringLit'
+
+instance Reflectable h Boolean => TsBridge (Lit h Boolean) where
+  tsBridge = TSB.tsBridgeBooleanLit'
+
+instance Reflectable h Int => TsBridge (Lit h Int) where
+  tsBridge = TSB.tsBridgeIntLit'
