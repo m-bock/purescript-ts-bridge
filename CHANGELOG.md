@@ -1,6 +1,5 @@
 # Changelog
 
-
 ## [Unreleased]
 
 ### Added
@@ -9,19 +8,28 @@
 
 ### Fixed
 
+## [3.1.0]
+
+### Added
+
+- Convenience API for TSRecord
+- RecordUnion type
+- Lit type
 
 ## [3.0.0]
 
 ### Added
-  - HasRuntimeType instance for TsRecord
-  - Add boolean literals
+
+- HasRuntimeType instance for TsRecord
+- Add boolean literals
 
 ### Changed
-  - Revert variant flat printing to intersection types
+
+- Revert variant flat printing to intersection types
 
 ### Fixed
-  - New empty record printing (tests updated)
 
+- New empty record printing (tests updated)
 
 ## [2.3.0]
 
@@ -31,7 +39,7 @@
 
 ### Fixed
 
-- Flat encoded variants with empty record values. 
+- Flat encoded variants with empty record values.
 
 ## [2.2.0]
 
