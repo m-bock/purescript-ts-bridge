@@ -35,7 +35,7 @@ package:
     - variant-encodings: ">=2.0.0 <3.0.0"
   name: ts-bridge
   publish:
-    version: 3.0.0
+    version: 3.1.0
     license: BSD-3-Clause
     location:
       githubOwner: thought2
