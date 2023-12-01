@@ -1,6 +1,8 @@
 module TsBridge.Types.TsRecord
   ( Mod
   , ModField
+  , Opt
+  , RO
   , TsRecord
   , class Get
   , class GetKey
@@ -18,7 +20,9 @@ module TsBridge.Types.TsRecord
   , toRecordBuilder
   , tsBridgeTsRecord
   , tsBridgeTsRecordRL
-  ) where
+  , type (~)
+  )
+  where
 
 import Prelude
 
@@ -29,7 +33,7 @@ import Data.Reflectable (class Reflectable, reflectType)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant.Encodings.Flat (class IsRecordWithoutKey)
 import Partial.Unsafe (unsafePartial)
-import Prim.Boolean (False)
+import Prim.Boolean (False, True)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
@@ -58,11 +62,17 @@ foreign import data Mod :: Row Boolean -> Type -> ModField Type
 
 type role Mod phantom representational
 
+infixr 9 type Mod as ~
+
 instance (Row.Lacks sym rts) => IsRecordWithoutKey sym (TsRecord rts) where
   isRecordWithoutKey _ = Proxy
 
 instance HasRuntimeType (TsRecord rts) where
   hasRuntimeType _ _ = true
+
+type Opt = (optional :: True)
+
+type RO = (readOnly :: True)
 
 -------------------------------------------------------------------------------
 --- ToRecord
