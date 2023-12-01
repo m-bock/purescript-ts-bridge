@@ -20,7 +20,7 @@ import Foreign.Object (Object)
 import Literals (StringLit, BooleanLit)
 import Literals.Null (Null)
 import Literals.Undefined (Undefined)
-import NTuple (NTuple)
+import TsBridge.Types.NTuple (NTuple)
 import TsBridge.Core (class TsBridgeBy)
 import TsBridge.DefaultImpls as TSB
 import TsBridge.Monad (TsBridgeM)

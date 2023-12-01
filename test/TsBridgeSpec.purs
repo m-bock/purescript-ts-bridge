@@ -27,7 +27,7 @@ import Effect (Effect)
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, EffectFn4)
 import Literals (StringLit)
 import Literals.Undefined as Lit
-import NTuple (NTuple)
+import TsBridge.Types.NTuple (NTuple)
 import Prim.Boolean (False, True)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)

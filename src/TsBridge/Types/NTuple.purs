@@ -1,4 +1,4 @@
-module NTuple
+module TsBridge.Types.NTuple
   ( NTuple
   , cons
   , empty

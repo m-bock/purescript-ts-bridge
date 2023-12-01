@@ -85,7 +85,7 @@ import Foreign.Object (Object)
 import Literals (StringLit, BooleanLit)
 import Literals.Null (Null)
 import Literals.Undefined as Lit
-import NTuple (NTuple)
+import TsBridge.Types.NTuple (NTuple)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)

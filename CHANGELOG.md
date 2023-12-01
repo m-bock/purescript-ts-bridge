@@ -8,6 +8,12 @@
 
 ### Fixed
 
+## [4.0.0]
+
+### Changed
+
+- NTuple module name
+
 ## [3.1.0]
 
 ### Added
