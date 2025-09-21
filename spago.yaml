@@ -35,20 +35,14 @@ package:
     - variant-encodings: ">=2.0.0 <3.0.0"
   name: ts-bridge
   publish:
-    version: 4.0.0
+    version: 5.0.0
     license: BSD-3-Clause
     location:
       githubOwner: thought2
       githubRepo: purescript-ts-bridge
   test:
     dependencies:
-      [
-        "aff",
-        "spec",
-        "classless-encode-json",
-        "argonaut-core",
-        "classless"
-      ]
+      ["aff", "spec", "classless-encode-json", "argonaut-core", "classless"]
     main: Test.Main
   build:
     censor_project_warnings:
