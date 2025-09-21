@@ -1,3 +1,24 @@
 {
-    "purescript.buildCommand": "spago build --json-errors"
+    "purescript.buildCommand": "spago build --json-errors",
+    "workbench.colorCustomizations": {
+        "activityBar.activeBackground": "#c98d97",
+        "activityBar.background": "#c98d97",
+        "activityBar.foreground": "#15202b",
+        "activityBar.inactiveForeground": "#15202b99",
+        "activityBarBadge.background": "#d8ebd4",
+        "activityBarBadge.foreground": "#15202b",
+        "commandCenter.border": "#15202b99",
+        "sash.hoverBorder": "#c98d97",
+        "statusBar.background": "#b86b77",
+        "statusBar.foreground": "#15202b",
+        "statusBarItem.hoverBackground": "#a24e5b",
+        "statusBarItem.remoteBackground": "#b86b77",
+        "statusBarItem.remoteForeground": "#15202b",
+        "titleBar.activeBackground": "#b86b77",
+        "titleBar.activeForeground": "#15202b",
+        "titleBar.inactiveBackground": "#b86b7799",
+        "titleBar.inactiveForeground": "#15202b99",
+        "tab.activeBorder": "#c98d97"
+    },
+    "peacock.color": "#b86b77"
 }

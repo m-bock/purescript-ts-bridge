@@ -50,7 +50,6 @@ package:
         "classless"
       ]
     main: Test.Main
-  strict: true
   build:
     censor_project_warnings:
       - ImplicitQualifiedImport

@@ -46,8 +46,8 @@ derive instance Newtype MyNT _
 
 instance TsBridge MyNT where
   tsBridge =
-    TSB.tsBridgeNewtype TSB.Tok
-      { moduleName: "Foo.Bar", typeName: "MyNT", typeArgs: [] }
+    TSB.tsBridgeNewtype0 TSB.Tok
+      { moduleName: "Foo.Bar", typeName: "MyNT" }
 
 --
 
@@ -62,8 +62,8 @@ derive instance Newtype RecListStr _
 
 instance TsBridge RecListStr where
   tsBridge x =
-    TSB.tsBridgeNewtype TSB.Tok
-      { moduleName: "Data.RecListStr", typeName: "RecListStr", typeArgs: [] }
+    TSB.tsBridgeNewtype0 TSB.Tok
+      { moduleName: "Data.RecListStr", typeName: "RecListStr" }
       x
 
 --

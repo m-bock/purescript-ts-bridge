@@ -30,7 +30,11 @@ module TsBridge.DefaultImpls
   , tsBridgeMaybe
   , tsBridgeNTuple
   , tsBridgeNTupleList
-  , tsBridgeNewtype
+  , tsBridgeNewtype0
+  , tsBridgeNewtype1
+  , tsBridgeNewtype2
+  , tsBridgeNewtype3
+  , tsBridgeNewtype4
   , tsBridgeNull
   , tsBridgeNullable
   , tsBridgeNumber
@@ -67,7 +71,7 @@ import Data.Either (Either)
 import Data.Function.Uncurried (Fn2, Fn3, Fn4)
 import Data.Int as Int
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, over)
+import Data.Newtype (class Newtype, over, un, unwrap)
 import Data.Nullable (Nullable)
 import Data.Reflectable (class Reflectable, reflectType)
 import Data.Set as Set
@@ -85,7 +89,6 @@ import Foreign.Object (Object)
 import Literals (StringLit, BooleanLit)
 import Literals.Null (Null)
 import Literals.Undefined as Lit
-import TsBridge.Types.NTuple (NTuple)
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as R
 import Safe.Coerce (coerce)
@@ -93,8 +96,10 @@ import TsBridge.Core (class TsBridgeBy, tsBridgeBy)
 import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, getAccum)
 import TsBridge.Types (AppError(..), mapErr, mkName, toTsName)
 import TsBridge.Types.Lit (Lit)
+import TsBridge.Types.NTuple (NTuple)
 import Type.Data.List (type (:>), List', Nil')
 import Type.Proxy (Proxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 import Untagged.Union (OneOf)
 
 -------------------------------------------------------------------------------
@@ -626,59 +631,233 @@ tsBridgeOpaqueType { moduleName, typeName, typeArgs } _ =
       pure
         $ DTS.TsTypeConstructor (DTS.TsQualName (Just importPath) (toTsName name)) (DTS.TsTypeArgs targs)
 
--- | `tsBridge` type class method implementation for newtypes
-tsBridgeNewtype
-  :: forall tok a t
-   . Newtype a t
-  => TsBridgeBy tok t
+tsBridgeNewtype0
+  :: forall tok a i i2
+   . Newtype a i
+  => Newtype (a) i2
+  => TsBridgeBy tok i2
   => tok
-  -> { moduleName :: String, typeName :: String, typeArgs :: Array (String /\ TsBridgeM DTS.TsType) }
+  -> { moduleName :: String
+     , typeName :: String
+     }
   -> Proxy a
   -> TsBridgeM DTS.TsType
-tsBridgeNewtype tok { moduleName, typeName, typeArgs } _ =
+tsBridgeNewtype0 tok { moduleName, typeName } _ =
   mapErr (AtType typeName)
     do
       let
-        targNames = map fst typeArgs
-        targs = map snd typeArgs
-        filePath = DTS.TsFilePath (moduleName <> "/index.d.ts")
-        filePathRef = DTS.TsImportPath ("../" <> moduleName)
+        targNames = []
+        targs = []
+      newtypeImpl tok moduleName typeName targs targNames (Proxy :: _ i2)
 
-      name <- mkName typeName
-      args <- sequence targs
+tsBridgeNewtype1
+  :: forall @sym1 tok a t1 i i2
+   . Newtype (a t1) i
+  => Newtype (a (TypeVar sym1)) i2
+  => TsBridgeBy tok i2
+  => TsBridgeBy tok (TypeVar sym1)
+  => IsSymbol sym1
+  => tok
+  -> { moduleName :: String
+     , typeName :: String
+     }
+  -> Proxy (a t1)
+  -> TsBridgeM DTS.TsType
+tsBridgeNewtype1 tok { moduleName, typeName } _ =
+  mapErr (AtType typeName)
+    do
+      let
+        targNames = [ reflectSymbol (Proxy :: _ sym1) ]
+        targs = [ tsBridgeBy tok (Proxy :: _ (TypeVar sym1)) ]
 
-      TsBridgeAccum accum <- getAccum
+      newtypeImpl tok moduleName typeName targs targNames (Proxy :: _ i2)
 
-      unless (Set.member { moduleName, typeName } accum.registeredTypes) do
+tsBridgeNewtype2
+  :: forall @sym1 @sym2 tok a t1 t2 i i2
+   . Newtype (a t1 t2) i
+  => Newtype (a (TypeVar sym1) (TypeVar sym2)) i2
+  => TsBridgeBy tok i2
+  => TsBridgeBy tok (TypeVar sym1)
+  => TsBridgeBy tok (TypeVar sym2)
+  => IsSymbol sym1
+  => IsSymbol sym2
+  => tok
+  -> { moduleName :: String
+     , typeName :: String
+     }
+  -> Proxy (a t1 t2)
+  -> TsBridgeM DTS.TsType
+tsBridgeNewtype2 tok { moduleName, typeName } _ =
+  mapErr (AtType typeName)
+    do
+      let
+        targNames = [ reflectSymbol (Proxy :: _ sym1), reflectSymbol (Proxy :: _ sym2) ]
+        targs = [ tsBridgeBy tok (Proxy :: _ (TypeVar sym1)), tsBridgeBy tok (Proxy :: _ (TypeVar sym2)) ]
 
-        tell
-          $ TsBridgeAccum
-          $ R.union mempty { registeredTypes: Set.singleton { moduleName, typeName } }
+      newtypeImpl tok moduleName typeName targs targNames (Proxy :: _ i2)
 
-        x <- tsBridgeBy tok (Proxy :: _ t)
+tsBridgeNewtype3
+  :: forall @sym1 @sym2 @sym3 tok a t1 t2 t3 i i2
+   . Newtype (a t1 t2 t3) i
+  => Newtype (a (TypeVar sym1) (TypeVar sym2) (TypeVar sym3)) i2
+  => TsBridgeBy tok i2
+  => TsBridgeBy tok (TypeVar sym1)
+  => TsBridgeBy tok (TypeVar sym2)
+  => TsBridgeBy tok (TypeVar sym3)
+  => IsSymbol sym1
+  => IsSymbol sym2
+  => IsSymbol sym3
+  => tok
+  -> { moduleName :: String
+     , typeName :: String
+     }
+  -> Proxy (a t1 t2 t3)
+  -> TsBridgeM DTS.TsType
+tsBridgeNewtype3 tok { moduleName, typeName } _ =
+  mapErr (AtType typeName)
+    do
+      let
+        targNames = [ reflectSymbol (Proxy :: _ sym1), reflectSymbol (Proxy :: _ sym2), reflectSymbol (Proxy :: _ sym3) ]
+        targs = [ tsBridgeBy tok (Proxy :: _ (TypeVar sym1)), tsBridgeBy tok (Proxy :: _ (TypeVar sym2)), tsBridgeBy tok (Proxy :: _ (TypeVar sym3)) ]
 
-        args' <- OSet.fromFoldable <$> map toTsName <$> traverse mkName targNames
+      newtypeImpl tok moduleName typeName targs targNames (Proxy :: _ i2)
 
-        let
-          removeQuant =
-            DTS.mapQuantifier $ coerce $ OSet.filter (_ `OSet.notElem` args')
+tsBridgeNewtype4
+  :: forall @sym1 @sym2 @sym3 @sym4 tok a t1 t2 t3 t4 i i2
+   . Newtype (a t1 t2 t3 t4) i
+  => Newtype (a (TypeVar sym1) (TypeVar sym2) (TypeVar sym3) (TypeVar sym4)) i2
+  => TsBridgeBy tok i2
+  => TsBridgeBy tok (TypeVar sym1)
+  => TsBridgeBy tok (TypeVar sym2)
+  => TsBridgeBy tok (TypeVar sym3)
+  => TsBridgeBy tok (TypeVar sym4)
+  => IsSymbol sym1
+  => IsSymbol sym2
+  => IsSymbol sym3
+  => IsSymbol sym4
+  => tok
+  -> { moduleName :: String
+     , typeName :: String
+     }
+  -> Proxy (a t1 t2 t3 t4)
+  -> TsBridgeM DTS.TsType
+tsBridgeNewtype4 tok { moduleName, typeName } _ =
+  mapErr (AtType typeName)
+    do
+      let
+        targNames =
+          [ reflectSymbol (Proxy :: _ sym1)
+          , reflectSymbol (Proxy :: _ sym2)
+          , reflectSymbol (Proxy :: _ sym3)
+          , reflectSymbol (Proxy :: _ sym4)
+          ]
+        targs =
+          [ tsBridgeBy tok (Proxy :: _ (TypeVar sym1))
+          , tsBridgeBy tok (Proxy :: _ (TypeVar sym2))
+          , tsBridgeBy tok (Proxy :: _ (TypeVar sym3))
+          , tsBridgeBy tok (Proxy :: _ (TypeVar sym4))
+          ]
 
-        let
-          typeDefs =
-            [ DTS.TsModuleFile
-                filePath
-                ( DTS.TsModule
-                    [ DTS.TsDeclTypeDef (toTsName name) DTS.Public (coerce args') (removeQuant x)
-                    ]
-                )
-            ]
+      newtypeImpl tok moduleName typeName targs targNames (Proxy :: _ i2)
 
-        tell
-          $ TsBridgeAccum
-          $ R.union mempty { typeDefs, registeredTypes: Set.singleton { moduleName, typeName } }
+newtypeImpl
+  :: forall tok i2
+   . TsBridgeBy tok i2
+  => tok
+  -> String
+  -> String
+  -> Array (TsBridgeM DTS.TsType)
+  -> Array String
+  -> Proxy i2
+  -> TsBridgeM DTS.TsType
+newtypeImpl tok moduleName typeName targs targNames _ = do
+  let
+    filePath = DTS.TsFilePath (moduleName <> "/index.d.ts")
+    filePathRef = DTS.TsImportPath ("../" <> moduleName)
 
-      pure
-        $ DTS.TsTypeConstructor (DTS.TsQualName (Just filePathRef) (toTsName name)) (DTS.TsTypeArgs args)
+  name <- mkName typeName
+  args <- sequence targs
+
+  TsBridgeAccum accum <- getAccum
+
+  unless (Set.member { moduleName, typeName } accum.registeredTypes) do
+
+    tell
+      $ TsBridgeAccum
+      $ R.union mempty { registeredTypes: Set.singleton { moduleName, typeName } }
+
+    x <- tsBridgeBy tok (Proxy :: _ i2)
+
+    args' <- OSet.fromFoldable <$> map toTsName <$> traverse mkName targNames
+
+    let
+      removeQuant =
+        DTS.mapQuantifier $ coerce $ OSet.filter (_ `OSet.notElem` args')
+
+    let
+      typeDefs =
+        [ DTS.TsModuleFile
+            filePath
+            ( DTS.TsModule
+                [ DTS.TsDeclTypeDef (toTsName name) DTS.Public (coerce args') (removeQuant x)
+                ]
+            )
+        ]
+
+    tell
+      $ TsBridgeAccum
+      $ R.union mempty { typeDefs, registeredTypes: Set.singleton { moduleName, typeName } }
+
+  pure
+    $ DTS.TsTypeConstructor (DTS.TsQualName (Just filePathRef) (toTsName name)) (DTS.TsTypeArgs args)
+
+fixNewtype :: DTS.TsType -> DTS.TsType
+fixNewtype = case _ of
+  DTS.TsTypeNumber -> DTS.TsTypeNumber
+  DTS.TsTypeString -> DTS.TsTypeString
+  DTS.TsTypeBoolean -> DTS.TsTypeBoolean
+  DTS.TsTypeNull -> DTS.TsTypeNull
+  DTS.TsTypeArray x -> DTS.TsTypeArray $ fixNewtype x
+  DTS.TsTypeReadonlyArray x -> DTS.TsTypeReadonlyArray $ fixNewtype x
+  DTS.TsTypeIntersection xs -> DTS.TsTypeIntersection
+    (fixNewtype <$> xs)
+  DTS.TsTypeUnion xs -> DTS.TsTypeUnion
+    (fixNewtype <$> xs)
+  DTS.TsTypeReadonlyTuple xs -> DTS.TsTypeReadonlyTuple
+    (fixNewtype <$> xs)
+  DTS.TsTypeTuple xs -> DTS.TsTypeTuple
+    (fixNewtype <$> xs)
+  DTS.TsTypeRecord x -> DTS.TsTypeRecord $ goTsRecordField <$> x
+  DTS.TsTypeFunction x y z -> DTS.TsTypeFunction
+    (goTsTypeArgsQuant x)
+    (goTsFnArg <$> y)
+    (fixNewtype z)
+  DTS.TsTypeConstructor x y -> DTS.TsTypeConstructor
+    --(goTsQualName x)
+    (DTS.TsQualName Nothing (DTS.TsName "foo"))
+    (goTsTypeArgs y)
+  DTS.TsTypeUniqueSymbol -> DTS.TsTypeUniqueSymbol
+  DTS.TsTypeVar x -> DTS.TsTypeVar $ goTsName x
+  DTS.TsTypeVoid -> DTS.TsTypeVoid
+  DTS.TsTypeTypelevelString x -> DTS.TsTypeTypelevelString x
+  DTS.TsTypeTypelevelNumber x -> DTS.TsTypeTypelevelNumber x
+  where
+  goTsRecordField (DTS.TsRecordField x y z) = DTS.TsRecordField
+    (goTsName x)
+    (goPropModifiers y)
+    (fixNewtype z)
+
+  goTsTypeArgsQuant (DTS.TsTypeArgsQuant oset) = DTS.TsTypeArgsQuant oset
+
+  goTsTypeArgs (DTS.TsTypeArgs x) = DTS.TsTypeArgs $ fixNewtype <$> x
+
+  goTsFnArg (DTS.TsFnArg x y) = DTS.TsFnArg (goTsName x) (fixNewtype y)
+
+  goTsQualName = identity
+
+  goTsName = identity
+
+  goPropModifiers = identity
 
 -------------------------------------------------------------------------------
 
