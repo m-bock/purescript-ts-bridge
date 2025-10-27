@@ -1,4 +1,4 @@
-<img src="assets/logo.png" alt="Logo" width="500">
+<img src="assets/logo.png" alt="Logo" width="600">
 
 # purescript-ts-bridge
 
