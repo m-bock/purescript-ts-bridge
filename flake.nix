@@ -41,6 +41,7 @@
             pkgs.just
             pkgs.yarn
             pkgs.psa
+            pkgs.nodejs_20
           ];
         };
       }

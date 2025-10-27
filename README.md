@@ -1,3 +1,5 @@
+<img src="assets/logo.png" alt="Logo" width="500">
+
 # purescript-ts-bridge
 
 ![example workflow](https://github.com/thought2/purescript-ts-bridge/actions/workflows/ci.yml/badge.svg)
