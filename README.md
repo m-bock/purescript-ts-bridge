@@ -2,9 +2,9 @@
 
 # purescript-ts-bridge
 
-![example workflow](https://github.com/thought2/purescript-ts-bridge/actions/workflows/ci.yml/badge.svg)
+_TypeScript types generated from PureScript_
 
-Call your PureScript code from TypeScript.
+![example workflow](https://github.com/thought2/purescript-ts-bridge/actions/workflows/ci.yml/badge.svg)
 
 ## Documentation
 
