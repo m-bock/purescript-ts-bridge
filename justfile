@@ -36,7 +36,7 @@ install-git-hooks:
 
 # CI
 
-ci_: install check-format build-strict test gen-docs check-git-clean
+ci_: install check-format build-strict test check-git-clean
 
 ci:
     DIR=`pwd`; \
