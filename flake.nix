@@ -33,17 +33,15 @@
 
       {
         devShell = pkgs.mkShell {
-          nativeBuildInputs = let
-            yarn20 = pkgs.yarn.override { nodejs = pkgs.nodejs_20; };
-          in [
+          nativeBuildInputs = [
             pkgs.purescript
             pkgs.purs-tidy
             pkgs.bashInteractive
             pkgs.nodePackages.prettier
             pkgs.just
-            yarn20
+            pkgs.yarn
             pkgs.psa
-            pkgs.nodejs_20
+            pkgs.nodejs_22
           ];
         };
       }

@@ -21,9 +21,9 @@
     "cspell": "^6.31.1",
     "jest-diff": "^29.5.0",
     "markdown-magic": "^2.6.1",
-    "purs-to-md": "https://github.com/m-bock/purs-to-md",
     "purescript": "^0.15.15",
     "purs-tidy": "^0.11.0",
+    "purs-to-md": "https://github.com/m-bock/purs-to-md",
     "spago": "^0.93.44"
   }
 }
