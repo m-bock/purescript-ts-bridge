@@ -169,9 +169,17 @@ spec = do
         testTypePrint (tsBridge (Proxy :: _ (String -> Number -> Boolean)))
           "(_: string) => (_: number) => boolean"
 
+      describe "Function with named arguments" do
+        testTypePrint (tsBridge (Proxy :: _ (TSB.Named "arg1" String -> TSB.Named "arg2" Number -> Boolean)))
+          "(arg1: string) => (arg2: number) => boolean"
+
       describe "Fn2" do
         testTypePrint (tsBridge (Proxy :: _ (Fn2 String Number Boolean)))
           "(arg1: string, arg2: number) => boolean"
+
+      describe "Fn2 with named arguments" do
+        testTypePrint (tsBridge (Proxy :: _ (TSB.Named "arg1" String -> TSB.Named "arg2" Number -> Boolean)))
+          "(arg1: string) => (arg2: number) => boolean"
 
       describe "Fn3" do
         testTypePrint (tsBridge (Proxy :: _ (Fn3 String Number Number Boolean)))

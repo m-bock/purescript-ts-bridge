@@ -55,7 +55,7 @@ instance TsBridge String where
 instance TsBridge a => TsBridge (Array a) where
   tsBridge = TSB.tsBridgeArray Tok
 
-instance (TsBridge a, TsBridge b) => TsBridge (a -> b) where
+instance (TSB.GetName a, TsBridge a, TsBridge b) => TsBridge (a -> b) where
   tsBridge = TSB.tsBridgeFunction Tok
 
 -- As you can see, this even works for something generic like records:

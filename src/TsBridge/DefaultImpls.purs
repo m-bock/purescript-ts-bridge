@@ -57,6 +57,9 @@ module TsBridge.DefaultImpls
   , tsBridgeVariantEncodedNested
   , tsBridgeVariantEncodedNestedRL
   , tsBridgeVariantRL
+  , Named(..)
+  , class GetName
+  , getName
   ) where
 
 import Prelude
@@ -71,7 +74,7 @@ import Data.Either (Either)
 import Data.Function.Uncurried (Fn2, Fn3, Fn4)
 import Data.Int as Int
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, over, un, unwrap)
+import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable)
 import Data.Reflectable (class Reflectable, reflectType)
 import Data.Set as Set
@@ -99,7 +102,6 @@ import TsBridge.Types.Lit (Lit)
 import TsBridge.Types.NTuple (NTuple)
 import Type.Data.List (type (:>), List', Nil')
 import Type.Proxy (Proxy(..))
-import Unsafe.Coerce (unsafeCoerce)
 import Untagged.Union (OneOf)
 
 -------------------------------------------------------------------------------
@@ -110,6 +112,19 @@ import Untagged.Union (OneOf)
 -- | `Maybe (TypeVar "A")`. It's useful to create some type aliases for
 -- | variables that are used often, like: `type A = TypeVar "A"`.
 data TypeVar (s :: Symbol) = TypeVar
+
+newtype Named :: forall k. k -> Type -> Type
+newtype Named sym a = Named a
+
+class GetName :: Type -> Constraint
+class GetName a where
+  getName :: Proxy a -> String
+
+instance (IsSymbol sym) => GetName (Named sym a) where
+  getName _ = reflectSymbol (Proxy :: _ sym)
+
+else instance GetName a where
+  getName _ = "_"
 
 -------------------------------------------------------------------------------
 -- tsBridge methods
@@ -421,6 +436,7 @@ tsBridgeFunction
   :: forall tok a b
    . TsBridgeBy tok a
   => TsBridgeBy tok b
+  => GetName a
   => tok
   -> Proxy (a -> b)
   -> TsBridgeM DTS.TsType
@@ -435,9 +451,11 @@ tsBridgeFunction tok _ = censor mapAccum ado
     removeQuant =
       DTS.mapQuantifier $ coerce $ OSet.filter (_ `OSet.notElem` newFixed)
 
+    argName = getName (Proxy :: _ a)
+
   in
     DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
-      [ DTS.TsFnArg (DTS.TsName "_") (removeQuant arg)
+      [ DTS.TsFnArg (DTS.TsName argName) (removeQuant arg)
       ]
       (removeQuant ret)
   where
@@ -448,6 +466,8 @@ tsBridgeFn2
    . TsBridgeBy tok a1
   => TsBridgeBy tok a2
   => TsBridgeBy tok b
+  => GetName a1
+  => GetName a2
   => tok
   -> Proxy (Fn2 a1 a2 b)
   -> TsBridgeM DTS.TsType
@@ -483,6 +503,9 @@ tsBridgeFn3
   => TsBridgeBy tok a2
   => TsBridgeBy tok a3
   => TsBridgeBy tok b
+  => GetName a1
+  => GetName a2
+  => GetName a3
   => tok
   -> Proxy (Fn3 a1 a2 a3 b)
   -> TsBridgeM DTS.TsType
@@ -564,6 +587,7 @@ tsBridgeEffectFn1
   :: forall tok a1 b
    . TsBridgeBy tok a1
   => TsBridgeBy tok b
+  => GetName a1
   => tok
   -> Proxy (EffectFn1 a1 b)
   -> TsBridgeM DTS.TsType
@@ -574,6 +598,8 @@ tsBridgeEffectFn2
    . TsBridgeBy tok a1
   => TsBridgeBy tok a2
   => TsBridgeBy tok b
+  => GetName a1
+  => GetName a2
   => tok
   -> Proxy (EffectFn2 a1 a2 b)
   -> TsBridgeM DTS.TsType
@@ -585,6 +611,9 @@ tsBridgeEffectFn3
   => TsBridgeBy tok a2
   => TsBridgeBy tok a3
   => TsBridgeBy tok b
+  => GetName a1
+  => GetName a2
+  => GetName a3
   => tok
   -> Proxy (EffectFn3 a1 a2 a3 b)
   -> TsBridgeM DTS.TsType
@@ -597,6 +626,10 @@ tsBridgeEffectFn4
   => TsBridgeBy tok a3
   => TsBridgeBy tok a4
   => TsBridgeBy tok b
+  => GetName a1
+  => GetName a2
+  => GetName a3
+  => GetName a4
   => tok
   -> Proxy (EffectFn4 a1 a2 a3 a4 b)
   -> TsBridgeM DTS.TsType

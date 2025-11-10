@@ -21,9 +21,9 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Class.Console as Console
 import Node.Encoding (Encoding(..))
-import Node.FS.Aff (mkdir', writeTextFile)
+import Node.FS.Aff (mkdir', readTextFile, writeTextFile)
 import Node.FS.Perms (all, mkPerms)
-import Node.Path (dirname)
+import Node.Path (FilePath, dirname)
 import Node.Process as Process
 import TsBridge.Types (AppError, printError)
 
@@ -95,8 +95,15 @@ writeTsProgramToDisk cliOpts tsProg = do
           { recursive: true
           , mode: mkPerms all all all
           }
-        writeTextFile UTF8 (un Path filePath) (un TsSource source)
+
+        writeTextFileWhenChanged (un Path filePath) (un TsSource source)
     )
+
+writeTextFileWhenChanged :: FilePath -> String -> Aff Unit
+writeTextFileWhenChanged path content = do
+  existingContent <- readTextFile UTF8 path
+  if existingContent == content then pure unit
+  else writeTextFile UTF8 path content
 
 -- | Given a `TsProgram` returns an effectful CLI that can be used as an entry
 -- | point for a type generator.
