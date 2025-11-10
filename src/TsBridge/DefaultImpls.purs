@@ -73,7 +73,7 @@ import Data.Array as A
 import Data.Either (Either)
 import Data.Function.Uncurried (Fn2, Fn3, Fn4)
 import Data.Int as Int
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable)
 import Data.Reflectable (class Reflectable, reflectType)
@@ -118,13 +118,13 @@ newtype Named sym a = Named a
 
 class GetName :: Type -> Constraint
 class GetName a where
-  getName :: Proxy a -> String
+  getName :: Proxy a -> Maybe String
 
 instance (IsSymbol sym) => GetName (Named sym a) where
-  getName _ = reflectSymbol (Proxy :: _ sym)
+  getName _ = Just $ reflectSymbol (Proxy :: _ sym)
 
 else instance GetName a where
-  getName _ = "_"
+  getName _ = Nothing
 
 -------------------------------------------------------------------------------
 -- tsBridge methods
@@ -451,7 +451,7 @@ tsBridgeFunction tok _ = censor mapAccum ado
     removeQuant =
       DTS.mapQuantifier $ coerce $ OSet.filter (_ `OSet.notElem` newFixed)
 
-    argName = getName (Proxy :: _ a)
+    argName = fromMaybe "_" $ getName (Proxy :: _ a)
 
   in
     DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
@@ -488,10 +488,13 @@ tsBridgeFn2 tok _ = censor mapAccum ado
     removeQuant =
       DTS.mapQuantifier $ coerce $ OSet.filter (_ `OSet.notElem` newFixed)
 
+    arg1Name = fromMaybe "arg1" $ getName (Proxy :: _ a1)
+    arg2Name = fromMaybe "arg2" $ getName (Proxy :: _ a2)
+
   in
     DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
-      [ DTS.TsFnArg (DTS.TsName "arg1") (removeQuant arg1)
-      , DTS.TsFnArg (DTS.TsName "arg2") (removeQuant arg2)
+      [ DTS.TsFnArg (DTS.TsName arg1Name) (removeQuant arg1)
+      , DTS.TsFnArg (DTS.TsName arg2Name) (removeQuant arg2)
       ]
       (removeQuant ret)
   where
@@ -529,11 +532,15 @@ tsBridgeFn3 tok _ = censor mapAccum ado
     removeQuant =
       DTS.mapQuantifier $ coerce $ OSet.filter (_ `OSet.notElem` newFixed)
 
+    arg1Name = fromMaybe "arg1" $ getName (Proxy :: _ a1)
+    arg2Name = fromMaybe "arg2" $ getName (Proxy :: _ a2)
+    arg3Name = fromMaybe "arg3" $ getName (Proxy :: _ a3)
+
   in
     DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
-      [ DTS.TsFnArg (DTS.TsName "arg1") (removeQuant arg1)
-      , DTS.TsFnArg (DTS.TsName "arg2") (removeQuant arg2)
-      , DTS.TsFnArg (DTS.TsName "arg3") (removeQuant arg3)
+      [ DTS.TsFnArg (DTS.TsName arg1Name) (removeQuant arg1)
+      , DTS.TsFnArg (DTS.TsName arg2Name) (removeQuant arg2)
+      , DTS.TsFnArg (DTS.TsName arg3Name) (removeQuant arg3)
       ]
       (removeQuant ret)
   where
@@ -546,6 +553,10 @@ tsBridgeFn4
   => TsBridgeBy tok a3
   => TsBridgeBy tok a4
   => TsBridgeBy tok b
+  => GetName a1
+  => GetName a2
+  => GetName a3
+  => GetName a4
   => tok
   -> Proxy (Fn4 a1 a2 a3 a4 b)
   -> TsBridgeM DTS.TsType
@@ -572,12 +583,17 @@ tsBridgeFn4 tok _ = censor mapAccum ado
     removeQuant =
       DTS.mapQuantifier $ coerce $ OSet.filter (_ `OSet.notElem` newFixed)
 
+    arg1Name = fromMaybe "arg1" $ getName (Proxy :: _ a1)
+    arg2Name = fromMaybe "arg2" $ getName (Proxy :: _ a2)
+    arg3Name = fromMaybe "arg3" $ getName (Proxy :: _ a3)
+    arg4Name = fromMaybe "arg4" $ getName (Proxy :: _ a4)
+
   in
     DTS.TsTypeFunction (DTS.TsTypeArgsQuant $ coerce newFixed)
-      [ DTS.TsFnArg (DTS.TsName "arg1") (removeQuant arg1)
-      , DTS.TsFnArg (DTS.TsName "arg2") (removeQuant arg2)
-      , DTS.TsFnArg (DTS.TsName "arg3") (removeQuant arg3)
-      , DTS.TsFnArg (DTS.TsName "arg4") (removeQuant arg4)
+      [ DTS.TsFnArg (DTS.TsName arg1Name) (removeQuant arg1)
+      , DTS.TsFnArg (DTS.TsName arg2Name) (removeQuant arg2)
+      , DTS.TsFnArg (DTS.TsName arg3Name) (removeQuant arg3)
+      , DTS.TsFnArg (DTS.TsName arg4Name) (removeQuant arg4)
       ]
       (removeQuant ret)
   where
