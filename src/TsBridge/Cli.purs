@@ -7,6 +7,7 @@ import Prelude
 
 import ArgParse.Basic (ArgParser)
 import ArgParse.Basic as Arg
+import Control.Monad.Error.Class (catchError)
 import DTS (TsProgram)
 import DTS.Print (Path(..), TsSource(..), printTsProgram)
 import Data.Array as Array
@@ -21,7 +22,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Class.Console as Console
 import Node.Encoding (Encoding(..))
-import Node.FS.Aff (mkdir', readTextFile, writeTextFile)
+import Node.FS.Aff as FS
 import Node.FS.Perms (all, mkPerms)
 import Node.Path (FilePath, dirname)
 import Node.Process as Process
@@ -91,7 +92,7 @@ writeTsProgramToDisk cliOpts tsProg = do
         let
           filePath = cliOpts.outputDir <> Path "/" <> modPath
         log $ un Path filePath
-        mkdir' (dirname $ un Path filePath)
+        FS.mkdir' (dirname $ un Path filePath)
           { recursive: true
           , mode: mkPerms all all all
           }
@@ -100,10 +101,14 @@ writeTsProgramToDisk cliOpts tsProg = do
     )
 
 writeTextFileWhenChanged :: FilePath -> String -> Aff Unit
-writeTextFileWhenChanged path content = do
-  existingContent <- readTextFile UTF8 path
-  if existingContent == content then pure unit
-  else writeTextFile UTF8 path content
+writeTextFileWhenChanged path content =
+  ( do
+      existingContent <- FS.readTextFile UTF8 path
+      if existingContent == content then pure unit
+      else FS.writeTextFile UTF8 path content
+  )
+    `catchError` \_ -> do
+      FS.writeTextFile UTF8 path content
 
 -- | Given a `TsProgram` returns an effectful CLI that can be used as an entry
 -- | point for a type generator.
