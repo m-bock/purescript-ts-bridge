@@ -113,8 +113,10 @@ import Untagged.Union (OneOf)
 -- | variables that are used often, like: `type A = TypeVar "A"`.
 data TypeVar (s :: Symbol) = TypeVar
 
-newtype Named :: forall k. k -> Type -> Type
+newtype Named :: Symbol -> Type -> Type
 newtype Named sym a = Named a
+
+derive instance Newtype (Named sym a) _
 
 class GetName :: Type -> Constraint
 class GetName a where
