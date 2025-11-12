@@ -57,6 +57,15 @@ instance (TSB.TsBridgeVariant tok r) => TsBridgeVia tok (Variant r) where
 instance TsBridgeVia tok String where
   tsBridgeVia _ = TSB.tsBridgeString
 
+instance TsBridgeVia tok Boolean where
+  tsBridgeVia _ = TSB.tsBridgeBoolean
+
+instance TsBridgeVia tok Int where
+  tsBridgeVia _ = TSB.tsBridgeInt
+
+instance TsBridgeVia tok Char where
+  tsBridgeVia _ = TSB.tsBridgeChar
+
 instance (TsBridgeBy tok a) => TsBridgeVia tok (Array a) where
   tsBridgeVia = TSB.tsBridgeArray
 
