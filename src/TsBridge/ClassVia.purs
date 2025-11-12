@@ -9,6 +9,7 @@ import Data.Nullable (Nullable)
 import Data.Reflectable (class Reflectable)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple)
+import Data.Unit (Unit)
 import Data.Variant (Variant)
 import Data.Variant.Encodings.Flat (VariantEncodedFlat)
 import Data.Variant.Encodings.Nested (VariantEncodedNested)
@@ -67,6 +68,9 @@ instance (TsBridgeBy tok a) => TsBridgeVia tok (Effect a) where
 
 instance (TsBridgeBy tok a) => TsBridgeVia tok (Nullable a) where
   tsBridgeVia = TSB.tsBridgeNullable
+
+instance TsBridgeVia tok Unit where
+  tsBridgeVia _ = TSB.tsBridgeUnit
 
 instance (TSB.GetName a, TsBridgeBy tok a, TsBridgeBy tok b) => TsBridgeVia tok (a -> b) where
   tsBridgeVia = TSB.tsBridgeFunction
