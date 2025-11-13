@@ -1,10 +1,12 @@
 module TsBridge.Core
-  ( class RecordDef
+  ( TsExports
+  , class RecordDef
   , class RecordDefRL
   , class TsBridgeBy
   , recordDef
   , recordDefRL
   , tsBridgeBy
+  , tsExportValues
   , tsModuleFile
   , tsOpaqueType
   , tsProgram
@@ -63,6 +65,12 @@ import Type.Proxy (Proxy(..))
 class TsBridgeBy :: Type -> Type -> Constraint
 class TsBridgeBy tok a where
   tsBridgeBy :: tok -> Proxy a -> TsBridgeM DTS.TsType
+
+type TsExports = String -> Either AppError (Array DTS.TsModuleFile)
+
+tsExportValues :: forall tok r. RecordDef tok r => tok -> Record r -> TsExports
+tsExportValues tok r moduleName = tsModuleFile moduleName
+  [ tsValues tok r ]
 
 tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Either AppError (Array DTS.TsModuleFile)
 tsModuleFile n xs =
