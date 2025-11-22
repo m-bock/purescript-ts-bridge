@@ -26,8 +26,8 @@ import TsBridge.Monad (TsBridgeM)
 import TsBridge.Types.Intersection (Intersection, tsBridgeIntersection)
 import TsBridge.Types.Lit (Lit)
 import TsBridge.Types.NTuple (NTuple)
+import TsBridge.Types.Named (class GetName, Named, QualNamed)
 import TsBridge.Types.TsRecord (TsRecord, class TsBridgeTsRecord, tsBridgeTsRecord)
-import Type.Prelude (Proxy(..))
 import Type.Proxy (Proxy)
 import Unsafe.Coerce (unsafeCoerce)
 import Untagged.Union (OneOf)
@@ -40,8 +40,11 @@ data Tok = Tok
 instance TsBridge a => TsBridgeBy Tok a where
   tsBridgeBy _ = tsBridge
 
-instance TsBridge a => TsBridge (TSB.Named sym a) where
-  tsBridge _ = tsBridge (Proxy :: _ a)
+instance TsBridge a => TsBridge (Named sym a) where
+  tsBridge = TSB.tsBridgeNamed Tok
+
+instance (IsSymbol moduleName, IsSymbol typeName, TsBridge a) => TsBridge (QualNamed moduleName typeName a) where
+  tsBridge = TSB.tsBridgeQualNamed Tok
 
 instance (TsBridge a, TsBridge b) => TsBridge (Either a b) where
   tsBridge = TSB.tsBridgeEither Tok
@@ -88,31 +91,31 @@ instance TsBridge a => TsBridge (Effect a) where
 instance TsBridge a => TsBridge (Nullable a) where
   tsBridge = TSB.tsBridgeNullable Tok
 
-instance (TSB.GetName a, TsBridge a, TsBridge b) => TsBridge (a -> b) where
+instance (GetName a, TsBridge a, TsBridge b) => TsBridge (a -> b) where
   tsBridge = TSB.tsBridgeFunction Tok
 
 else instance TsBridge (Maybe a -> b) where
   tsBridge = unsafeCoerce
 
-instance (TSB.GetName a, TSB.GetName b, TSB.GetName c, TsBridge a, TsBridge b, TsBridge c) => TsBridge (Fn2 a b c) where
+instance (GetName a, GetName b, GetName c, TsBridge a, TsBridge b, TsBridge c) => TsBridge (Fn2 a b c) where
   tsBridge = TSB.tsBridgeFn2 Tok
 
-instance (TSB.GetName a, TSB.GetName b, TSB.GetName c, TsBridge a, TsBridge b, TsBridge c, TsBridge d) => TsBridge (Fn3 a b c d) where
+instance (GetName a, GetName b, GetName c, TsBridge a, TsBridge b, TsBridge c, TsBridge d) => TsBridge (Fn3 a b c d) where
   tsBridge = TSB.tsBridgeFn3 Tok
 
-instance (TSB.GetName a, TSB.GetName b, TSB.GetName c, TSB.GetName d, TsBridge a, TsBridge b, TsBridge c, TsBridge d, TsBridge e) => TsBridge (Fn4 a b c d e) where
+instance (GetName a, GetName b, GetName c, GetName d, TsBridge a, TsBridge b, TsBridge c, TsBridge d, TsBridge e) => TsBridge (Fn4 a b c d e) where
   tsBridge = TSB.tsBridgeFn4 Tok
 
-instance (TSB.GetName a, TsBridge a, TsBridge b) => TsBridge (EffectFn1 a b) where
+instance (GetName a, TsBridge a, TsBridge b) => TsBridge (EffectFn1 a b) where
   tsBridge = TSB.tsBridgeEffectFn1 Tok
 
-instance (TSB.GetName a, TSB.GetName b, TSB.GetName c, TsBridge a, TsBridge b, TsBridge c) => TsBridge (EffectFn2 a b c) where
+instance (GetName a, GetName b, GetName c, TsBridge a, TsBridge b, TsBridge c) => TsBridge (EffectFn2 a b c) where
   tsBridge = TSB.tsBridgeEffectFn2 Tok
 
-instance (TSB.GetName a, TSB.GetName b, TSB.GetName c, TSB.GetName d, TsBridge a, TsBridge b, TsBridge c, TsBridge d) => TsBridge (EffectFn3 a b c d) where
+instance (GetName a, GetName b, GetName c, GetName d, TsBridge a, TsBridge b, TsBridge c, TsBridge d) => TsBridge (EffectFn3 a b c d) where
   tsBridge = TSB.tsBridgeEffectFn3 Tok
 
-instance (TSB.GetName a, TSB.GetName b, TSB.GetName c, TSB.GetName d, TSB.GetName e, TsBridge a, TsBridge b, TsBridge c, TsBridge d, TsBridge e) => TsBridge (EffectFn4 a b c d e) where
+instance (GetName a, GetName b, GetName c, GetName d, GetName e, TsBridge a, TsBridge b, TsBridge c, TsBridge d, TsBridge e) => TsBridge (EffectFn4 a b c d e) where
   tsBridge = TSB.tsBridgeEffectFn4 Tok
 
 instance TsBridge a => TsBridge (Maybe a) where

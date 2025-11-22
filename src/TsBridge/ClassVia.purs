@@ -25,6 +25,7 @@ import TsBridge.Monad (TsBridgeM)
 import TsBridge.Types.Intersection (Intersection, tsBridgeIntersection)
 import TsBridge.Types.Lit (Lit)
 import TsBridge.Types.NTuple (NTuple)
+import TsBridge.Types.Named (class GetName, Named, QualNamed)
 import Type.Prelude (Proxy(..))
 import Type.Proxy (Proxy)
 import Unsafe.Coerce (unsafeCoerce)
@@ -33,8 +34,11 @@ import Untagged.Union (OneOf)
 class TsBridgeVia (tok :: Type) (a :: Type) where
   tsBridgeVia :: tok -> Proxy a -> TsBridgeM DTS.TsType
 
-instance TsBridgeBy tok a => TsBridgeVia tok (TSB.Named sym a) where
-  tsBridgeVia tok _ = tsBridgeBy tok (Proxy :: _ a)
+instance TsBridgeBy tok a => TsBridgeVia tok (Named sym a) where
+  tsBridgeVia tok = TSB.tsBridgeNamed tok
+
+instance (IsSymbol moduleName, IsSymbol typeName, TsBridgeBy tok a) => TsBridgeVia tok (QualNamed moduleName typeName a) where
+  tsBridgeVia tok = TSB.tsBridgeQualNamed tok
 
 instance (TsBridgeBy tok a, TsBridgeBy tok b) => TsBridgeVia tok (Either a b) where
   tsBridgeVia = TSB.tsBridgeEither
@@ -81,31 +85,31 @@ instance (TsBridgeBy tok a) => TsBridgeVia tok (Nullable a) where
 instance TsBridgeVia tok Unit where
   tsBridgeVia _ = TSB.tsBridgeUnit
 
-instance (TSB.GetName a, TsBridgeBy tok a, TsBridgeBy tok b) => TsBridgeVia tok (a -> b) where
+instance (GetName a, TsBridgeBy tok a, TsBridgeBy tok b) => TsBridgeVia tok (a -> b) where
   tsBridgeVia = TSB.tsBridgeFunction
 
 else instance TsBridgeVia tok (Maybe a -> b) where
   tsBridgeVia = unsafeCoerce
 
-instance (TSB.GetName a, TSB.GetName b, TSB.GetName c, TsBridgeBy tok a, TsBridgeBy tok b, TsBridgeBy tok c) => TsBridgeVia tok (Fn2 a b c) where
+instance (GetName a, GetName b, GetName c, TsBridgeBy tok a, TsBridgeBy tok b, TsBridgeBy tok c) => TsBridgeVia tok (Fn2 a b c) where
   tsBridgeVia = TSB.tsBridgeFn2
 
-instance (TSB.GetName a, TSB.GetName b, TSB.GetName c, TsBridgeBy tok a, TsBridgeBy tok b, TsBridgeBy tok c, TsBridgeBy tok d) => TsBridgeVia tok (Fn3 a b c d) where
+instance (GetName a, GetName b, GetName c, TsBridgeBy tok a, TsBridgeBy tok b, TsBridgeBy tok c, TsBridgeBy tok d) => TsBridgeVia tok (Fn3 a b c d) where
   tsBridgeVia = TSB.tsBridgeFn3
 
-instance (TSB.GetName a, TSB.GetName b, TSB.GetName c, TSB.GetName d, TsBridgeBy tok a, TsBridgeBy tok b, TsBridgeBy tok c, TsBridgeBy tok d, TsBridgeBy tok e) => TsBridgeVia tok (Fn4 a b c d e) where
+instance (GetName a, GetName b, GetName c, GetName d, TsBridgeBy tok a, TsBridgeBy tok b, TsBridgeBy tok c, TsBridgeBy tok d, TsBridgeBy tok e) => TsBridgeVia tok (Fn4 a b c d e) where
   tsBridgeVia = TSB.tsBridgeFn4
 
-instance (TSB.GetName a, TsBridgeBy tok a, TsBridgeBy tok b) => TsBridgeVia tok (EffectFn1 a b) where
+instance (GetName a, TsBridgeBy tok a, TsBridgeBy tok b) => TsBridgeVia tok (EffectFn1 a b) where
   tsBridgeVia = TSB.tsBridgeEffectFn1
 
-instance (TSB.GetName a, TSB.GetName b, TSB.GetName c, TsBridgeBy tok a, TsBridgeBy tok b, TsBridgeBy tok c) => TsBridgeVia tok (EffectFn2 a b c) where
+instance (GetName a, GetName b, GetName c, TsBridgeBy tok a, TsBridgeBy tok b, TsBridgeBy tok c) => TsBridgeVia tok (EffectFn2 a b c) where
   tsBridgeVia = TSB.tsBridgeEffectFn2
 
-instance (TSB.GetName a, TSB.GetName b, TSB.GetName c, TSB.GetName d, TsBridgeBy tok a, TsBridgeBy tok b, TsBridgeBy tok c, TsBridgeBy tok d) => TsBridgeVia tok (EffectFn3 a b c d) where
+instance (GetName a, GetName b, GetName c, GetName d, TsBridgeBy tok a, TsBridgeBy tok b, TsBridgeBy tok c, TsBridgeBy tok d) => TsBridgeVia tok (EffectFn3 a b c d) where
   tsBridgeVia = TSB.tsBridgeEffectFn3
 
-instance (TSB.GetName a, TSB.GetName b, TSB.GetName c, TSB.GetName d, TSB.GetName e, TsBridgeBy tok a, TsBridgeBy tok b, TsBridgeBy tok c, TsBridgeBy tok d, TsBridgeBy tok e) => TsBridgeVia tok (EffectFn4 a b c d e) where
+instance (GetName a, GetName b, GetName c, GetName d, GetName e, TsBridgeBy tok a, TsBridgeBy tok b, TsBridgeBy tok c, TsBridgeBy tok d, TsBridgeBy tok e) => TsBridgeVia tok (EffectFn4 a b c d e) where
   tsBridgeVia = TSB.tsBridgeEffectFn4
 
 instance TsBridgeBy tok a => TsBridgeVia tok (Promise a) where

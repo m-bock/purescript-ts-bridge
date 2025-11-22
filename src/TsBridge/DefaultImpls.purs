@@ -1,6 +1,5 @@
 module TsBridge.DefaultImpls
-  ( TypeVar(..)
-  , class NTupleList
+  ( class NTupleList
   , class TsBridgeRecord
   , class TsBridgeRecordRL
   , class TsBridgeVariant
@@ -42,6 +41,7 @@ module TsBridge.DefaultImpls
   , tsBridgeOneOf
   , tsBridgeOpaqueType
   , tsBridgePromise
+  , tsBridgeQualNamed
   , tsBridgeRecord
   , tsBridgeRecordRL
   , tsBridgeString
@@ -57,9 +57,8 @@ module TsBridge.DefaultImpls
   , tsBridgeVariantEncodedNested
   , tsBridgeVariantEncodedNestedRL
   , tsBridgeVariantRL
-  , Named(..)
-  , class GetName
-  , getName
+  , tsBridgeNamed
+  , module Exp
   ) where
 
 import Prelude
@@ -100,37 +99,32 @@ import TsBridge.Monad (Scope(..), TsBridgeAccum(..), TsBridgeM, getAccum)
 import TsBridge.Types (AppError(..), mapErr, mkName, toTsName)
 import TsBridge.Types.Lit (Lit)
 import TsBridge.Types.NTuple (NTuple)
+import TsBridge.Types.Named (class GetName, Named, QualNamed, getName)
+import TsBridge.Types.TypeVar (TypeVar)
+import TsBridge.Types.TypeVar (TypeVar) as Exp
 import Type.Data.List (type (:>), List', Nil')
 import Type.Proxy (Proxy(..))
 import Untagged.Union (OneOf)
 
 -------------------------------------------------------------------------------
--- Types
--------------------------------------------------------------------------------
-
--- | Represents a monomorphized type variable. E.g. a `Maybe a` can become a
--- | `Maybe (TypeVar "A")`. It's useful to create some type aliases for
--- | variables that are used often, like: `type A = TypeVar "A"`.
-data TypeVar (s :: Symbol) = TypeVar
-
-newtype Named :: Symbol -> Type -> Type
-newtype Named sym a = Named a
-
-derive instance Newtype (Named sym a) _
-
-class GetName :: Type -> Constraint
-class GetName a where
-  getName :: Proxy a -> Maybe String
-
-instance (IsSymbol sym) => GetName (Named sym a) where
-  getName _ = Just $ reflectSymbol (Proxy :: _ sym)
-
-else instance GetName a where
-  getName _ = Nothing
-
--------------------------------------------------------------------------------
 -- tsBridge methods
 -------------------------------------------------------------------------------
+
+tsBridgeNamed :: forall tok sym a. TsBridgeBy tok a => tok -> Proxy (Named sym a) -> TsBridgeM DTS.TsType
+tsBridgeNamed tok _ = tsBridgeBy tok (Proxy :: _ a)
+
+tsBridgeQualNamed
+  :: forall tok moduleName typeName a
+   . IsSymbol moduleName
+  => IsSymbol typeName
+  => TsBridgeBy tok a
+  => tok
+  -> Proxy (QualNamed moduleName typeName a)
+  -> TsBridgeM DTS.TsType
+tsBridgeQualNamed tok = tsBridgeNewtype0 tok
+  { moduleName: reflectSymbol (Proxy :: _ moduleName)
+  , typeName: reflectSymbol (Proxy :: _ typeName)
+  }
 
 -- | `tsBridge` type class method implementation for type variables.
 -- | This is needed because polymorphic values cannot be exported directly.

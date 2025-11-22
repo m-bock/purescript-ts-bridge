@@ -10,3 +10,5 @@ import TsBridge.DefaultImpls as Exp
 import TsBridge.Types as Exp
 import TsBridge.Types.TsRecord as Exp
 import TsBridge.Types.Intersection as Exp
+import TsBridge.Types.TypeVar as Exp
+import TsBridge.Types.Named as Exp

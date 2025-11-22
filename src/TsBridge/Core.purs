@@ -66,10 +66,10 @@ class TsBridgeBy :: Type -> Type -> Constraint
 class TsBridgeBy tok a where
   tsBridgeBy :: tok -> Proxy a -> TsBridgeM DTS.TsType
 
-type TsExports = String -> Either AppError (Array DTS.TsModuleFile)
+type TsExports = Either AppError (Array DTS.TsModuleFile)
 
-tsExportValues :: forall tok r. RecordDef tok r => tok -> Record r -> TsExports
-tsExportValues tok r moduleName = tsModuleFile moduleName
+tsExportValues :: forall tok r. RecordDef tok r => tok -> String -> Record r -> TsExports
+tsExportValues tok moduleName r = tsModuleFile moduleName
   [ tsValues tok r ]
 
 tsModuleFile :: String -> Array (TsBridgeM (Array DTS.TsDeclaration)) -> Either AppError (Array DTS.TsModuleFile)
